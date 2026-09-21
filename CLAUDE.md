@@ -37,9 +37,16 @@ checked rather than trusted.
 
 ## Commands
 
-`JAVA_HOME` must point at a JDK 21 for any Gradle command. Android Studio ships one:
-`C:\Program Files\Android\Android Studio\jbr`. The SDK path lives in
-`android/local.properties`, which is not committed.
+`JAVA_HOME` must point at a JDK for any Gradle command; on the owner's machine it is
+already set to Android Studio's bundled JBR. The SDK path lives in
+`android/local.properties`, which is not committed — recreate it on a fresh clone with
+`sdk.dir=C:/Users/<user>/AppData/Local/Android/Sdk`, forward slashes, because a Java
+properties file treats a backslash as an escape.
+
+The `apk` script invokes `.\gradlew.bat` by explicit relative path. npm runs scripts
+through `cmd.exe`, and Git Bash exports `NoDefaultCurrentDirectoryInExePath`, which stops
+`cmd` finding an executable in the working directory, so both `./gradlew` and a bare
+`gradlew` fail there.
 
 | Command | What it does |
 |---|---|
