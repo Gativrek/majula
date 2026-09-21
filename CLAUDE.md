@@ -115,3 +115,38 @@ export round trip are testable without a phone, not to leave room for a third ba
   `.githooks/` runs Prettier; enable it once per clone with
   `git config core.hooksPath .githooks`.
 - Reformatting commits contain nothing but reformatting (CODESTYLE §2).
+
+---
+
+## Device verification — Phase 1 and GATE V1
+
+Everything below needs the phone. Nothing here can be closed from a desktop, and
+`ROADMAP.md` Phase 1 is not done until it is. Log the outcome in `DECISIONS.md`.
+
+```bash
+npm run apk && npm run install:apk
+```
+
+**Phase 1 acceptance** (`ROADMAP.md` Phase 1, *done when*), in airplane mode throughout:
+
+1. Cold start to typing in quick capture, under ~2 s. Force-stop the app first, time it.
+2. Capture a note, a to-do and a running-low item. All three appear in the list.
+3. Check the to-do off; it stays checked after a restart.
+4. Delete one item. It leaves the list and appears under **Deleted**. Restore it.
+5. Delete it again, then **Purge deleted**. It is gone from both views.
+6. **Export**. Confirm `Documents/Majula/majula-export.json` and `Documents/Majula/pdfs/`
+   exist from a file manager.
+7. Uninstall the app, reinstall the APK, **Import**. The surviving data comes back and the
+   purged row does not.
+
+**GATE V1 — FTS5 availability** (`SPECS.md` §9, ADR-002). It blocks Phase 2, not Phase 1,
+so it is run once a build is on the phone. Over `adb logcat`, or from a temporary probe in
+`initialiseApp`, run:
+
+```sql
+CREATE VIRTUAL TABLE fts_probe USING fts5(title, body);
+```
+
+It either succeeds or raises `no such module: fts5`. That outcome — not a preference —
+decides FTS5 against the `LIKE` fallback for Phase 2. Record which, and the Android and
+plugin versions it was observed on, in `DECISIONS.md`. Drop the probe table afterwards.
