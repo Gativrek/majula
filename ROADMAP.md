@@ -14,7 +14,7 @@ Decisions are recorded in `DECISIONS.md`; rationale goes in the ADR or spec sect
   and the closure is logged in `DECISIONS.md`.
 - *Done when* — the observable check that ends the phase. Not "code written".
 
-**Two gates remain open.** Everything else was closed on 2026-09-21.
+**One gate remains open.** GATE V1 needs a device to close. Everything else is closed.
 
 ---
 
@@ -49,12 +49,10 @@ Remaining Phase 0 work, unblocked:
 Goal: one item captured on the phone, listed, soft-deleted, purged, exported, wiped,
 re-imported.
 
-Blocked by: **GATE E1**.
+**GATE E1 — CLOSED 2026-09-21: a directory.** `majula-export.json` beside a `pdfs/`
+directory, in user-accessible storage. No zip library, so no new dependency and no new
+ADR. Logged in `DECISIONS.md`.
 
-- **GATE E1** — export packaging: a directory (`majula-export.json` plus `pdfs/`, no new
-  dependency) or a single zip file (needs a zip library, and therefore a new ADR under
-  §8's standing rule). §5 currently specifies the directory. Decide before the export
-  writer is built; retrofitting the container format means a second import path forever.
 - Toolchain
   - Capacitor project, Android as the only target.
   - Vite + Preact + TypeScript strict. `react` and `react-dom` aliased to
@@ -83,7 +81,7 @@ Blocked by: **GATE E1**.
   - Defaults to `note`; type chosen via chips. No text parsing, no prefix syntax.
 - One list view. Generic over `items`, not a per-module screen.
 - Export / import (§5) — built in this phase, not bolted on later
-  - Full export of all tables to `majula-export.json`, in the container E1 decides.
+  - Full export of all tables to `majula-export.json`, in the directory container E1 chose.
   - Export embeds `schema_version`.
   - PDF inclusion is not exercised yet (no PDFs until Phase 5), but the container must
     already be able to carry a `pdfs/` directory without a format change.
@@ -258,7 +256,7 @@ Not a phase. These apply from Phase 1 onward and are part of "done" every time.
 | S2 | FTS and soft-deleted rows | §4.2 | CLOSED 2026-09-21 — filter at query time | — |
 | F1 | Finance contradiction | §1.1 | CLOSED 2026-09-21 — no finance features | — |
 | L1 | License | — | CLOSED 2026-09-21 — MIT | — |
-| **E1** | **Export packaging: directory or zip** | **§5** | **OPEN** | **Phase 1** |
+| E1 | Export packaging: directory or zip | §5 | CLOSED 2026-09-21 — directory | — |
 | **V1** | **FTS5 availability on device** | **ADR-002** | **OPEN — needs a device** | **Phase 2** |
 
 V1 cannot be closed until Phase 1 puts a build on the phone. That ordering is fine: it

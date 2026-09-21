@@ -1,0 +1,117 @@
+# CLAUDE.md — agent operating manual
+
+Read `SPECS.md` first. It is the source of truth; this file is only how to operate the
+repository. If the two disagree, the spec wins and this file gets fixed.
+
+Precedence: `SPECS.md` > `CODESTYLE.md` > this file > preference.
+
+---
+
+## Standing rules
+
+These are not suggestions. Each one is in the spec; the reference is given so it can be
+checked rather than trusted.
+
+1. **Spec first, code second.** To change behaviour, edit `SPECS.md`, then reconcile the
+   code (§8). Never patch code and leave the spec stale.
+2. **Never resolve an OPEN gate.** `SPECS.md` §9 and the `ROADMAP.md` gate register hold
+   what is undecided. The owner decides; the closure is logged in `DECISIONS.md` before
+   the work it blocks starts.
+3. **No new dependency without an ADR** (§8). Prefer a platform API, then a small
+   well-scoped package, then nothing.
+4. **No new entity type without editing `SPECS.md` §4 first** (§8).
+5. **Nothing from §1.1 gets built**, however convenient it looks mid-phase. No accounts,
+   no sync, no calendar, no due dates, no charts, no finance, no settings for preferences
+   the owner does not have.
+6. **Every schema change is a numbered, forward-only migration** that bumps
+   `schema_version` (§6). A shipped migration is never edited; a mistake is fixed by the
+   next one.
+7. **Re-verify the export/import round trip after every schema change** (ADR-003). It is
+   the only thing between the owner and total data loss.
+8. **Offline is the only mode** (§6). Verify in airplane mode, not by assertion.
+9. **Write the module spec for the current step only**, never more than one step ahead
+   (§7). Module specs live in `docs/modules/` and carry observable behaviour only.
+10. **Acceptance is verified on a real Android device** (§6), not in a desktop browser.
+
+---
+
+## Commands
+
+`JAVA_HOME` must point at a JDK 21 for any Gradle command. Android Studio ships one:
+`C:\Program Files\Android\Android Studio\jbr`. The SDK path lives in
+`android/local.properties`, which is not committed.
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Vite dev server. The UI renders; the database does not open (see below). |
+| `npm run typecheck` | `tsc --noEmit`, strict. |
+| `npm test` | Node's test runner over `test/*.test.ts`. |
+| `npm run build` | Typecheck, then bundle to `dist/`. |
+| `npm run format` | Prettier over the repository. |
+| `npm run sync` | Build, then `cap sync android`. Run after any dependency change. |
+| `npm run apk` | Sync, then `assembleDebug`. Output in `android/app/build/outputs/apk/debug/`. |
+| `npm run install:apk` | `adb install -r` the debug APK onto the connected phone. |
+
+**`npm run dev` cannot open the database.** SQLite is a native plugin (ADR-002), so in a
+desktop browser `initialiseApp` throws and the app says so in a banner. That failure is
+deliberate and must stay loud: it is not worked around with a browser fallback, because
+acceptance runs on the device anyway (§6). Use the dev server for layout, the APK for
+anything that touches data.
+
+**Reading device logs:** `adb logcat | grep -i chromium` surfaces the WebView console,
+which is where the logger writes. Event names are stable and greppable
+(`migration.start`, `export.done`, `purge.done`).
+
+---
+
+## Layout
+
+```
+src/
+  lib/        logger, errors, branded time types, id generation
+  data/       every SQL statement; migrations; payload validation; the type union
+  services/   orchestration the UI is allowed to call; filesystem; export/import
+  ui/         Preact components and the theme
+test/
+  support/    the node:sqlite driver and in-memory file store used by tests only
+docs/
+  adr/        ADRs once they outgrow SPECS §3
+  modules/    per-module acceptance criteria, written just before each module is built
+android/      the Capacitor Android project
+```
+
+**Layering is one-directional: UI → service → data** (CODESTYLE §4). The UI never issues
+SQL, never touches the filesystem and never parses a payload.
+
+Two interfaces have exactly two implementations each — `SqlDriver` and `FileStore` — one
+for the device and one for `node --test`. They exist so migrations, the item store and the
+export round trip are testable without a phone, not to leave room for a third backend
+(§1.1 item 3). Do not add one.
+
+---
+
+## Where the bodies are buried
+
+- **`payload` is TEXT.** Static types do not survive `JSON.parse`. Everything coming out
+  of that column goes through `src/data/payload.ts`; never cast (CODESTYLE §9).
+- **`Timestamp` and `LocalDate` are branded** and deliberately incompatible. ISO 8601 UTC
+  for rows, local `YYYY-MM-DD` for habit check-ins (§4.1).
+- **`erasableSyntaxOnly` is on** so `node --test --experimental-strip-types` can run the
+  TypeScript directly. That rules out constructor parameter properties and enums.
+- **Soft delete retains attached files.** Only purge removes them (§4.1). A delete path
+  that unlinks a file is a bug.
+- **Every read filters `deleted_at IS NULL`** except the two paths named for it,
+  `listDeleted` and `purgeDeleted`.
+- **`items_fts` does not exist yet.** It is blocked on GATE V1 and ships in Phase 2.
+- **Export column names come from `src/data/tables.ts`**, never from the file being
+  imported: no interpolation of data into SQL, including identifiers (CODESTYLE §10).
+
+---
+
+## Commits
+
+- One logical change per commit, English, imperative, subject under ~72 characters.
+- No commit leaves the build broken or the formatter unhappy. The pre-commit hook in
+  `.githooks/` runs Prettier; enable it once per clone with
+  `git config core.hooksPath .githooks`.
+- Reformatting commits contain nothing but reformatting (CODESTYLE §2).

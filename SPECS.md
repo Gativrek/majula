@@ -270,7 +270,7 @@ Required because of ADR-003.
 
 - Full export of all tables to a single JSON file, `majula-export.json`.
 - **Attached PDFs are included by default**, with a flag to exclude them: ACCEPTED 2026-09-21. ADR-004 copies PDFs into private storage precisely so the originals can be deleted, which means the app's copy is often the only copy; an export that excluded it would be an incomplete backup by default.
-- Export is therefore a **directory**, not a lone file: `majula-export.json` plus a `pdfs/` directory, written to user-accessible storage. A data-only export is the same directory without `pdfs/`. Packaging it as a single zip would require a new dependency and therefore a new ADR — **OPEN** (§9).
+- Export is therefore a **directory**, not a lone file: `majula-export.json` plus a `pdfs/` directory, written to user-accessible storage. A data-only export is the same directory without `pdfs/`. ACCEPTED 2026-09-21: the container is the directory. A single zip would require a zip library and therefore a new ADR, and the directory costs nothing and is readable by any file manager.
 - Full import from that directory restores the database (replace, not merge), and restores the PDF copies when they are present.
 - Export includes `schema_version`; import refuses newer versions and migrates older ones.
 - Re-verify the export/import round trip after every schema change. It is the only thing standing between the owner and total data loss.
@@ -331,8 +331,8 @@ Do not write a module spec more than one step ahead.
 - [x] FTS and soft-deleted rows — filter at query time, 2026-09-21
 - [x] Finance contradiction — no finance features at all, 2026-09-21
 - [x] License — MIT, 2026-09-21
+- [x] Export packaging — directory, not zip, 2026-09-21
 
 Still open:
 
 - [ ] Verify FTS5 availability in the SQLite plugin on the target Android version. A device verification, not a preference. Blocks §7 step 2.
-- [ ] Export packaging: directory (no new dependency) or single zip file (new dependency, needs an ADR). Blocks §7 step 1.

@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test --experimental-strip-types test/**/*.test.ts",
+    "test": "node --test --experimental-strip-types --disable-warning=ExperimentalWarning \"test/*.test.ts\"",
     "sync": "npm run build && cap sync android",
     "apk": "npm run sync && cd android && ./gradlew assembleDebug",
     "install:apk": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk"

@@ -25,3 +25,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - §4.2 FTS and soft deletes: filter at QUERY TIME. A soft delete is an `UPDATE`, so the sync trigger re-indexes the row and deleted items would stay searchable; search now joins back to `items` on `rowid` and requires `deleted_at IS NULL`. Rejected: conditional delete-from-FTS inside the update trigger, which would need an undelete path exercised too rarely to stay correct.
 - §1.1 item 12 finance: NO finance features at all. The clause "beyond expense capture with export" implied an expense module that existed nowhere in §2 or §4. §4.1's integer-cents money convention is kept, marked reserved, so a future money field cannot get it wrong.
 - License: MIT. The repo is published to be readable and forkable; with no license, default copyright forbids both.
+
+---
+
+## 2026-09-21 — GATE E1 closed, Phase 1 built
+
+- §5 export packaging: a DIRECTORY, not a zip. GATE E1 closed. `majula-export.json` beside a `pdfs/` directory in user-accessible storage; a data-only export is the same directory without `pdfs/`. Rejected: a single zip file, which would need a zip library and therefore an ADR, to buy a convenience the directory does not lack — any file manager already moves a folder. The container carries `pdfs/` from Phase 1 even though nothing attaches a PDF until Phase 5, so the format never has to change and a second import path never has to exist.
+- Formatter: Prettier, with its config committed and a `.githooks/pre-commit` hook that refuses a commit the formatter would change (CODESTYLE §2). Not an ADR: §2 already requires a formatter, and this is which one. Rejected: husky, which is a dependency for something `core.hooksPath` does for free.
+- Test SQL engine: `node:sqlite`, the platform's own, so migrations and the export round trip are testable without a device. Not a dependency: it ships with Node. Consequence: `erasableSyntaxOnly` is on in `tsconfig.json` so `node --test --experimental-strip-types` can run the TypeScript directly, which rules out constructor parameter properties and enums.
+- Desktop browser behaviour: `npm run dev` renders the UI but cannot open the database, because SQLite is a native plugin (ADR-002). The failure is a visible banner rather than a browser storage fallback. A fallback would be a second storage path exercised only by the developer, and §6 puts acceptance on the device anyway.

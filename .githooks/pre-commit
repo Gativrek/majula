@@ -1,0 +1,11 @@
+#!/bin/sh
+# CODESTYLE §2: a commit that would change under the formatter does not get made.
+
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '*.ts' '*.tsx' '*.css' '*.json')
+[ -z "$staged" ] && exit 0
+
+echo "$staged" | xargs npx prettier --check || {
+  echo
+  echo "Formatting differs. Run: npm run format"
+  exit 1
+}
