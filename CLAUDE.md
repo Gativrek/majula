@@ -147,13 +147,15 @@ npm run apk && npm run install:apk
    purged row does not.
 
 **GATE V1 — FTS5 availability** (`SPECS.md` §9, ADR-002). It blocks Phase 2, not Phase 1,
-so it is run once a build is on the phone. Over `adb logcat`, or from a temporary probe in
-`initialiseApp`, run:
+so it runs once a build is on the phone. `src/data/fts-probe.ts` answers it on every
+launch; read the answer off the device log:
 
-```sql
-CREATE VIRTUAL TABLE fts_probe USING fts5(title, body);
+```bash
+adb logcat -s chromium | grep gate_v1.fts5
 ```
 
-It either succeeds or raises `no such module: fts5`. That outcome — not a preference —
-decides FTS5 against the `LIKE` fallback for Phase 2. Record which, and the Android and
-plugin versions it was observed on, in `DECISIONS.md`. Drop the probe table afterwards.
+One line comes back, `availability=available` or `availability=unavailable` with the
+SQLite error that says why. That outcome — not a preference — decides FTS5 against the
+`LIKE` fallback for Phase 2. Record it, with the Android version and the plugin version it
+was observed on, in `DECISIONS.md`. Then delete `src/data/fts-probe.ts` and its call in
+`initialiseApp`: the gate is closed and the probe has nothing left to answer.
