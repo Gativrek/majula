@@ -1,0 +1,270 @@
+/*
+ * Gold and yellow on black (SPECS §1). Plain CSS with custom properties; kitchen
+ * mode's large type will be a theme variable here, not a per-component override
+ * (CODESTYLE §12).
+ */
+
+:root {
+  --colour-background: #0a0906;
+  --colour-surface: #16130c;
+  --colour-surface-raised: #221d12;
+  --colour-border: #3a301b;
+  --colour-gold: #d9a441;
+  --colour-gold-bright: #f2c94c;
+  --colour-text: #ede4d3;
+  --colour-text-dim: #978a70;
+  --colour-danger: #c85a3a;
+
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --size-text: 1rem;
+  --size-title: 1.0625rem;
+  --size-small: 0.8125rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+
+  --radius: 0.5rem;
+  --tap-target: 2.75rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--colour-background);
+  color: var(--colour-text);
+  font-family: var(--font-body);
+  font-size: var(--size-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: env(safe-area-inset-top);
+}
+
+.app__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--colour-border);
+}
+
+.app__title {
+  margin: 0;
+  color: var(--colour-gold);
+  font-size: var(--size-title);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app__build {
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.app__main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4) var(--space-5);
+}
+
+.app__footer {
+  border-top: 1px solid var(--colour-border);
+  background: var(--colour-surface);
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.chip {
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface-raised);
+  color: var(--colour-text);
+  font-size: var(--size-small);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold);
+  color: var(--colour-background);
+  font-weight: 600;
+}
+
+.capture {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.capture__input {
+  flex: 1;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-background);
+  color: var(--colour-text);
+  font-family: inherit;
+  font-size: var(--size-text);
+}
+
+.capture__input:focus {
+  outline: 2px solid var(--colour-gold);
+  outline-offset: -2px;
+}
+
+.button {
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--colour-gold);
+  border-radius: var(--radius);
+  background: var(--colour-gold);
+  color: var(--colour-background);
+  font-family: inherit;
+  font-size: var(--size-text);
+  font-weight: 600;
+}
+
+.button--quiet {
+  background: transparent;
+  border-color: var(--colour-border);
+  color: var(--colour-text);
+  font-weight: 400;
+}
+
+.button--danger {
+  background: transparent;
+  border-color: var(--colour-danger);
+  color: var(--colour-danger);
+}
+
+.button:disabled {
+  opacity: 0.45;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+}
+
+.item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item__title {
+  overflow-wrap: anywhere;
+}
+
+.item--done .item__title {
+  color: var(--colour-text-dim);
+  text-decoration: line-through;
+}
+
+.item__meta {
+  margin-top: var(--space-1);
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.item__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.icon-button {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--colour-text-dim);
+  font-size: var(--size-text);
+}
+
+.empty {
+  padding: var(--space-5) 0;
+  color: var(--colour-text-dim);
+  text-align: center;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.panel__note {
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  line-height: 1.45;
+}
+
+.banner {
+  padding: var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+  font-size: var(--size-small);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.banner--error {
+  border-left-color: var(--colour-danger);
+  color: var(--colour-danger);
+}
+
+.banner--info {
+  border-left-color: var(--colour-gold);
+}
