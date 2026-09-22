@@ -7,7 +7,6 @@
 
 import { openDeviceDatabase } from '../data/driver-capacitor.ts';
 import type { SqlDriver } from '../data/driver.ts';
-import { probeFts5 } from '../data/fts-probe.ts';
 import { ItemStore } from '../data/items.ts';
 import { runMigrations } from '../data/migrations.ts';
 import { log } from '../lib/logger.ts';
@@ -35,10 +34,6 @@ export async function initialiseApp(): Promise<AppContext> {
   const driver = await openDeviceDatabase();
   const schemaVersion = await runMigrations(driver);
   const files = await createDeviceFileStore();
-
-  // GATE V1: answers ADR-002's open question on the device it actually has to hold for.
-  // Remove this call, and src/data/fts-probe.ts, once the gate is closed.
-  await probeFts5(driver);
 
   log.info('app.initialised', { schemaVersion, commit: __COMMIT_HASH__ });
   context = { driver, items: new ItemStore(driver), files, schemaVersion };

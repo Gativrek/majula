@@ -94,7 +94,7 @@ Format: context, decision, consequences. Each ADR is final once marked ACCEPTED;
 
 **Decision.** SQLite via `@capacitor-community/sqlite`. Full-text search via FTS5.
 
-**Consequences.** Real SQL, migrations, FTS. Not eviction-prone. Must verify FTS5 is available in the plugin's bundled SQLite build on the target Android version before relying on it; fallback is `LIKE` queries, acceptable at personal-data scale. This verification is still **OPEN** (§9) and blocks §7 step 2.
+**Consequences.** Real SQL, migrations, FTS. Not eviction-prone. FTS5 availability in the plugin's bundled SQLite build was verified on device on 2026-09-21 and is present, so search uses FTS5 and the `LIKE` fallback is not built. Were a future device to lack it, the fallback returns as a new decision, never as a silent path.
 
 ### ADR-003 — Single device, no sync
 
@@ -332,7 +332,7 @@ Do not write a module spec more than one step ahead.
 - [x] Finance contradiction — no finance features at all, 2026-09-21
 - [x] License — MIT, 2026-09-21
 - [x] Export packaging — directory, not zip, 2026-09-21
+- [x] FTS5 availability on device — available, verified 2026-09-21
 
 Still open:
 
-- [ ] Verify FTS5 availability in the SQLite plugin on the target Android version. A device verification, not a preference. Blocks §7 step 2.

@@ -14,7 +14,7 @@ Decisions are recorded in `DECISIONS.md`; rationale goes in the ADR or spec sect
   and the closure is logged in `DECISIONS.md`.
 - *Done when* — the observable check that ends the phase. Not "code written".
 
-**One gate remains open.** GATE V1 needs a device to close. Everything else is closed.
+**Every gate is closed.** Phase 1 is verified on device; Phase 2 is in progress.
 
 ---
 
@@ -65,7 +65,7 @@ ADR. Logged in `DECISIONS.md`.
   - `PRAGMA foreign_keys = ON` on every connection. Without it the `REFERENCES` clauses
     in §4.2 are decorative.
   - Migration runner: numbered, forward-only, bumps `schema_version`, logs `from -> to`.
-  - `items_fts` and its triggers are deferred to Phase 2 (they depend on **GATE V1**).
+  - `items_fts` and its triggers are deferred to Phase 2 (they depended on GATE V1).
 - Data layer
   - Create / read / update / soft-delete over `items`; tag write path.
   - Every read filters `deleted_at IS NULL` unless it is the purge path.
@@ -100,21 +100,15 @@ uninstall/reinstall → import returns exactly the surviving data.
 
 Covers notes, to-do, network log, running-low as views over `items`.
 
-Blocked by: **GATE V1**.
+**GATE V1 — CLOSED 2026-09-21: FTS5 is available.** Verified on the device with a probe
+that asked SQLite directly. Search takes the FTS5 path; the `LIKE` fallback is not built.
 
-- **GATE V1** — verify FTS5 is available in the SQLite plugin's bundled build on the
-  target Android version (§9, ADR-002). A verification, not a preference: run it on
-  device before writing search. The outcome decides FTS5 vs the `LIKE` fallback. Log the
-  result and the chosen path in `DECISIONS.md`.
 - Module specs due now (`docs/modules/`): `notes.md`, `todo.md`, `network-log.md`,
   `running-low.md`. Acceptance criteria only, observable behaviour only.
 - Search
   - `items_fts` + insert/update/delete triggers, shipped in the same migration.
-  - Or the `LIKE` fallback if V1 fails. Whichever path runs logs which one it is —
-    no silent fallback.
   - Soft-deleted rows are excluded at query time: join back to `items` on `rowid`,
-    require `deleted_at IS NULL`. The same filter applies to both paths, so the fallback
-    is not a second set of semantics.
+    require `deleted_at IS NULL`.
   - Search covers `title` and `body` across all types.
 - Tag views
   - Saved filters over `items`. No new tables, no per-module storage.
@@ -257,7 +251,6 @@ Not a phase. These apply from Phase 1 onward and are part of "done" every time.
 | F1 | Finance contradiction | §1.1 | CLOSED 2026-09-21 — no finance features | — |
 | L1 | License | — | CLOSED 2026-09-21 — MIT | — |
 | E1 | Export packaging: directory or zip | §5 | CLOSED 2026-09-21 — directory | — |
-| **V1** | **FTS5 availability on device** | **ADR-002** | **OPEN — needs a device** | **Phase 2** |
+| V1 | FTS5 availability on device | ADR-002 | CLOSED 2026-09-21 — available | — |
 
-V1 cannot be closed until Phase 1 puts a build on the phone. That ordering is fine: it
-blocks Phase 2, not Phase 1.
+Both device gates were closed on 2026-09-21, once Phase 1 put a build on the phone.
