@@ -314,3 +314,25 @@ body {
   width: 100%;
   margin-bottom: var(--space-2);
 }
+
+/* A habit's control is larger than a checkbox: it is the whole interaction, tapped once
+   a day with one thumb (SPECS §6). */
+.habit__check {
+  min-width: 3rem;
+  min-height: 3rem;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--colour-text-dim);
+  font-size: 1.25rem;
+}
+
+.habit__check[aria-pressed='true'] {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold);
+  color: var(--colour-background);
+}
+
+.item--checked-today {
+  border-color: var(--colour-gold);
+}

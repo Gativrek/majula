@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Item, ItemType } from '../data/types.ts';
+import type { Item, ItemOfType, ItemType } from '../data/types.ts';
 import { log } from '../lib/logger.ts';
+import type { HabitState } from '../services/habits.ts';
+import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
 import { initialiseApp } from '../services/database.ts';
 import {
@@ -47,6 +49,7 @@ export function App() {
   const [filter, setFilter] = useState<Filter>({});
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<Item[]>([]);
+  const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [tags, setTags] = useState<TagCount[]>([]);
 
   useEffect(function openDatabaseOnce() {
@@ -76,15 +79,18 @@ export function App() {
     async function refreshVisibleItems(): Promise<void> {
       if (context === null) return;
       if (view === 'deleted') {
-        setItems(await listDeletedItems(context));
+        const deleted = await listDeletedItems(context);
+        setItems(deleted);
+        setHabitStates(await loadHabitStates(context, deleted));
         return;
       }
       const trimmed = query.trim();
-      setItems(
+      const visible =
         trimmed.length > 0
           ? await searchAll(context, trimmed, filter)
-          : await listItems(context, filter),
-      );
+          : await listItems(context, filter);
+      setItems(visible);
+      setHabitStates(await loadHabitStates(context, visible));
       setTags(await loadTagCounts(context));
     },
     [context, view, query, filter],
@@ -107,6 +113,12 @@ export function App() {
   async function onToggleDone(item: Item): Promise<void> {
     if (context === null) return;
     await toggleDone(context, item);
+    await refresh();
+  }
+
+  async function onToggleToday(habit: ItemOfType<'habit'>): Promise<void> {
+    if (context === null) return;
+    await toggleHabitToday(context, habit.id);
     await refresh();
   }
 
@@ -148,7 +160,9 @@ export function App() {
         <ItemList
           items={items}
           emptyMessage={emptyMessage(view, query, filter)}
+          habitStates={habitStates}
           onToggleDone={(item) => void onToggleDone(item)}
+          onToggleToday={(habit) => void onToggleToday(habit)}
           onDelete={(item) => void onDelete(item)}
           {...(view === 'deleted' ? { onRestore: (item: Item) => void onRestore(item) } : {})}
         />

@@ -1,15 +1,22 @@
-import type { Item } from '../data/types.ts';
+import type { Item, ItemOfType } from '../data/types.ts';
+import type { HabitState } from '../services/habits.ts';
+import { HabitRow } from './HabitRow.tsx';
 import { ItemRow } from './ItemRow.tsx';
 
 /**
- * The single list view of Phase 1 (ROADMAP Phase 1). Tag views and per-type views in
- * Phase 2 are filters over this same list, not new screens.
+ * The one list view (ROADMAP Phase 1). Type and tag views are filters over this same
+ * list, not screens of their own (SPECS §2.2).
+ *
+ * Habits get their own row because they carry a streak and a today-toggle instead of a
+ * done flag. Everything else shares one row.
  */
 
 interface ItemListProps {
   items: readonly Item[];
   emptyMessage: string;
+  habitStates: ReadonlyMap<string, HabitState>;
   onToggleDone: (item: Item) => void;
+  onToggleToday: (habit: ItemOfType<'habit'>) => void;
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
 }
@@ -17,7 +24,9 @@ interface ItemListProps {
 export function ItemList({
   items,
   emptyMessage,
+  habitStates,
   onToggleDone,
+  onToggleToday,
   onDelete,
   onRestore,
 }: ItemListProps) {
@@ -27,17 +36,28 @@ export function ItemList({
 
   return (
     <ul class="item-list">
-      {items.map((item) => (
+      {items.map((item) =>
         // Keyed by entity id, never by index: rows get soft-deleted and reordered
         // (CODESTYLE §12).
-        <ItemRow
-          key={item.id}
-          item={item}
-          onToggleDone={onToggleDone}
-          onDelete={onDelete}
-          {...(onRestore === undefined ? {} : { onRestore })}
-        />
-      ))}
+        item.type === 'habit' ? (
+          <HabitRow
+            key={item.id}
+            habit={item}
+            state={habitStates.get(item.id)}
+            onToggleToday={onToggleToday}
+            onDelete={onDelete}
+            {...(onRestore === undefined ? {} : { onRestore })}
+          />
+        ) : (
+          <ItemRow
+            key={item.id}
+            item={item}
+            onToggleDone={onToggleDone}
+            onDelete={onDelete}
+            {...(onRestore === undefined ? {} : { onRestore })}
+          />
+        ),
+      )}
     </ul>
   );
 }
