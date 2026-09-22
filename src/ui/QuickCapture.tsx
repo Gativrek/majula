@@ -6,11 +6,14 @@ import type { ItemType } from '../data/types.ts';
  * nothing else: GATE P1 closed on no prefix syntax, because a note that legitimately
  * opens with a prefix-shaped string would be filed as the wrong type with no signal.
  *
- * It sits in the footer so the input and the save button are in the lower half of the
+ * It sits in the footer so the input and the save control are in the lower half of the
  * screen, reachable one-handed (SPECS §6).
+ *
+ * The tag field is hidden until asked for. Tags are optional on every type that has them
+ * (§2.1), and the default path — open, type, save — must not grow a field to skip past.
  */
 
-/** The types Phase 1 can capture. The rest arrive with the phases that build them. */
+/** The types Phase 2 can capture. The rest arrive with the phases that build them. */
 const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'note', label: 'Note' },
   { type: 'todo', label: 'To-do' },
@@ -18,14 +21,24 @@ const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'grocery', label: 'Running low' },
 ];
 
+/** Tags are separated by whitespace or commas, and stored exactly as typed. */
+export function parseTags(raw: string): string[] {
+  return raw
+    .split(/[\s,]+/)
+    .map((tag) => tag.replace(/^#/, ''))
+    .filter((tag) => tag.length > 0);
+}
+
 interface QuickCaptureProps {
-  onCapture: (type: ItemType, title: string) => Promise<void>;
+  onCapture: (type: ItemType, title: string, tags: string[]) => Promise<void>;
   disabled: boolean;
 }
 
 export function QuickCapture({ onCapture, disabled }: QuickCaptureProps) {
   const [type, setType] = useState<ItemType>('note');
   const [title, setTitle] = useState('');
+  const [tagText, setTagText] = useState('');
+  const [tagsShown, setTagsShown] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const trimmed = title.trim();
@@ -35,8 +48,9 @@ export function QuickCapture({ onCapture, disabled }: QuickCaptureProps) {
     if (!canSave) return;
     setSaving(true);
     try {
-      await onCapture(type, trimmed);
+      await onCapture(type, trimmed, parseTags(tagText));
       setTitle('');
+      setTagText('');
     } finally {
       setSaving(false);
     }
@@ -62,6 +76,20 @@ export function QuickCapture({ onCapture, disabled }: QuickCaptureProps) {
           </button>
         ))}
       </div>
+
+      {tagsShown ? (
+        <input
+          class="capture__input capture__input--tags"
+          type="text"
+          value={tagText}
+          placeholder="Tags"
+          aria-label="Tags, separated by spaces"
+          autoComplete="off"
+          disabled={disabled}
+          onInput={(event) => setTagText((event.currentTarget as HTMLInputElement).value)}
+        />
+      ) : null}
+
       <div class="capture">
         <input
           class="capture__input"
@@ -74,6 +102,15 @@ export function QuickCapture({ onCapture, disabled }: QuickCaptureProps) {
           disabled={disabled}
           onInput={(event) => setTitle((event.currentTarget as HTMLInputElement).value)}
         />
+        <button
+          type="button"
+          class="icon-button"
+          aria-pressed={tagsShown}
+          aria-label={tagsShown ? 'Hide tags' : 'Add tags'}
+          onClick={() => setTagsShown(!tagsShown)}
+        >
+          #
+        </button>
         <button class="button" type="submit" disabled={!canSave}>
           Save
         </button>

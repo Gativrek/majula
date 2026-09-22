@@ -8,10 +8,14 @@ import {
   deleteItem,
   listDeletedItems,
   listItems,
+  loadTagCounts,
   restoreItem,
+  searchAll,
   toggleDone,
 } from '../services/items.ts';
 import { BackupPanel } from './BackupPanel.tsx';
+import type { Filter } from './FilterBar.tsx';
+import { FilterBar } from './FilterBar.tsx';
 import { ItemList } from './ItemList.tsx';
 import { QuickCapture } from './QuickCapture.tsx';
 
@@ -23,16 +27,27 @@ const VIEW_LABEL: Record<View, string> = {
   backup: 'Backup',
 };
 
-const EMPTY_MESSAGE: Record<'items' | 'deleted', string> = {
-  items: 'Nothing captured yet.',
-  deleted: 'Nothing deleted.',
-};
+interface TagCount {
+  tag: string;
+  count: number;
+}
+
+function emptyMessage(view: View, query: string, filter: Filter): string {
+  if (view === 'deleted') return 'Nothing deleted.';
+  if (query.trim().length > 0) return 'No match.';
+  if (filter.tag !== undefined) return `Nothing tagged #${filter.tag}.`;
+  if (filter.type !== undefined) return 'Nothing here yet.';
+  return 'Nothing captured yet.';
+}
 
 export function App() {
   const [context, setContext] = useState<AppContext | null>(null);
   const [startupError, setStartupError] = useState<string | null>(null);
   const [view, setView] = useState<View>('items');
+  const [filter, setFilter] = useState<Filter>({});
+  const [query, setQuery] = useState('');
   const [items, setItems] = useState<Item[]>([]);
+  const [tags, setTags] = useState<TagCount[]>([]);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -60,21 +75,31 @@ export function App() {
   const refresh = useCallback(
     async function refreshVisibleItems(): Promise<void> {
       if (context === null) return;
-      setItems(view === 'deleted' ? await listDeletedItems(context) : await listItems(context));
+      if (view === 'deleted') {
+        setItems(await listDeletedItems(context));
+        return;
+      }
+      const trimmed = query.trim();
+      setItems(
+        trimmed.length > 0
+          ? await searchAll(context, trimmed, filter)
+          : await listItems(context, filter),
+      );
+      setTags(await loadTagCounts(context));
     },
-    [context, view],
+    [context, view, query, filter],
   );
 
   useEffect(
-    function loadOnViewChange() {
+    function loadWheneverTheViewChanges() {
       void refresh();
     },
     [refresh],
   );
 
-  async function onCapture(type: ItemType, title: string): Promise<void> {
+  async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
     if (context === null) return;
-    await captureItem(context, { type, title });
+    await captureItem(context, { type, title, tags: itemTags });
     if (view !== 'items') setView('items');
     await refresh();
   }
@@ -97,6 +122,40 @@ export function App() {
     await refresh();
   }
 
+  function renderMain() {
+    if (startupError !== null) {
+      return (
+        <p class="banner banner--error">
+          Majula could not open its database: {startupError}. It runs on the phone, not in a desktop
+          browser.
+        </p>
+      );
+    }
+    if (context === null) return <p class="empty">Opening…</p>;
+    if (view === 'backup') return <BackupPanel context={context} onDataChanged={refresh} />;
+
+    return (
+      <>
+        {view === 'items' ? (
+          <FilterBar
+            query={query}
+            filter={filter}
+            tags={tags}
+            onQueryChange={setQuery}
+            onFilterChange={setFilter}
+          />
+        ) : null}
+        <ItemList
+          items={items}
+          emptyMessage={emptyMessage(view, query, filter)}
+          onToggleDone={(item) => void onToggleDone(item)}
+          onDelete={(item) => void onDelete(item)}
+          {...(view === 'deleted' ? { onRestore: (item: Item) => void onRestore(item) } : {})}
+        />
+      </>
+    );
+  }
+
   return (
     <div class="app">
       <header class="app__header">
@@ -104,29 +163,10 @@ export function App() {
         <span class="app__build">{__COMMIT_HASH__}</span>
       </header>
 
-      <main class="app__main">
-        {startupError !== null ? (
-          <p class="banner banner--error">
-            Majula could not open its database: {startupError}. It runs on the phone, not in a
-            desktop browser.
-          </p>
-        ) : context === null ? (
-          <p class="empty">Opening…</p>
-        ) : view === 'backup' ? (
-          <BackupPanel context={context} onDataChanged={refresh} />
-        ) : (
-          <ItemList
-            items={items}
-            emptyMessage={EMPTY_MESSAGE[view]}
-            onToggleDone={(item) => void onToggleDone(item)}
-            onDelete={(item) => void onDelete(item)}
-            {...(view === 'deleted' ? { onRestore: (item: Item) => void onRestore(item) } : {})}
-          />
-        )}
-      </main>
+      <main class="app__main">{renderMain()}</main>
 
       <footer class="app__footer">
-        <div class="chips" role="group" aria-label="View">
+        <div class="chips" role="group" aria-label="Section">
           {(Object.keys(VIEW_LABEL) as View[]).map((candidate) => (
             <button
               key={candidate}

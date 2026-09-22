@@ -4,7 +4,8 @@
  */
 
 import { countDeleted, purgeDeleted } from '../data/purge.ts';
-import { setTags, tagsForItem } from '../data/tags.ts';
+import { searchItems } from '../data/search.ts';
+import { listTags, setTags, tagsForItem } from '../data/tags.ts';
 import type { Item, ItemType, NewItem } from '../data/types.ts';
 import { log } from '../lib/logger.ts';
 import type { AppContext } from './database.ts';
@@ -32,8 +33,38 @@ export async function captureItem(context: AppContext, input: CaptureInput): Pro
   return item;
 }
 
-export async function listItems(context: AppContext, type?: ItemType): Promise<Item[]> {
-  return type === undefined ? context.items.list() : context.items.list({ type });
+/** SPECS §2.2: every module is a filter over one list, not a screen of its own. */
+export interface ItemFilter {
+  type?: ItemType;
+  tag?: string;
+}
+
+export async function listItems(context: AppContext, filter: ItemFilter = {}): Promise<Item[]> {
+  return context.items.list({
+    ...(filter.type === undefined ? {} : { type: filter.type }),
+    ...(filter.tag === undefined ? {} : { tag: filter.tag }),
+  });
+}
+
+/**
+ * Global search over title and body (SPECS §2.2). Soft-deleted rows never appear.
+ *
+ * The type filter narrows the same search rather than switching to a different one, so a
+ * word found in the unfiltered list is still found inside a module view.
+ */
+export async function searchAll(
+  context: AppContext,
+  query: string,
+  filter: ItemFilter = {},
+): Promise<Item[]> {
+  return searchItems(context.driver, query, filter.type === undefined ? {} : { type: filter.type });
+}
+
+/** Every tag currently on a live item, for the tag views. */
+export async function loadTagCounts(
+  context: AppContext,
+): Promise<{ tag: string; count: number }[]> {
+  return listTags(context.driver);
 }
 
 export async function listDeletedItems(context: AppContext): Promise<Item[]> {
