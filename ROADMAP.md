@@ -127,7 +127,7 @@ both schema versions. What remains is the on-device check, per §6.
 
 ---
 
-## Phase 3 — Habit streak (§7 step 3)
+## Phase 3 — Habit streak (§7 step 3) — AWAITING DEVICE CHECK
 
 - `docs/modules/habits.md` first.
 - Migration adds `habit_checks` (`habit_id`, `date` as `YYYY-MM-DD` local, composite PK).
@@ -141,6 +141,11 @@ both schema versions. What remains is the on-device check, per §6.
 
 *Done when:* a habit checked on three consecutive days reads "3", skipping a day reads "0",
 both survive an app restart, and neither breaks when the device timezone changes.
+
+Built and green off device: migration 003, the streak walk with its calendar cases under
+test, the habit row, and the export round trip re-verified with `habit_checks` in the
+payload. The clock is injected, so the midnight and timezone cases are tests rather than
+things to take on trust — but the device still has to confirm them with a real clock.
 
 ---
 

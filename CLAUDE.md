@@ -174,6 +174,21 @@ the export/import round trip is what stands between the owner and total data los
 8. **Backup → Export**, then reinstall and **Import**. Everything returns, and search still
    finds a word from a restored item — the index is rebuilt on import, not exported.
 
+**Phase 3 acceptance** (`ROADMAP.md` Phase 3, *done when*), in airplane mode:
+
+1. Capture a habit with the **Habit** chip. It reads `Streak 0 days` and has no done flag.
+2. Tap it. It reads `Streak 1 day` — singular — and the row is outlined in gold.
+3. Tap it again the same day. It returns to `0`. This is a toggle, not an increment.
+4. Check it three days running. It reads `3`.
+5. The morning of the fourth day, before checking: it still reads `3`, not `0`.
+6. Skip a whole day, then open the app: it reads `0`.
+7. Force-stop and relaunch at any point: the number is unchanged.
+8. **Change the device timezone** by several hours, in both directions, and reopen. No past
+   check-in moves and the streak does not break. This is the case SPECS §4.4 singles out.
+9. Delete a habit with a streak, restore it from **Deleted**: the streak comes back intact.
+10. Delete it again and **Purge**: its check-ins go with it.
+11. Export, reinstall, import: the streak reads the same.
+
 **GATE V1 — FTS5 availability** (`SPECS.md` §9, ADR-002). It blocks Phase 2, not Phase 1,
 so it runs once a build is on the phone. `src/data/fts-probe.ts` answers it on every
 launch; read the answer off the device log:

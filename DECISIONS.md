@@ -54,3 +54,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - `items_fts` is not exported. It is derived from `items` and rebuilt by its triggers as the restore inserts rows; exporting it would write the same text into the backup twice and create a second thing that can disagree with itself.
 - Tags in quick capture: an optional field, hidden behind a `#` control, rather than a permanent second input. §2.2 requires capture to be one tap from the home screen, and a field to skip past on every note is friction on the path that matters most. Rejected: parsing `#tag` out of the title, which is the prefix-syntax magic GATE P1 already closed against.
 - Search placement: with the list it filters, not in the footer with capture. §6's one-handed requirement is about primary actions, and capture is the primary action; a third footer row would eat the list to make retrieval marginally easier than the tap that follows it.
+
+---
+
+## 2026-09-21 — Phase 3 built
+
+- `habit_checks` uses `ON DELETE CASCADE` on `habit_id`. A soft delete is an `UPDATE`, so check-ins survive it and an undeleted habit keeps its streak; a purge is the app's one hard delete (§2.2) and takes them with it. Rejected: deleting check-ins in application code during purge, which would be a second place for the rule to live and a way for it to drift.
+- The streak walk is a pure function taking `today` as an argument rather than reading a clock. §4.4 warns that the walk is trivial and the calendar is not, so midnight rollover, timezone change in both directions, month, year and leap-day boundaries are tests instead of reasoning. `previousLocalDate` does date arithmetic on the calendar parts rather than subtracting 86,400,000 ms, which lands on the wrong day across a DST boundary.
+- Habits get their own row component rather than a branch inside the generic one. A habit carries a streak and a today-toggle where everything else carries a done flag, and §1.1 item 7 makes that streak the only statistic in the app — keeping it in one small component keeps it that way.
+- `habit_checks` is exported; `items_fts` still is not. The distinction is facts against derived data: a check-in is something that happened and cannot be recomputed, an index can.
