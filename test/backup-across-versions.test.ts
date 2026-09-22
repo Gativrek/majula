@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ItemStore } from '../src/data/items.ts';
 import { runMigrations, TARGET_SCHEMA_VERSION } from '../src/data/migrations.ts';
+import { stateFor } from '../src/data/habits.ts';
 import { searchItems } from '../src/data/search.ts';
 import { setTags } from '../src/data/tags.ts';
 import { exportDatabase, importDatabase } from '../src/services/backup.ts';
@@ -68,7 +69,11 @@ describe('export and import across schema versions', function crossVersionSuite(
     const envelope = JSON.parse(await files.readText('export', EXPORT_JSON)) as {
       tables: Record<string, unknown>;
     };
-    assert.deepEqual(Object.keys(envelope.tables).sort(), ['items', 'tags']);
+    assert.deepEqual(
+      Object.keys(envelope.tables).sort(),
+      ['habit_checks', 'items', 'tags'],
+      'facts travel in the export; the derived index does not',
+    );
     await driver.close();
   });
 
@@ -143,6 +148,57 @@ describe('export and import across schema versions', function crossVersionSuite(
       ['Still here'],
       'and the index survives with it',
     );
+    await target.close();
+  });
+});
+
+/** ROADMAP Phase 3: `habit_checks` is a new table in the export payload. */
+describe('export and import with habit check-ins', function habitBackupSuite() {
+  it('carries check-ins and restores the same streak', async function roundTrip() {
+    const clock = () => new Date('2026-09-21T09:00:00');
+    const source = openTestDatabase();
+    await runMigrations(source);
+    const habit = await storeFor(source, 1).create({ type: 'habit', title: 'Stretch' });
+    for (const date of ['2026-09-19', '2026-09-20', '2026-09-21']) {
+      await source.run('INSERT INTO habit_checks (habit_id, date) VALUES (?, ?)', [habit.id, date]);
+    }
+
+    const files = createMemoryFileStore();
+    await exportDatabase(source, files);
+    await source.close();
+
+    const target = openTestDatabase();
+    await runMigrations(target);
+    await importDatabase(target, files);
+
+    assert.equal((await stateFor(target, habit.id, clock)).streak, 3);
+    await target.close();
+  });
+
+  it('migrates a Phase 2 export forward into the habit schema', async function fromVersion2() {
+    const old = openTestDatabase();
+    await runMigrations(old, 2);
+    await storeFor(old, 1).create({ type: 'note', title: 'Before habits existed' });
+
+    const files = createMemoryFileStore();
+    const exported = await exportDatabase(old, files);
+    assert.equal(exported.schemaVersion, 2);
+    await old.close();
+
+    const target = openTestDatabase();
+    await runMigrations(target);
+    const result = await importDatabase(target, files);
+
+    assert.equal(result.fromSchemaVersion, 2);
+    assert.equal(result.toSchemaVersion, TARGET_SCHEMA_VERSION);
+    assert.deepEqual(
+      (await storeFor(target, 2).list()).map((item) => item.title),
+      ['Before habits existed'],
+    );
+    const checks = await target.query<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM habit_checks',
+    );
+    assert.equal(checks[0]?.count, 0, 'a table the export predates restores empty, not missing');
     await target.close();
   });
 });

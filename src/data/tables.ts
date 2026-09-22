@@ -31,9 +31,14 @@ const VERSION_1: TableColumns = {
 // on restore. Exporting an index would be exporting the same text twice.
 const VERSION_2: TableColumns = VERSION_1;
 
+// Version 3 adds habit check-ins, which are facts rather than derived data and so must
+// travel in the export (SPECS §5).
+const VERSION_3: TableColumns = { ...VERSION_2, habit_checks: ['habit_id', 'date'] };
+
 export const TABLE_COLUMNS_BY_VERSION: Readonly<Record<number, TableColumns>> = {
   1: VERSION_1,
   2: VERSION_2,
+  3: VERSION_3,
 };
 
 export function tableColumnsForVersion(version: number): TableColumns | null {

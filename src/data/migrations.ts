@@ -88,7 +88,33 @@ const MIGRATION_002: Migration = {
   `,
 };
 
-export const MIGRATIONS: readonly Migration[] = [MIGRATION_001, MIGRATION_002];
+/**
+ * Habit check-ins (SPECS §2.1, §4.2). A streak cannot be derived from a single row, so
+ * habits need an event log.
+ *
+ * `date` is a local `YYYY-MM-DD`, not a UTC instant (§4.1). The composite primary key is
+ * what makes a check-in idempotent: checking the same habit twice on the same day is the
+ * same fact, not two facts.
+ *
+ * `ON DELETE CASCADE` ties check-ins to the purge path. A soft delete is an `UPDATE` and
+ * leaves them alone, so an undeleted habit keeps its streak; only a purge, which is the
+ * one hard delete in the app (§2.2), takes them with it.
+ */
+const MIGRATION_003: Migration = {
+  version: 3,
+  name: 'create-habit-checks',
+  sql: `
+    CREATE TABLE habit_checks (
+      habit_id  TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+      date      TEXT NOT NULL,
+      PRIMARY KEY (habit_id, date)
+    );
+
+    CREATE INDEX idx_habit_checks_habit ON habit_checks(habit_id);
+  `,
+};
+
+export const MIGRATIONS: readonly Migration[] = [MIGRATION_001, MIGRATION_002, MIGRATION_003];
 
 export const TARGET_SCHEMA_VERSION = MIGRATIONS.reduce(function highestVersion(highest, migration) {
   return Math.max(highest, migration.version);
