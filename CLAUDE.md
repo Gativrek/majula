@@ -65,9 +65,20 @@ deliberate and must stay loud: it is not worked around with a browser fallback, 
 acceptance runs on the device anyway (§6). Use the dev server for layout, the APK for
 anything that touches data.
 
-**Reading device logs:** `adb logcat | grep -i chromium` surfaces the WebView console,
-which is where the logger writes. Event names are stable and greppable
-(`migration.start`, `export.done`, `purge.done`).
+**Reading device logs.** Capacitor forwards the WebView console to logcat under the tag
+`Capacitor/Console` — not `chromium`, which is what a WebView tags its own internal
+messages with. Filtering on `chromium` hides everything this app logs.
+
+```bash
+adb logcat -d -s Capacitor/Console
+```
+
+`-d` dumps the buffer and exits. Without it, `logcat` tails the log forever and the
+terminal looks hung; Ctrl+C ends it. Event names are stable and greppable
+(`migration.start`, `export.done`, `purge.done`, `gate_v1.fts5`).
+
+Capacitor only forwards console output when logging is enabled, which is the default for a
+debug build (`loggingBehavior`). A release build would be silent.
 
 ---
 
@@ -151,7 +162,13 @@ so it runs once a build is on the phone. `src/data/fts-probe.ts` answers it on e
 launch; read the answer off the device log:
 
 ```bash
-adb logcat -s chromium | grep gate_v1.fts5
+adb logcat -c
+```
+
+Force-stop the app and reopen it, so the probe runs into an empty buffer, then:
+
+```bash
+adb logcat -d | grep gate_v1
 ```
 
 One line comes back, `availability=available` or `availability=unavailable` with the
