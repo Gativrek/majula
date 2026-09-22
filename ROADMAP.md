@@ -44,7 +44,7 @@ Remaining Phase 0 work, unblocked:
 
 ---
 
-## Phase 1 — Vertical slice (§7 step 1)
+## Phase 1 — Vertical slice (§7 step 1) — CLOSED 2026-09-21
 
 Goal: one item captured on the phone, listed, soft-deleted, purged, exported, wiped,
 re-imported.
@@ -91,12 +91,13 @@ ADR. Logged in `DECISIONS.md`.
   - Cold start to typing in quick capture under ~2 s, measured on the owner's phone.
   - Every step above works in airplane mode.
 
-*Done when:* the APK is on the phone, and capture → list → soft delete → purge → export →
-uninstall/reinstall → import returns exactly the surviving data.
+*Done:* verified on the phone in airplane mode. Capture → list → soft delete → restore →
+purge → export → uninstall/reinstall → import returned exactly the surviving data, and the
+purged row stayed gone.
 
 ---
 
-## Phase 2 — Tag views and global search (§7 step 2)
+## Phase 2 — Tag views and global search (§7 step 2) — AWAITING DEVICE CHECK
 
 Covers notes, to-do, network log, running-low as views over `items`.
 
@@ -119,6 +120,10 @@ that asked SQLite directly. Search takes the FTS5 path; the `LIKE` fallback is n
 
 *Done when:* an item captured in Phase 1 is findable by a word in its body, a soft-deleted
 item is not, and each of the four modules is reachable as a tag/type view.
+
+Built and green off device: migration 002 with `items_fts` and its triggers, search, type
+and tag views, the four module specs, and the export/import round trip re-verified across
+both schema versions. What remains is the on-device check, per §6.
 
 ---
 

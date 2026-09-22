@@ -136,7 +136,7 @@ export round trip are testable without a phone, not to leave room for a third ba
 
 ---
 
-## Device verification — Phase 1 and GATE V1
+## Device verification
 
 Everything below needs the phone. Nothing here can be closed from a desktop, and
 `ROADMAP.md` Phase 1 is not done until it is. Log the outcome in `DECISIONS.md`.
@@ -145,7 +145,8 @@ Everything below needs the phone. Nothing here can be closed from a desktop, and
 npm run apk && npm run install:apk
 ```
 
-**Phase 1 acceptance** (`ROADMAP.md` Phase 1, *done when*), in airplane mode throughout:
+**Phase 1 acceptance** — PASSED 2026-09-21. Re-run it after any schema change, because
+the export/import round trip is what stands between the owner and total data loss:
 
 1. Cold start to typing in quick capture, under ~2 s. Force-stop the app first, time it.
 2. Capture a note, a to-do and a running-low item. All three appear in the list.
@@ -156,6 +157,22 @@ npm run apk && npm run install:apk
    exist from a file manager.
 7. Uninstall the app, reinstall the APK, **Import**. The surviving data comes back and the
    purged row does not.
+
+**Phase 2 acceptance** (`ROADMAP.md` Phase 2, *done when*), in airplane mode:
+
+1. Search a word that appears only in an item's **body**, not its title. The item is found.
+2. Search a prefix of a word — three letters of a longer one. The item is found while the
+   word is still being typed.
+3. Search two words. Only items carrying both come back.
+4. Delete an item, then search a word from it. It is not found. Restore it and search
+   again: it is found.
+5. An item captured in Phase 1, before the index existed, is findable by a word in its
+   body. This is the migration's rebuild, and it is the one that fails silently if wrong.
+6. Each of **Notes**, **To-do**, **Contacts** and **Running low** shows only its own type.
+7. Capture something with a tag via the **#** control. Its tag appears as a chip, and
+   tapping the chip shows that item.
+8. **Backup → Export**, then reinstall and **Import**. Everything returns, and search still
+   finds a word from a restored item — the index is rebuilt on import, not exported.
 
 **GATE V1 — FTS5 availability** (`SPECS.md` §9, ADR-002). It blocks Phase 2, not Phase 1,
 so it runs once a build is on the phone. `src/data/fts-probe.ts` answers it on every
