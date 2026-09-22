@@ -171,6 +171,15 @@ Force-stop the app and reopen it, so the probe runs into an empty buffer, then:
 adb logcat -d | grep gate_v1
 ```
 
+In PowerShell, which is the owner's shell, that pipeline is:
+
+```bash
+adb logcat -d | Select-String gate_v1
+```
+
+`grep` does not exist there. The same substitution applies anywhere else in this file
+that pipes into it.
+
 One line comes back, `availability=available` or `availability=unavailable` with the
 SQLite error that says why. That outcome — not a preference — decides FTS5 against the
 `LIKE` fallback for Phase 2. Record it, with the Android version and the plugin version it
