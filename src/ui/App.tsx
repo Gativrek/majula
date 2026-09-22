@@ -4,7 +4,7 @@ import { log } from '../lib/logger.ts';
 import type { HabitState } from '../services/habits.ts';
 import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
-import { initialiseApp } from '../services/database.ts';
+import { initialiseApp, StartupError } from '../services/database.ts';
 import {
   captureItem,
   deleteItem,
@@ -34,6 +34,28 @@ interface TagCount {
   count: number;
 }
 
+interface StartupFailure {
+  stage: 'open' | 'migrate' | 'files' | 'unknown';
+  detail: string;
+}
+
+/**
+ * What to tell the owner. Each stage has a different cause and a different next step, so
+ * the screen says which one it was rather than guessing at the most likely.
+ */
+function startupAdvice(failure: StartupFailure): string {
+  switch (failure.stage) {
+    case 'open':
+      return 'SQLite is a native plugin, so this happens in a desktop browser. On the phone it means the database could not be opened at all.';
+    case 'migrate':
+      return 'The database opened but its schema could not be brought up to date. The data is untouched; the logs carry the failing migration under migration.start.';
+    case 'files':
+      return 'The database is fine, but app storage could not be reached, so export and import will not work.';
+    default:
+      return 'Startup failed before the app could tell what went wrong.';
+  }
+}
+
 function emptyMessage(view: View, query: string, filter: Filter): string {
   if (view === 'deleted') return 'Nothing deleted.';
   if (query.trim().length > 0) return 'No match.';
@@ -44,7 +66,7 @@ function emptyMessage(view: View, query: string, filter: Filter): string {
 
 export function App() {
   const [context, setContext] = useState<AppContext | null>(null);
-  const [startupError, setStartupError] = useState<string | null>(null);
+  const [startupFailure, setStartupFailure] = useState<StartupFailure | null>(null);
   const [view, setView] = useState<View>('items');
   const [filter, setFilter] = useState<Filter>({});
   const [query, setQuery] = useState('');
@@ -63,9 +85,10 @@ export function App() {
           reason: error instanceof Error ? error.name : 'unknown',
         });
         if (!cancelled) {
-          setStartupError(
-            error instanceof Error ? error.message : 'the database could not be opened',
-          );
+          setStartupFailure({
+            stage: error instanceof StartupError ? error.stage : 'unknown',
+            detail: error instanceof Error ? error.message : 'an unknown failure',
+          });
         }
       }
     }
@@ -135,11 +158,11 @@ export function App() {
   }
 
   function renderMain() {
-    if (startupError !== null) {
+    if (startupFailure !== null) {
       return (
         <p class="banner banner--error">
-          Majula could not open its database: {startupError}. It runs on the phone, not in a desktop
-          browser.
+          Majula could not start ({startupFailure.stage}): {startupFailure.detail}.{' '}
+          {startupAdvice(startupFailure)}
         </p>
       );
     }

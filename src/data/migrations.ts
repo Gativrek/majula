@@ -60,6 +60,14 @@ const MIGRATION_001: Migration = {
  *
  * The final `rebuild` populates the index from the rows Phase 1 already captured. Without
  * it, everything written before this migration would be invisible to search forever.
+ *
+ * Every trigger is written on ONE line. `@capacitor-community/sqlite` does not hand a
+ * script to SQLite whole: it splits on `";\n"` and runs the pieces separately, then
+ * rejoins a trigger only by gluing a fragment that is exactly `END` onto the single
+ * fragment before it. A trigger body holding two statements therefore arrives as an
+ * unterminated `CREATE TRIGGER ... BEGIN ...` and an orphan, and the migration fails on
+ * the device while passing every test against `node:sqlite`. Keeping each trigger to one
+ * line leaves no `";\n"` inside it for the splitter to cut at.
  */
 const MIGRATION_002: Migration = {
   version: 2,
@@ -69,20 +77,11 @@ const MIGRATION_002: Migration = {
       title, body, content='items', content_rowid='rowid'
     );
 
-    CREATE TRIGGER items_fts_after_insert AFTER INSERT ON items BEGIN
-      INSERT INTO items_fts (rowid, title, body) VALUES (new.rowid, new.title, new.body);
-    END;
+    CREATE TRIGGER items_fts_after_insert AFTER INSERT ON items BEGIN INSERT INTO items_fts (rowid, title, body) VALUES (new.rowid, new.title, new.body); END;
 
-    CREATE TRIGGER items_fts_after_delete AFTER DELETE ON items BEGIN
-      INSERT INTO items_fts (items_fts, rowid, title, body)
-        VALUES ('delete', old.rowid, old.title, old.body);
-    END;
+    CREATE TRIGGER items_fts_after_delete AFTER DELETE ON items BEGIN INSERT INTO items_fts (items_fts, rowid, title, body) VALUES ('delete', old.rowid, old.title, old.body); END;
 
-    CREATE TRIGGER items_fts_after_update AFTER UPDATE ON items BEGIN
-      INSERT INTO items_fts (items_fts, rowid, title, body)
-        VALUES ('delete', old.rowid, old.title, old.body);
-      INSERT INTO items_fts (rowid, title, body) VALUES (new.rowid, new.title, new.body);
-    END;
+    CREATE TRIGGER items_fts_after_update AFTER UPDATE ON items BEGIN INSERT INTO items_fts (items_fts, rowid, title, body) VALUES ('delete', old.rowid, old.title, old.body); INSERT INTO items_fts (rowid, title, body) VALUES (new.rowid, new.title, new.body); END;
 
     INSERT INTO items_fts (items_fts) VALUES ('rebuild');
   `,
