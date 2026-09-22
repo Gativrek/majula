@@ -123,6 +123,17 @@ export round trip are testable without a phone, not to leave room for a third ba
 - **`items_fts` does not exist yet.** It is blocked on GATE V1 and ships in Phase 2.
 - **Export column names come from `src/data/tables.ts`**, never from the file being
   imported: no interpolation of data into SQL, including identifiers (CODESTYLE §10).
+- **The device does not run your SQL script whole.**
+  `@capacitor-community/sqlite` splits on `";
+"`, runs the pieces separately, and
+  rejoins a trigger only by gluing a fragment that is exactly `END` onto the one fragment
+  before it. So a trigger body with two statements in it arrives broken. **Write every
+  trigger on one line.** `node:sqlite`'s `exec()` has no such behaviour, so this class of
+  bug passes every test unless it goes through `test/support/capacitor-splitter.ts` —
+  which `test/migration-statements.test.ts` makes every migration do.
+- **Startup failures name their stage** (`open`, `migrate`, `files`). Do not collapse them
+  back into one message: a failing migration reported as "could not open the database, it
+  runs on the phone not a browser" sends the search in exactly the wrong direction.
 
 ---
 
