@@ -1,0 +1,148 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { ItemStore } from '../src/data/items.ts';
+import { runMigrations, TARGET_SCHEMA_VERSION } from '../src/data/migrations.ts';
+import { searchItems } from '../src/data/search.ts';
+import { setTags } from '../src/data/tags.ts';
+import { exportDatabase, importDatabase } from '../src/services/backup.ts';
+import { EXPORT_DIRECTORY, EXPORT_FILE_NAME } from '../src/services/files.ts';
+import { setLogLevel } from '../src/lib/logger.ts';
+import { openTestDatabase } from './support/driver-node.ts';
+import { createMemoryFileStore } from './support/files-memory.ts';
+
+setLogLevel('error');
+
+const EXPORT_JSON = `${EXPORT_DIRECTORY}/${EXPORT_FILE_NAME}`;
+
+function sequentialIds(prefix: number): () => string {
+  let next = 0;
+  return function nextId() {
+    next += 1;
+    return `00000000-0000-4000-8000-${String(prefix)}${String(next).padStart(11, '0')}`;
+  };
+}
+
+function storeFor(driver: ReturnType<typeof openTestDatabase>, prefix: number) {
+  return new ItemStore(driver, {
+    clock: () => new Date('2026-09-21T12:00:00.000Z'),
+    newId: sequentialIds(prefix),
+  });
+}
+
+/**
+ * SPECS §6 and ADR-003: the round trip is re-verified after every schema change, and
+ * migration 002 is one. These are the cases the FTS migration introduced.
+ */
+describe('export and import across schema versions', function crossVersionSuite() {
+  it('round-trips at the current version with search still working', async function current() {
+    const source = openTestDatabase();
+    await runMigrations(source);
+    const sourceStore = storeFor(source, 1);
+    const files = createMemoryFileStore();
+
+    await sourceStore.create({ type: 'note', title: 'Idea', body: 'cache the RRT tree' });
+    const exported = await exportDatabase(source, files);
+    assert.equal(exported.schemaVersion, TARGET_SCHEMA_VERSION);
+    await source.close();
+
+    const target = openTestDatabase();
+    await runMigrations(target);
+    await importDatabase(target, files);
+
+    const found = await searchItems(target, 'RRT');
+    assert.deepEqual(
+      found.map((item) => item.title),
+      ['Idea'],
+      'the triggers must reindex rows as the restore inserts them',
+    );
+    await target.close();
+  });
+
+  it('does not export the index, which is derived from the rows', async function noIndex() {
+    const driver = openTestDatabase();
+    await runMigrations(driver);
+    await storeFor(driver, 1).create({ type: 'note', title: 'Anything' });
+    const files = createMemoryFileStore();
+    await exportDatabase(driver, files);
+
+    const envelope = JSON.parse(await files.readText('export', EXPORT_JSON)) as {
+      tables: Record<string, unknown>;
+    };
+    assert.deepEqual(Object.keys(envelope.tables).sort(), ['items', 'tags']);
+    await driver.close();
+  });
+
+  it('migrates a Phase 1 export forward into the current schema', async function older() {
+    // A database that never saw migration 002, exported as it was.
+    const old = openTestDatabase();
+    await runMigrations(old, 1);
+    const oldStore = storeFor(old, 1);
+    const note = await oldStore.create({
+      type: 'note',
+      title: 'Captured in Phase 1',
+      body: 'written before the index existed',
+    });
+    await setTags(old, note.id, ['pesquisa']);
+    await oldStore.create({ type: 'todo', title: 'Renew bus card', done: true });
+
+    const files = createMemoryFileStore();
+    const exported = await exportDatabase(old, files);
+    assert.equal(exported.schemaVersion, 1, 'the export records the version it was written at');
+    await old.close();
+
+    // The phone it lands on is on the current build.
+    const target = openTestDatabase();
+    await runMigrations(target);
+    const result = await importDatabase(target, files);
+
+    assert.equal(result.fromSchemaVersion, 1);
+    assert.equal(result.toSchemaVersion, TARGET_SCHEMA_VERSION);
+    assert.equal(result.restoredRows, 3, 'two items and one tag');
+
+    const restored = await storeFor(target, 2).list();
+    assert.deepEqual(restored.map((item) => item.title).sort(), [
+      'Captured in Phase 1',
+      'Renew bus card',
+    ]);
+    assert.equal(restored.find((item) => item.type === 'todo')?.done, true);
+
+    const found = await searchItems(target, 'index');
+    assert.deepEqual(
+      found.map((item) => item.title),
+      ['Captured in Phase 1'],
+      'rows from before the index existed must be searchable after the import migrates them',
+    );
+    await target.close();
+  });
+
+  it('leaves the database intact when an older export is malformed', async function refused() {
+    const target = openTestDatabase();
+    await runMigrations(target);
+    const store = storeFor(target, 1);
+    await store.create({ type: 'note', title: 'Still here' });
+
+    const files = createMemoryFileStore();
+    await files.writeText(
+      'export',
+      EXPORT_JSON,
+      JSON.stringify({
+        format: 'majula-export',
+        schema_version: 1,
+        tables: { items: [{ id: 'x', not_a_column: 1 }] },
+      }),
+    );
+
+    await assert.rejects(importDatabase(target, files), /unexpected column/);
+    assert.deepEqual(
+      (await store.list()).map((item) => item.title),
+      ['Still here'],
+      'the file is validated before the schema is torn down',
+    );
+    assert.deepEqual(
+      (await searchItems(target, 'still')).map((item) => item.title),
+      ['Still here'],
+      'and the index survives with it',
+    );
+    await target.close();
+  });
+});

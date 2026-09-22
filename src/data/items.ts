@@ -30,7 +30,23 @@ export interface ItemRow {
   deleted_at: string | null;
 }
 
-const COLUMNS = 'id, type, title, body, url, done, payload, created_at, updated_at, deleted_at';
+const COLUMN_NAMES = [
+  'id',
+  'type',
+  'title',
+  'body',
+  'url',
+  'done',
+  'payload',
+  'created_at',
+  'updated_at',
+  'deleted_at',
+] as const;
+
+const COLUMNS = COLUMN_NAMES.join(', ');
+
+/** The same columns, qualified, for the reads that join `tags`. */
+const QUALIFIED_COLUMNS = COLUMN_NAMES.map((column) => `items.${column}`).join(', ');
 
 /** Storage row to domain item. Validates the payload on read (CODESTYLE §10). */
 export function toItem(row: ItemRow): Item {
@@ -63,6 +79,8 @@ export interface ItemStoreOptions {
 
 export interface ListItemsFilter {
   type?: ItemType;
+  /** SPECS §2.2: a tag view is a filter over this list, not its own storage. */
+  tag?: string;
   limit?: number;
 }
 
@@ -118,12 +136,17 @@ export class ItemStore {
 
   async list(filter: ListItemsFilter = {}): Promise<Item[]> {
     const params: SqlValue[] = [];
-    let sql = `SELECT ${COLUMNS} FROM items WHERE deleted_at IS NULL`;
+    let sql = `SELECT ${QUALIFIED_COLUMNS} FROM items`;
+    if (filter.tag !== undefined) {
+      sql += ' JOIN tags ON tags.item_id = items.id AND tags.tag = ?';
+      params.push(filter.tag);
+    }
+    sql += ' WHERE items.deleted_at IS NULL';
     if (filter.type !== undefined) {
-      sql += ' AND type = ?';
+      sql += ' AND items.type = ?';
       params.push(filter.type);
     }
-    sql += ' ORDER BY created_at DESC, id DESC';
+    sql += ' ORDER BY items.created_at DESC, items.id DESC';
     if (filter.limit !== undefined) {
       sql += ' LIMIT ?';
       params.push(filter.limit);

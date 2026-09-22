@@ -27,8 +27,13 @@ const VERSION_1: TableColumns = {
   tags: ['item_id', 'tag'],
 };
 
+// Version 2 adds `items_fts`, which is derived from `items` and rebuilt by its triggers
+// on restore. Exporting an index would be exporting the same text twice.
+const VERSION_2: TableColumns = VERSION_1;
+
 export const TABLE_COLUMNS_BY_VERSION: Readonly<Record<number, TableColumns>> = {
   1: VERSION_1,
+  2: VERSION_2,
 };
 
 export function tableColumnsForVersion(version: number): TableColumns | null {

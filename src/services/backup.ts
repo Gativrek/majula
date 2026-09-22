@@ -8,10 +8,14 @@
  * attaches a PDF until Phase 5, so the container never changes format.
  */
 
-import { restoreTables } from '../data/dump.ts';
-import { dumpTables } from '../data/dump.ts';
+import { applyRestore, dumpTables, prepareRestore } from '../data/dump.ts';
 import type { SqlDriver } from '../data/driver.ts';
-import { readSchemaVersion, runMigrations, TARGET_SCHEMA_VERSION } from '../data/migrations.ts';
+import {
+  readSchemaVersion,
+  resetSchema,
+  runMigrations,
+  TARGET_SCHEMA_VERSION,
+} from '../data/migrations.ts';
 import { tableColumnsForVersion } from '../data/tables.ts';
 import { InvariantError, ValidationError } from '../lib/errors.ts';
 import { log } from '../lib/logger.ts';
@@ -196,11 +200,21 @@ export async function importDatabase(driver: SqlDriver, files: FileStore): Promi
     });
   }
 
-  const restoredRows = await restoreTables(driver, columns, envelope.tables);
+  // Validate the whole file before destroying anything. The rebuild below drops the
+  // existing schema, so a malformed export that got that far would be data loss rather
+  // than a refused import.
+  const prepared = prepareRestore(columns, envelope.tables);
 
-  // The rows landed in the shape their own version defined, so the migration runner
-  // carries them forward from there rather than from wherever this database was.
-  await driver.run('UPDATE schema_version SET version = ? WHERE id = 1', [envelope.schema_version]);
+  // Rebuild the schema at the export's own version before putting its rows back. An
+  // older export was written against an older shape, and the migrations that follow are
+  // what carry it forward; pouring old rows straight into the current schema would skip
+  // every transformation those migrations exist to perform. Re-running a migration over
+  // a schema that already holds its objects would fail on the second CREATE anyway.
+  await resetSchema(driver);
+  await runMigrations(driver, envelope.schema_version);
+
+  const restoredRows = await applyRestore(driver, prepared);
+
   const toSchemaVersion = await runMigrations(driver);
 
   const restoredPdfs = envelope.pdfs_included ? await restoreAttachedPdfs(files) : 0;

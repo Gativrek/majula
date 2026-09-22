@@ -60,48 +60,78 @@ function rowValues(row: unknown, table: string, tableColumns: readonly string[])
   return tableColumns.map((column) => coerceValue(record[column], table, column));
 }
 
+/** One table's rows, validated and flattened into positional parameters. */
+export interface PreparedTable {
+  table: string;
+  columns: readonly string[];
+  rows: SqlValue[][];
+}
+
+export interface PreparedRestore {
+  tables: PreparedTable[];
+  rowCount: number;
+}
+
 /**
- * Replace the contents of every registered table with `dump`.
+ * Validate an entire dump without touching the database.
  *
- * SPECS §5: import replaces the database, it never merges. The whole restore runs in
- * one transaction, so a rejected file leaves the existing data untouched.
+ * This is separate from {@link applyRestore} on purpose. The import path has to drop the
+ * existing schema before it can rebuild it at the export's version, and dropping it
+ * before knowing the file is sound would turn a malformed export into data loss — the
+ * exact failure ADR-003 makes export exist to prevent. Everything is checked first; only
+ * then is anything destroyed.
  *
  * @throws {ValidationError} when a row does not match the registered columns.
  */
-export async function restoreTables(
-  driver: SqlDriver,
+export function prepareRestore(
   columns: TableColumns,
   dump: Record<string, unknown>,
-): Promise<number> {
-  const order = insertionOrder(columns);
-  let restored = 0;
+): PreparedRestore {
+  const tables: PreparedTable[] = [];
+  let rowCount = 0;
 
+  for (const table of insertionOrder(columns)) {
+    const tableColumns = columns[table];
+    if (tableColumns === undefined) {
+      throw new StorageError('table missing from registry', { operation: 'prepareRestore' });
+    }
+    const rows = dump[table];
+    if (rows === undefined) {
+      log.info('import.table_absent', { table });
+      continue;
+    }
+    if (!Array.isArray(rows)) {
+      throw new ValidationError(`${table}: expected an array`, { subject: 'import.table' });
+    }
+    const prepared = rows.map((row) => rowValues(row, table, tableColumns));
+    tables.push({ table, columns: tableColumns, rows: prepared });
+    rowCount += prepared.length;
+  }
+
+  return { tables, rowCount };
+}
+
+/**
+ * Write a {@link prepareRestore} result into an empty schema.
+ *
+ * SPECS §5: import replaces the database, it never merges. The whole write runs in one
+ * transaction, and the tables are emptied in reverse dependency order first so that
+ * `PRAGMA foreign_keys = ON` does not reject the deletes.
+ */
+export async function applyRestore(driver: SqlDriver, prepared: PreparedRestore): Promise<number> {
   await driver.transaction(async function replaceAllTables() {
-    for (const table of [...order].reverse()) {
+    for (const { table } of [...prepared.tables].reverse()) {
       await driver.run(`DELETE FROM "${table}"`);
     }
-    for (const table of order) {
-      const tableColumns = columns[table];
-      if (tableColumns === undefined) {
-        throw new StorageError('table missing from registry', { operation: 'restoreTables' });
-      }
-      const rows = dump[table];
-      if (rows === undefined) {
-        log.info('import.table_absent', { table });
-        continue;
-      }
-      if (!Array.isArray(rows)) {
-        throw new ValidationError(`${table}: expected an array`, { subject: 'import.table' });
-      }
-      const placeholders = tableColumns.map(() => '?').join(', ');
-      const sql = `INSERT INTO "${table}" (${quotedColumns(tableColumns)}) VALUES (${placeholders})`;
+    for (const { table, columns, rows } of prepared.tables) {
+      const placeholders = columns.map(() => '?').join(', ');
+      const sql = `INSERT INTO "${table}" (${quotedColumns(columns)}) VALUES (${placeholders})`;
       for (const row of rows) {
-        await driver.run(sql, rowValues(row, table, tableColumns));
+        await driver.run(sql, row);
       }
-      restored += rows.length;
       log.info('import.table_restored', { table, rows: rows.length });
     }
   });
 
-  return restored;
+  return prepared.rowCount;
 }
