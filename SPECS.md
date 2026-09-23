@@ -69,6 +69,7 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 - **Tag views.** Saved filters over the generic entity table. Most modules are views, not separate screens with separate storage.
 - **Purge.** A global action that hard-deletes soft-deleted rows and removes their attached files. Not per-module. Lands in the vertical slice, since soft delete does (§7 step 1).
 - **Export/backup.** Required, not optional. See §5.
+- **Back.** The Android back button undoes one step and never commits anything: it cancels an edit in progress (writing nothing), closes an open item, or leaves Deleted or Backup for the list. Only on the list itself does back leave the app. Adding a recipe is an edit in progress until Save, so back cancels the add and no recipe is created. ACCEPTED 2026-09-23 (owner’s instruction).
 
 ---
 

@@ -28,9 +28,10 @@ case-folded (`CODESTYLE.md` §1).
 
 **Creating and editing**
 
-1. Quick capture with the **Recipe** chip creates a recipe with the typed title, one
-   serving, no ingredients and no steps, and opens it straight into the editor. A recipe
-   is never captured from a title alone and left half-made without the owner seeing it.
+1. Quick capture with the **Recipe** chip opens the editor with the typed title filled in
+   and one serving. **Nothing is written until Save.** Cancel or the back button discards
+   the new recipe entirely — no row is created, nothing appears under Deleted
+   (`SPECS.md` §2.2, Back).
 2. The editor has servings, then ingredients, then steps, in that order.
 3. Each ingredient is three fields — quantity, unit, name. **Nothing is parsed out of
    free text.** "2 ovos" typed into the name field stays a name, not a quantity; the same
@@ -47,7 +48,8 @@ case-folded (`CODESTYLE.md` §1).
    dropped on save.
 7. Saving an invalid recipe — no title, servings not a positive number, a quantity that is
    not a number — is refused with a message saying which field, and nothing is written.
-8. Cancel discards the edit and writes nothing.
+8. Cancel, or the back button, discards the edit and writes nothing. Editing an existing
+   recipe returns to it unchanged; adding a new one returns to the list with no recipe.
 
 **Kitchen mode — the reason this module is on the phone at all**
 
@@ -61,7 +63,8 @@ case-folded (`CODESTYLE.md` §1).
 13. If the device refuses to keep the screen awake, the recipe still opens and a line on
     screen says the screen may sleep. Never a silent failure (`CODESTYLE.md` §6).
 14. Steps are numbered. Ingredients show quantity, unit and name in one line.
-15. **Close** and **Edit** are in the lower half of the screen (`SPECS.md` §6).
+15. **Close** and **Edit** are in the lower half of the screen (`SPECS.md` §6). The back
+    button closes the recipe, as Close does.
 
 **Everything else**
 
