@@ -175,7 +175,7 @@ comes back with an ADR.
 
 ---
 
-## Phase 5 — Reading queue with PDF viewer (§7 step 5)
+## Phase 5 — Reading queue with PDF viewer (§7 step 5) — AWAITING DEVICE CHECK
 
 - `docs/modules/reading-queue.md` first.
 - Entry: title, optional URL, optional attached PDF, read status.
@@ -192,6 +192,13 @@ comes back with an ADR.
 *Done when:* a PDF is attached, the original is deleted from phone storage, the entry
 still opens at the page it was left on, and an export/import round trip on a different
 install reproduces the file.
+
+Built and green off device: the module spec, copy-on-attach, the viewer, last-page memory,
+and the file’s whole lifecycle through soft delete, purge, export and import under test.
+Checked in a real browser against a generated PDF with an unembedded font: no request
+leaves the app, every asset PDF.js can fetch resolves locally, and PDF.js stays out of
+the cold-start bundle. What only the phone can show: that Android’s picker hands over a
+real file, and that the copy survives the original being deleted.
 
 ---
 

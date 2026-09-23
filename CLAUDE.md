@@ -231,6 +231,23 @@ that touches `items` or `items_fts`:
 11. Export, reinstall, import: the recipe returns with every ingredient and step, and
     "sal a gosto" still has no number.
 
+**Phase 5 acceptance** (`ROADMAP.md` Phase 5, *done when*), in airplane mode:
+
+1. Capture with the **Reading** chip. Tap the entry: title, URL, and **Attach PDF**.
+2. Attach a PDF from the phone's storage. The page count appears.
+3. **The one that matters.** In a file manager, **delete the original PDF**. Open the
+   entry again: **Open PDF** still works. That is ADR-004's copy doing its job.
+4. Read to page 3 or so, close the viewer, close the app, reopen: it opens on that page.
+5. Tap Next quickly twice: it moves two pages, not one.
+6. Rotate the phone: the page refits the new width without stretching.
+7. Try to attach something that isn't a PDF: refused, nothing attached.
+8. Back closes the viewer; back again closes the entry.
+9. Delete the entry, restore it from **Deleted**: the PDF opens on the same page.
+10. Delete it again and **Purge**: the entry and its PDF are gone.
+11. Export, reinstall, import: the PDF comes back and opens on its saved page. Then try
+    **Export without PDFs** and import that: the entry opens with a plain message that
+    its PDF isn't on this phone, not a crash.
+
 **Back button** (`SPECS.md` §2.2, Back) — undoes one step, never commits:
 
 1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
