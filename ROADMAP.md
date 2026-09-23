@@ -123,7 +123,13 @@ item is not, and each of the four modules is reachable as a tag/type view.
 
 Verified on the phone in airplane mode, all eight checks — including a Phase 1 item found
 by a word in its body, which is the index rebuild working, and search surviving an
-export/import round trip. It took a second build: the first migration 002 failed on the
+export/import round trip.
+
+Built and green off device, and the done-when itself is a passing test. The module spec’s
+two open questions were decided by the owner on 2026-09-23: a deleted exercise or routine
+still in use stays readable in past workouts, and purge keeps back anything a surviving
+row still references. Every screen was exercised in a browser against stand-in data; the
+navigation between them needs the phone. It took a second build: the first migration 002 failed on the
 device (see `DECISIONS.md`, 2026-09-22).
 
 ---
@@ -218,7 +224,7 @@ that a GPS fix arrives in airplane mode.
 
 ---
 
-## Phase 7 — Workout routine and exercise catalog (§7 step 7, built last)
+## Phase 7 — Workout routine and exercise catalog (§7 step 7, built last) — AWAITING DEVICE CHECK
 
 - `docs/modules/workout.md` first. This module spec carries more weight than the others,
   because the catalog decision pushes real questions into it.
@@ -239,6 +245,12 @@ that a GPS fix arrives in airplane mode.
 *Done when:* an exercise is created, used in a routine, performed, logged, renamed in the
 catalog, and the rename is visible in the past log; and the whole lot survives an
 export/import round trip.
+
+Built and green off device, and the done-when itself is a passing test. The module spec’s
+two open questions were decided by the owner on 2026-09-23: a deleted exercise or routine
+still in use stays readable in past workouts, and purge keeps back anything a surviving
+row still references. Every screen was exercised in a browser against stand-in data; the
+navigation between them needs the phone.
 
 ---
 

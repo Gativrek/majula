@@ -264,6 +264,23 @@ that touches `items` or `items_fts`:
 7. Rows show "location saved" for places that have one.
 8. Export, reinstall, import: a place with coordinates and one without both come back.
 
+**Phase 7 acceptance** (`ROADMAP.md` Phase 7, *done when*):
+
+1. Capture with the **Routine** chip. The editor opens; back out of it: no routine exists.
+2. Capture again, **Add exercise**, type a new name, tap **Create**. It joins the routine
+   with 3 × 10 at 0 kg. Add a second exercise by picking an existing one. Save.
+3. Open the routine, **Start workout**. Every set is pre-filled. Change one set’s reps
+   and load, **Add set** (it copies the last), remove all of one exercise’s sets.
+4. Press back mid-session: nothing is logged. Start again and **Save workout**: the log
+   opens, and the removed exercise is not in it.
+5. **The done-when.** Open **Exercises**, rename the one you created. Open the past log
+   under **Workouts**: it shows the new name. The exercise’s own page lists its sets.
+6. Delete that exercise. The past log still shows its name. **Purge**: it is kept, and
+   the message says so. Delete the routine: the log says "from a deleted routine".
+7. Delete the log too, then **Purge**: routine, exercise and log all go together.
+8. Export, reinstall, import: routines, logs and history all come back.
+9. Back from a log returns to the routine it came from; back again closes it.
+
 **Back button** (`SPECS.md` §2.2, Back) — undoes one step, never commits:
 
 1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
