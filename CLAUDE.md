@@ -120,17 +120,19 @@ export round trip are testable without a phone, not to leave room for a third ba
   that unlinks a file is a bug.
 - **Every read filters `deleted_at IS NULL`** except the two paths named for it,
   `listDeleted` and `purgeDeleted`.
-- **`items_fts` does not exist yet.** It is blocked on GATE V1 and ships in Phase 2.
+- **`items_fts` is an external-content FTS5 table** over `items`, added by migration 002
+  and kept in sync by triggers. It is never exported: it is derived, and the restore
+  rebuilds it as rows go back in.
 - **Export column names come from `src/data/tables.ts`**, never from the file being
   imported: no interpolation of data into SQL, including identifiers (CODESTYLE §10).
 - **The device does not run your SQL script whole.**
-  `@capacitor-community/sqlite` splits on `";
-"`, runs the pieces separately, and
-  rejoins a trigger only by gluing a fragment that is exactly `END` onto the one fragment
-  before it. So a trigger body with two statements in it arrives broken. **Write every
-  trigger on one line.** `node:sqlite`'s `exec()` has no such behaviour, so this class of
-  bug passes every test unless it goes through `test/support/capacitor-splitter.ts` —
-  which `test/migration-statements.test.ts` makes every migration do.
+  `@capacitor-community/sqlite` splits it on a semicolon followed by a newline, runs the
+  pieces separately, then rejoins a trigger only by gluing a fragment that is exactly
+  `END` onto the one fragment before it. A trigger body holding two statements therefore
+  arrives broken. **Write every trigger on one line.** `node:sqlite`'s `exec()` has no
+  such behaviour, so this class of bug passes every test unless it goes through
+  `test/support/capacitor-splitter.ts` — which `test/migration-statements.test.ts` makes
+  every migration do.
 - **Startup failures name their stage** (`open`, `migrate`, `files`). Do not collapse them
   back into one message: a failing migration reported as "could not open the database, it
   runs on the phone not a browser" sends the search in exactly the wrong direction.
@@ -152,8 +154,11 @@ export round trip are testable without a phone, not to leave room for a third ba
 Everything below needs the phone. Nothing here can be closed from a desktop, and
 `ROADMAP.md` Phase 1 is not done until it is. Log the outcome in `DECISIONS.md`.
 
+The owner’s shell is **PowerShell 5.1**, which has no `&&`, no `??`, no ternary, and no
+`grep`. Chain with `;` and a `$?` check, and filter with `Select-String`:
+
 ```bash
-npm run apk && npm run install:apk
+npm run apk; if ($?) { npm run install:apk }
 ```
 
 **Phase 1 acceptance** — PASSED 2026-09-21. Re-run it after any schema change, because
@@ -200,31 +205,10 @@ the export/import round trip is what stands between the owner and total data los
 10. Delete it again and **Purge**: its check-ins go with it.
 11. Export, reinstall, import: the streak reads the same.
 
-**GATE V1 — FTS5 availability** (`SPECS.md` §9, ADR-002). It blocks Phase 2, not Phase 1,
-so it runs once a build is on the phone. `src/data/fts-probe.ts` answers it on every
-launch; read the answer off the device log:
+**GATE V1 — CLOSED 2026-09-21: FTS5 is available.** Verified on the device, logged in
+`DECISIONS.md`, and the probe that answered it has been deleted. Search takes the FTS5
+path and there is no `LIKE` fallback to fall into.
 
-```bash
-adb logcat -c
-```
-
-Force-stop the app and reopen it, so the probe runs into an empty buffer, then:
-
-```bash
-adb logcat -d | grep gate_v1
-```
-
-In PowerShell, which is the owner's shell, that pipeline is:
-
-```bash
-adb logcat -d | Select-String gate_v1
-```
-
-`grep` does not exist there. The same substitution applies anywhere else in this file
-that pipes into it.
-
-One line comes back, `availability=available` or `availability=unavailable` with the
-SQLite error that says why. That outcome — not a preference — decides FTS5 against the
-`LIKE` fallback for Phase 2. Record it, with the Android version and the plugin version it
-was observed on, in `DECISIONS.md`. Then delete `src/data/fts-probe.ts` and its call in
-`initialiseApp`: the gate is closed and the probe has nothing left to answer.
+If a future device ever lacks FTS5, migration 002 will fail at the `migrate` stage and
+the startup banner will say so. That is a new decision and a new ADR, not a silent
+fallback (CODESTYLE §6).
