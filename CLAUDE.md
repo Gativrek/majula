@@ -118,8 +118,12 @@ export round trip are testable without a phone, not to leave room for a third ba
   TypeScript directly. That rules out constructor parameter properties and enums.
 - **Soft delete retains attached files.** Only purge removes them (§4.1). A delete path
   that unlinks a file is a bug.
-- **Every read filters `deleted_at IS NULL`** except the two paths named for it,
-  `listDeleted` and `purgeDeleted`.
+- **Every read filters `deleted_at IS NULL`** except the paths named for it:
+  `listDeleted`, `purgeDeleted`, and `src/data/references.ts`, which resolves the
+  exercises and routines a workout points at even after they are soft-deleted
+  (CODESTYLE §10). References inside `payload` JSON are checked on write there too; a
+  reference to a row that is gone entirely is logged as `workout.dangling_reference`
+  and shown as "Unknown", never a blank screen.
 - **`items_fts` is an external-content FTS5 table** over `items`, added by migration 002
   and kept in sync by triggers. It is never exported: it is derived, and the restore
   rebuilds it as rows go back in.

@@ -156,8 +156,12 @@ TypeScript, `strict` on. Settled by ADR-005.
   `schema_version`. A shipped migration is never edited; a mistake is fixed by the next
   migration.
 - FTS triggers ship in the same migration as the virtual table they keep in sync.
-- Every read filters `deleted_at IS NULL` unless it is the explicit purge path.
-  Soft delete that leaks into a list view is a data-loss bug in the other direction.
+- Every read filters `deleted_at IS NULL` unless it is one of the named exceptions: the
+  Deleted view, the purge path, and resolving a reference from a routine or workout log
+  (`src/data/references.ts`). The last exists because a past workout must still show an
+  exercise that has since been deleted (`docs/modules/workout.md`); it resolves names by
+  id and never lists. Soft delete that leaks into a list view is a data-loss bug in the
+  other direction.
 - Search filters deleted rows at query time, by joining `items_fts` back to `items` on
   `rowid`. Do not make the sync triggers conditional on `deleted_at`; the undelete path
   would be exercised too rarely to stay correct.

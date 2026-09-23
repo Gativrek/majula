@@ -115,3 +115,16 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Pasted coordinates accept decimal points only. A pair written with decimal commas cannot be split reliably — `-12,34, -56,0` has three commas and nothing says which one separates the numbers — so it is refused, the same reasoning as the ambiguous recipe quantities. Maps apps copy with decimal points regardless of locale, which is the case that matters.
 - A pair that only makes sense as longitude-then-latitude is refused, not swapped. Swapping would be right most of the time and silently wrong the rest, and a place filed in the wrong hemisphere is found by nobody.
 - "Open in maps" hands a `geo:` link to the system. Capacitor's bridge sends any link outside the app's own host to Android as an `ACTION_VIEW` intent; checked that a host-less URI such as `geo:` cannot trip its host matching. This is handing a place to another app, not rendering one — the roadmap's "stored, not rendered" stands.
+
+---
+
+## 2026-09-23 — Phase 7 decisions
+
+- Deleting an exercise still used by routines or logs: an ordinary soft delete; routines and past logs keep showing its name. Purge skips an exercise still referenced by any routine or log that survives the purge, and reports how many it kept. Owner's decision, on the recommendation. Rejected: refusing the delete outright, which would make the catalog impossible to tidy; and letting purge remove it, which would leave past workouts pointing at nothing.
+- Deleting a routine that has logs: the logs keep working and show "from a deleted routine". Purge skips a routine still referenced by a surviving log. Owner's decision, on the recommendation.
+- Purge computes survivors as a fixed point. A deleted routine held back by a surviving log is itself a survivor, so the exercises it uses are referenced too. A deleted routine and a deleted exercise used only by it are purged together in one run.
+- CODESTYLE §10 amended: reads that see soft-deleted rows are now the Deleted view, the purge path, and reference resolution in `src/data/references.ts`. The third follows directly from the first decision — a past log cannot show a deleted exercise's name without reading the deleted row. It resolves by id and never lists, so a deleted exercise still cannot leak into the catalog or the picker.
+- Integrity on write: a routine or log may reference only ids that are exercises (or, for a log's `routine_id`, a routine), deleted or not. On read, a reference to a row that no longer exists is logged as `workout.dangling_reference` and shown as "Unknown", per CODESTYLE §10.
+- Load parsing reuses the cookbook's quantity rules, including refusing `1.000`-style ambiguity. The parser moves out of the recipe module into a shared one rather than being copied.
+- No Exercise chip in quick capture. The roadmap puts inline creation in the picker, which is where an exercise is actually needed; a tenth capture chip would buy a second way to do the same thing at the cost of footer height. Exercises are renamed and annotated from the Exercises view.
+- The workout screens live in their own controller component, not in `App.tsx`, which has grown past twice CODESTYLE §4's soft ceiling of about 200 lines. Splitting the earlier modules out of `App.tsx` follows as its own commit once Phase 7 works.
