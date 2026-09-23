@@ -37,9 +37,13 @@ export interface ReadingPayload {
   last_page?: number;
 }
 
+/**
+ * SPECS §4.3, amended 2026-09-23: `qty` and `unit` are each optional so that "sal a
+ * gosto" is an ingredient rather than a step. Absent means absent — never `0` or `''`.
+ */
 export interface RecipeIngredient {
-  qty: number;
-  unit: string;
+  qty?: number;
+  unit?: string;
   name: string;
 }
 

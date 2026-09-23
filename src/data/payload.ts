@@ -100,17 +100,25 @@ function recipePayload(value: unknown, id: string | undefined): RecipePayload {
   const ingredients: RecipeIngredient[] = asArray(raw.ingredients, 'ingredients', 'recipe', id).map(
     function toIngredient(entry, index) {
       const row = asObject(entry, 'recipe', id);
-      return {
-        qty: asFiniteNumber(row.qty, `ingredients[${index}].qty`, 'recipe', id),
-        unit: asString(row.unit, `ingredients[${index}].unit`, 'recipe', id),
-        name: asString(row.name, `ingredients[${index}].name`, 'recipe', id),
-      };
+      const where = `ingredients[${index}]`;
+      const name = asString(row.name, `${where}.name`, 'recipe', id);
+      if (name.trim().length === 0)
+        fail(`payload.${where}.name`, 'must not be empty', 'recipe', id);
+      const ingredient: RecipeIngredient = { name };
+      // SPECS §4.3: absent stays absent. A missing quantity is not zero.
+      if (row.qty !== undefined)
+        ingredient.qty = asFiniteNumber(row.qty, `${where}.qty`, 'recipe', id);
+      if (row.unit !== undefined)
+        ingredient.unit = asString(row.unit, `${where}.unit`, 'recipe', id);
+      return ingredient;
     },
   );
   const steps = asArray(raw.steps, 'steps', 'recipe', id).map(function toStep(entry, index) {
     return asString(entry, `steps[${index}]`, 'recipe', id);
   });
-  return { servings: asFiniteNumber(raw.servings, 'servings', 'recipe', id), ingredients, steps };
+  const servings = asFiniteNumber(raw.servings, 'servings', 'recipe', id);
+  if (servings <= 0) fail('payload.servings', 'must be positive', 'recipe', id);
+  return { servings, ingredients, steps };
 }
 
 function routinePayload(value: unknown, id: string | undefined): RoutinePayload {
