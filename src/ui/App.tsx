@@ -36,6 +36,9 @@ import { FilterBar } from './FilterBar.tsx';
 import { RecipeEditor } from './RecipeEditor.tsx';
 import { PdfViewer } from './PdfViewer.tsx';
 import { PlaceDetail } from './PlaceDetail.tsx';
+import type { WorkoutScreen } from './WorkoutScreens.tsx';
+import { WorkoutScreens } from './WorkoutScreens.tsx';
+import { newRoutineDraft } from '../services/workout-draft.ts';
 import { ReadingDetail } from './ReadingDetail.tsx';
 import { RecipeView } from './RecipeView.tsx';
 import { useBackStep } from './use-back-step.ts';
@@ -112,6 +115,7 @@ export function App() {
   const [openRecipe, setOpenRecipe] = useState<OpenRecipe | null>(null);
   const [openReading, setOpenReading] = useState<OpenReading | null>(null);
   const [openPlace, setOpenPlace] = useState<ItemOfType<'place'> | null>(null);
+  const [openWorkout, setOpenWorkout] = useState<WorkoutScreen | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -178,6 +182,11 @@ export function App() {
 
   async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
     if (context === null) return;
+    if (type === 'routine') {
+      // workout.md criterion 4: like a recipe, nothing is written until Save.
+      setOpenWorkout({ kind: 'routine-new', draft: newRoutineDraft(title), tags: itemTags });
+      return;
+    }
     if (type === 'recipe') {
       // cookbook.md criterion 1: a captured recipe opens straight into the editor, and
       // nothing is written until Save, so backing out of the add leaves no row.
@@ -214,6 +223,9 @@ export function App() {
     if (item.type === 'recipe') setOpenRecipe({ mode: 'view', recipe: item });
     if (item.type === 'reading') setOpenReading({ mode: 'detail', reading: item });
     if (item.type === 'place') setOpenPlace(item);
+    if (item.type === 'routine') setOpenWorkout({ kind: 'routine', routine: item });
+    if (item.type === 'workout_log') setOpenWorkout({ kind: 'log', log: item });
+    if (item.type === 'exercise') setOpenWorkout({ kind: 'exercise', exercise: item });
   }
 
   async function onSaveRecipe(id: string, draft: RecipeDraft) {
@@ -343,6 +355,10 @@ export function App() {
     );
   }
 
+  const closeWorkout = useCallback(function closeWorkout() {
+    setOpenWorkout(null);
+  }, []);
+
   /** Re-read a place after a change so its screen shows what was stored. */
   async function reloadPlace(id: string): Promise<void> {
     if (context === null) return;
@@ -420,6 +436,19 @@ export function App() {
   }
   if (openPlace !== null && context !== null) {
     return <div class="app">{renderPlace(openPlace, context)}</div>;
+  }
+  if (openWorkout !== null && context !== null) {
+    // The workout screens keep their own stack and back steps (WorkoutScreens.tsx).
+    return (
+      <div class="app">
+        <WorkoutScreens
+          context={context}
+          initial={openWorkout}
+          onClose={closeWorkout}
+          onChanged={refresh}
+        />
+      </div>
+    );
   }
 
   return (

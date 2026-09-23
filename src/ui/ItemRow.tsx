@@ -37,6 +37,10 @@ interface ItemRowProps {
  */
 function metaFor(item: Item): string {
   const label = TYPE_LABEL[item.type];
+  if (item.type === 'routine') {
+    const count = item.payload.exercises.length;
+    return `${label} \u00b7 ${count} exercise${count === 1 ? '' : 's'}`;
+  }
   if (item.type === 'place') {
     return item.payload.lat === undefined ? label : `${label} · location saved`;
   }

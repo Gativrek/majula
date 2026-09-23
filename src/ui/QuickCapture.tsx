@@ -13,7 +13,8 @@ import type { ItemType } from '../data/types.ts';
  * (§2.1), and the default path — open, type, save — must not grow a field to skip past.
  */
 
-/** The types Phase 6 can capture. The rest arrive with the phases that build them. */
+/** The types quick capture offers. Exercises are made in the routine picker and workout logs by finishing a workout, so
+ * neither has a chip (DECISIONS.md, 2026-09-23). */
 const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'note', label: 'Note' },
   { type: 'todo', label: 'To-do' },
@@ -23,6 +24,7 @@ const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'recipe', label: 'Recipe' },
   { type: 'reading', label: 'Reading' },
   { type: 'place', label: 'Place' },
+  { type: 'routine', label: 'Routine' },
 ];
 
 /** Tags are separated by whitespace or commas, and stored exactly as typed. */
