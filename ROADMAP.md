@@ -202,7 +202,7 @@ real file, and that the copy survives the original being deleted.
 
 ---
 
-## Phase 6 — Places to try (§7 step 6)
+## Phase 6 — Places to try (§7 step 6) — AWAITING DEVICE CHECK
 
 - `docs/modules/places.md` first.
 - Name, optional note, optional `lat`/`lon` in payload.
@@ -210,6 +210,11 @@ real file, and that the copy survives the original being deleted.
   forbids without an ADR.
 
 *Done when:* a place is captured with and without coordinates, and both export cleanly.
+
+Built and green off device, and the done-when itself is a passing test. Coordinates come
+from a **Here** button or a paste (owner’s decision, 2026-09-23), which adds the location
+permission. What only the phone can show: that Android asks for it on first use, and
+that a GPS fix arrives in airplane mode.
 
 ---
 

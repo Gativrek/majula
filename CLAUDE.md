@@ -248,6 +248,18 @@ that touches `items` or `items_fts`:
     **Export without PDFs** and import that: the entry opens with a plain message that
     its PDF isn't on this phone, not a crash.
 
+**Phase 6 acceptance** (`ROADMAP.md` Phase 6, *done when*):
+
+1. Capture with the **Place** chip. Its screen opens with **Here** one tap away.
+2. Tap **Here**. Android asks for location permission — this once, not at install.
+3. **In airplane mode**, outdoors, tap **Here** on another place. A fix arrives, though the
+   first one without signal may take a while, and the accuracy is shown.
+4. Refuse the permission on a fresh install: the screen says so and changes nothing.
+5. In a maps app, long-press a spot, copy its coordinates, paste them in, **Set**.
+6. **Open in maps** opens the maps app on that spot, pin labelled with the place's name.
+7. Rows show "location saved" for places that have one.
+8. Export, reinstall, import: a place with coordinates and one without both come back.
+
 **Back button** (`SPECS.md` §2.2, Back) — undoes one step, never commits:
 
 1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
