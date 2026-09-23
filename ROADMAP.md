@@ -97,7 +97,7 @@ purged row stayed gone.
 
 ---
 
-## Phase 2 — Tag views and global search (§7 step 2) — AWAITING DEVICE CHECK
+## Phase 2 — Tag views and global search (§7 step 2) — CLOSED 2026-09-23
 
 Covers notes, to-do, network log, running-low as views over `items`.
 
@@ -121,9 +121,10 @@ that asked SQLite directly. Search takes the FTS5 path; the `LIKE` fallback is n
 *Done when:* an item captured in Phase 1 is findable by a word in its body, a soft-deleted
 item is not, and each of the four modules is reachable as a tag/type view.
 
-Built and green off device: migration 002 with `items_fts` and its triggers, search, type
-and tag views, the four module specs, and the export/import round trip re-verified across
-both schema versions. What remains is the on-device check, per §6.
+Verified on the phone in airplane mode, all eight checks — including a Phase 1 item found
+by a word in its body, which is the index rebuild working, and search surviving an
+export/import round trip. It took a second build: the first migration 002 failed on the
+device (see `DECISIONS.md`, 2026-09-22).
 
 ---
 

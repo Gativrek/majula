@@ -174,7 +174,8 @@ the export/import round trip is what stands between the owner and total data los
 7. Uninstall the app, reinstall the APK, **Import**. The surviving data comes back and the
    purged row does not.
 
-**Phase 2 acceptance** (`ROADMAP.md` Phase 2, *done when*), in airplane mode:
+**Phase 2 acceptance** — PASSED 2026-09-23. Re-run checks 5 and 8 after any migration
+that touches `items` or `items_fts`:
 
 1. Search a word that appears only in an item's **body**, not its title. The item is found.
 2. Search a prefix of a word — three letters of a longer one. The item is found while the
