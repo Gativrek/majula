@@ -5,6 +5,8 @@ import type { HabitState } from '../services/habits.ts';
 import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
 import { initialiseApp, StartupError } from '../services/database.ts';
+import type { RecipeDraft } from '../services/recipe-draft.ts';
+import { createRecipe, getRecipe, saveRecipe } from '../services/recipes.ts';
 import {
   captureItem,
   deleteItem,
@@ -18,6 +20,8 @@ import {
 import { BackupPanel } from './BackupPanel.tsx';
 import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
+import { RecipeEditor } from './RecipeEditor.tsx';
+import { RecipeView } from './RecipeView.tsx';
 import { ItemList } from './ItemList.tsx';
 import { QuickCapture } from './QuickCapture.tsx';
 
@@ -32,6 +36,12 @@ const VIEW_LABEL: Record<View, string> = {
 interface TagCount {
   tag: string;
   count: number;
+}
+
+/** A recipe open full-screen, either read in kitchen mode or being edited. */
+interface OpenRecipe {
+  recipe: ItemOfType<'recipe'>;
+  mode: 'view' | 'edit';
 }
 
 interface StartupFailure {
@@ -73,6 +83,7 @@ export function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [tags, setTags] = useState<TagCount[]>([]);
+  const [openRecipe, setOpenRecipe] = useState<OpenRecipe | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -128,6 +139,14 @@ export function App() {
 
   async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
     if (context === null) return;
+    if (type === 'recipe') {
+      // cookbook.md criterion 1: a captured recipe opens straight into the editor, so it
+      // is never left as a bare title without the owner seeing it.
+      const recipe = await createRecipe(context, title, itemTags);
+      setOpenRecipe({ recipe, mode: 'edit' });
+      await refresh();
+      return;
+    }
     await captureItem(context, { type, title, tags: itemTags });
     if (view !== 'items') setView('items');
     await refresh();
@@ -149,6 +168,21 @@ export function App() {
     if (context === null) return;
     await deleteItem(context, item.id);
     await refresh();
+  }
+
+  function onOpen(item: Item): void {
+    if (item.type === 'recipe') setOpenRecipe({ recipe: item, mode: 'view' });
+  }
+
+  async function onSaveRecipe(id: string, draft: RecipeDraft) {
+    if (context === null) return { ok: false as const, field: 'app', message: 'Not ready.' };
+    const result = await saveRecipe(context, id, draft);
+    if (result.ok) {
+      const saved = await getRecipe(context, id);
+      setOpenRecipe(saved === null ? null : { recipe: saved, mode: 'view' });
+      await refresh();
+    }
+    return result;
   }
 
   async function onRestore(item: Item): Promise<void> {
@@ -187,9 +221,31 @@ export function App() {
           onToggleDone={(item) => void onToggleDone(item)}
           onToggleToday={(habit) => void onToggleToday(habit)}
           onDelete={(item) => void onDelete(item)}
+          onOpen={onOpen}
           {...(view === 'deleted' ? { onRestore: (item: Item) => void onRestore(item) } : {})}
         />
       </>
+    );
+  }
+
+  if (openRecipe !== null) {
+    const { recipe, mode } = openRecipe;
+    return (
+      <div class="app">
+        {mode === 'view' ? (
+          <RecipeView
+            recipe={recipe}
+            onClose={() => setOpenRecipe(null)}
+            onEdit={() => setOpenRecipe({ recipe, mode: 'edit' })}
+          />
+        ) : (
+          <RecipeEditor
+            recipe={recipe}
+            onSave={(draft) => onSaveRecipe(recipe.id, draft)}
+            onCancel={() => setOpenRecipe({ recipe, mode: 'view' })}
+          />
+        )}
+      </div>
     );
   }
 

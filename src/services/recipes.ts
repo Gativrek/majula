@@ -2,6 +2,7 @@
  * What the UI may do with recipes (`docs/modules/cookbook.md`).
  */
 
+import { setTags } from '../data/tags.ts';
 import type { ItemOfType } from '../data/types.ts';
 import type { AppContext } from './database.ts';
 import type { DraftResult, RecipeDraft } from './recipe-draft.ts';
@@ -15,12 +16,14 @@ import { buildRecipe } from './recipe-draft.ts';
 export async function createRecipe(
   context: AppContext,
   title: string,
+  tags: readonly string[] = [],
 ): Promise<ItemOfType<'recipe'>> {
   const item = await context.items.create({
     type: 'recipe',
     title,
     payload: { servings: 1, ingredients: [], steps: [] },
   });
+  if (tags.length > 0) await setTags(context.driver, item.id, tags);
   return asRecipe(item);
 }
 

@@ -1,7 +1,7 @@
 /*
- * Gold and yellow on black (SPECS §1). Plain CSS with custom properties; kitchen
- * mode's large type will be a theme variable here, not a per-component override
- * (CODESTYLE §12).
+ * Gold and yellow on black (SPECS §1). Plain CSS with custom properties. Kitchen mode's
+ * large type redefines these same variables inside `.kitchen` rather than overriding
+ * components one by one (CODESTYLE §12).
  */
 
 :root {
@@ -335,4 +335,157 @@ body {
 
 .item--checked-today {
   border-color: var(--colour-gold);
+}
+
+/* A row that opens into its own view. The whole content area is the target, so it
+   resets the button chrome and keeps the row's layout. */
+.item__open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+/*
+ * Kitchen mode (SPECS §6). Large type is the theme's own size variables redefined for
+ * this subtree, not per-component overrides (CODESTYLE §12), so everything inside —
+ * lists, buttons, banners — scales together and nothing is left at phone size.
+ */
+.kitchen {
+  --size-text: 1.375rem;
+  --size-title: 1.75rem;
+  --size-small: 1.0625rem;
+  --tap-target: 3.25rem;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: var(--size-text);
+}
+
+/* The editor is typed into, not read across a counter, so it keeps phone-sized text. */
+.kitchen--editing {
+  --size-text: 1rem;
+  --size-title: 1.25rem;
+  --size-small: 0.8125rem;
+  --tap-target: 2.75rem;
+}
+
+.kitchen__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  line-height: 1.5;
+}
+
+.kitchen__title {
+  margin: 0 0 var(--space-1);
+  color: var(--colour-gold);
+  font-size: var(--size-title);
+  line-height: 1.2;
+}
+
+.kitchen__servings {
+  margin: 0 0 var(--space-4);
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+}
+
+.kitchen__section {
+  margin-bottom: var(--space-5);
+}
+
+.kitchen__heading {
+  margin: 0 0 var(--space-2);
+  color: var(--colour-gold);
+  font-size: var(--size-small);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kitchen__ingredients,
+.kitchen__steps {
+  margin: 0;
+  padding-left: 1.5em;
+}
+
+.kitchen__ingredients li,
+.kitchen__steps li {
+  margin-bottom: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.kitchen__steps li::marker {
+  color: var(--colour-gold);
+  font-weight: 600;
+}
+
+/* SPECS §6: Close, Edit, Cancel and Save sit at the bottom, where a thumb reaches them. */
+.kitchen__actions {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--colour-border);
+  background: var(--colour-surface);
+}
+
+.kitchen__actions .button {
+  flex: 1;
+}
+
+.editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.editor__label {
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+}
+
+.editor__narrow {
+  max-width: 6rem;
+}
+
+.editor__ingredient,
+.editor__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.editor__qty {
+  flex: 0 0 4rem;
+  min-width: 0;
+}
+
+.editor__unit {
+  flex: 0 0 4.5rem;
+  min-width: 0;
+}
+
+.editor__name,
+.editor__step-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor__step-text {
+  resize: vertical;
+}
+
+.editor__step-number {
+  flex: 0 0 1.5rem;
+  padding-top: var(--space-2);
+  color: var(--colour-gold);
+  font-weight: 600;
+  text-align: right;
 }

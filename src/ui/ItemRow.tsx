@@ -27,9 +27,11 @@ interface ItemRowProps {
   onToggleDone: (item: Item) => void;
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
+  /** Present for types that open into their own view, such as a recipe in kitchen mode. */
+  onOpen?: (item: Item) => void;
 }
 
-export function ItemRow({ item, onToggleDone, onDelete, onRestore }: ItemRowProps) {
+export function ItemRow({ item, onToggleDone, onDelete, onRestore, onOpen }: ItemRowProps) {
   const isCheckable = CHECKABLE_TYPES.includes(item.type);
   const isDeleted = item.deletedAt !== null;
 
@@ -47,10 +49,17 @@ export function ItemRow({ item, onToggleDone, onDelete, onRestore }: ItemRowProp
         </button>
       ) : null}
 
-      <div class="item__content">
-        <div class="item__title">{item.title}</div>
-        <div class="item__meta">{TYPE_LABEL[item.type]}</div>
-      </div>
+      {onOpen === undefined || isDeleted ? (
+        <div class="item__content">
+          <div class="item__title">{item.title}</div>
+          <div class="item__meta">{TYPE_LABEL[item.type]}</div>
+        </div>
+      ) : (
+        <button type="button" class="item__content item__open" onClick={() => onOpen(item)}>
+          <div class="item__title">{item.title}</div>
+          <div class="item__meta">{TYPE_LABEL[item.type]}</div>
+        </button>
+      )}
 
       <div class="item__actions">
         {isDeleted && onRestore !== undefined ? (

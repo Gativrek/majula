@@ -202,3 +202,39 @@ describe('export and import with habit check-ins', function habitBackupSuite() {
     await target.close();
   });
 });
+
+/** SPECS §4.3 amended 2026-09-23: absent quantities must survive a backup as absent. */
+describe('export and import with recipes', function recipeBackupSuite() {
+  it('restores every ingredient and step, with absent quantities still absent', async function recipe() {
+    const payload = {
+      servings: 4,
+      ingredients: [{ qty: 500, unit: 'g', name: 'feijão' }, { name: 'sal a gosto' }],
+      steps: ['Cozinhe o feijão.', 'Tempere.'],
+    };
+    const source = openTestDatabase();
+    await runMigrations(source);
+    const created = await storeFor(source, 1).create({
+      type: 'recipe',
+      title: 'Feijão tropeiro',
+      payload,
+    });
+
+    const files = createMemoryFileStore();
+    await exportDatabase(source, files);
+    await source.close();
+
+    const target = openTestDatabase();
+    await runMigrations(target);
+    await importDatabase(target, files);
+
+    const restored = await storeFor(target, 2).get(created.id);
+    assert.equal(restored?.type, 'recipe');
+    if (restored?.type !== 'recipe') return;
+    assert.deepEqual(restored.payload, payload);
+    assert.ok(
+      !('qty' in (restored.payload.ingredients[1] ?? {})),
+      'a missing quantity must not come back as zero',
+    );
+    await target.close();
+  });
+});

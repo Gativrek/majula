@@ -19,6 +19,7 @@ interface ItemListProps {
   onToggleToday: (habit: ItemOfType<'habit'>) => void;
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
+  onOpen?: (item: Item) => void;
 }
 
 export function ItemList({
@@ -29,6 +30,7 @@ export function ItemList({
   onToggleToday,
   onDelete,
   onRestore,
+  onOpen,
 }: ItemListProps) {
   if (items.length === 0) {
     return <p class="empty">{emptyMessage}</p>;
@@ -55,6 +57,7 @@ export function ItemList({
             onToggleDone={onToggleDone}
             onDelete={onDelete}
             {...(onRestore === undefined ? {} : { onRestore })}
+            {...(onOpen === undefined || item.type !== 'recipe' ? {} : { onOpen })}
           />
         ),
       )}
