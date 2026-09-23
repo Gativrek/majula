@@ -128,3 +128,11 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Load parsing reuses the cookbook's quantity rules, including refusing `1.000`-style ambiguity. The parser moves out of the recipe module into a shared one rather than being copied.
 - No Exercise chip in quick capture. The roadmap puts inline creation in the picker, which is where an exercise is actually needed; a tenth capture chip would buy a second way to do the same thing at the cost of footer height. Exercises are renamed and annotated from the Exercises view.
 - The workout screens live in their own controller component, not in `App.tsx`, which has grown past twice CODESTYLE §4's soft ceiling of about 200 lines. Splitting the earlier modules out of `App.tsx` follows as its own commit once Phase 7 works.
+
+---
+
+## 2026-09-23 — App.tsx split
+
+- The module screens moved out of `App.tsx` into per-module controllers, as the Phase 7 entry committed to. It had grown to 481 lines against CODESTYLE §4's soft ceiling of about 200, one phase at a time. `App.tsx` is now the list alone, at 243 lines, and a new module adds a controller rather than growing it.
+- Bug found by the move: the PDF viewer's on-screen Close re-read the entry but left the viewer open; only the hardware back button closed it. The Phase 5 device checklist tested back but not Close, so it would have shipped. Fixed in `ReadingScreens`.
+- Bug found while checking the move in a browser: closing the viewer mid-render left PDF.js's cancelled render as an unhandled promise rejection, against CODESTYLE §8. The render loop now treats a cancellation as the close working.

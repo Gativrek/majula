@@ -101,6 +101,12 @@ android/      the Capacitor Android project
 **Layering is one-directional: UI → service → data** (CODESTYLE §4). The UI never issues
 SQL, never touches the filesystem and never parses a payload.
 
+**Each module that opens full-screen has its own screen controller** — `RecipeScreens`,
+`ReadingScreens`, `PlaceScreen`, `WorkoutScreens` — which owns that module's navigation
+and back steps. `App.tsx` is the list and holds one piece of state for whatever is open
+(`OpenScreenView.tsx`). A new module adds a controller and a case there; it does not grow
+`App.tsx`, which is how it reached twice CODESTYLE §4's ceiling before it was split.
+
 Two interfaces have exactly two implementations each — `SqlDriver` and `FileStore` — one
 for the device and one for `node --test`. They exist so migrations, the item store and the
 export round trip are testable without a phone, not to leave room for a third backend

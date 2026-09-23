@@ -146,7 +146,9 @@ Never patch code and leave the spec stale.
 
 ## Status
 
-In development. `ROADMAP.md` has the current phase and what still blocks it.
+Every phase of `ROADMAP.md` is built. Phases 1 and 2 are verified on the phone; Phases 3
+to 7 and the back button are built and tested off the device, and wait on their device
+checks, which are listed in `CLAUDE.md`.
 
 ---
 
