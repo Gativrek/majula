@@ -60,7 +60,7 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 - **Running-low list.** Tap to add an item when noticed; check off when bought. This is the grocery list. No quantities.
 - **Cookbook.** Recipes with ingredients (optional quantity, optional unit, name), ordered steps, servings. Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
 - **Workout routine.** Routine templates (exercises with sets, reps, load) and session logs. Exercises come from a catalog of `exercise` entities referenced by id, not free text: ACCEPTED 2026-09-21. Built last.
-- **Places to try.** Name, optional note, optional coordinates.
+- **Places to try.** Name, optional note, optional coordinates. Coordinates come from the device’s current location (one tap, GPS, works without signal) or are pasted from a maps app: ACCEPTED 2026-09-23 (owner’s decision). This adds the Android location permission, requested the first time the owner asks for the current location and never at install. Location never leaves the phone and is never logged. Coordinates are stored, not rendered: there is no map in the app, but a place can be handed to the device’s maps app.
 
 ### 2.2 Cross-cutting features
 

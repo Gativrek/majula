@@ -104,3 +104,14 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - File picking: a plain `<input type="file" accept="application/pdf">`. Capacitor's WebView client implements `onShowFileChooser`, so the system picker opens without a plugin. Rejected: a file-picker plugin, a dependency for something the platform already does.
 - One PDF per entry, no replace. Replacing would leave the old copy referenced by no row at all, and purge only removes files that belong to soft-deleted rows, so the old copy would sit in private storage forever and ride along in every export. Changing the PDF is delete-and-recreate, which routes the old file through the existing soft-delete and purge path.
 - A missing PDF is a named path, not a crash. An import from an export made without PDFs leaves entries naming files that are not there; the viewer says so and logs `reading.pdf_missing` (CODESTYLE §6).
+
+---
+
+## 2026-09-23 — Phase 6 decisions
+
+- Place coordinates: from the current location (a **Here** button) or pasted from a maps app. Owner's decision. Rejected: paste only, which never adds a permission but fails the design test, since nobody gets coordinates in seconds by copying them out of another app; and no coordinates yet.
+- Consequence: the app gains `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION`. Requested the first time Here is tapped, never at install. It uses the WebView's own `navigator.geolocation` — Capacitor's WebView client already relays the permission prompt — so no location plugin and no ADR. The position is read only on that tap; there is no background location and no history. Coordinates are never logged: they identify where the owner has been, which is the same category as the note bodies CODESTYLE §6 keeps out of logs.
+- Accuracy is shown at the moment of the fix and not stored. §4.3's place payload is `lat` and `lon`; widening it for a number that only matters at capture time would be the quiet schema growth §4.1 warns against.
+- Pasted coordinates accept decimal points only. A pair written with decimal commas cannot be split reliably — `-12,34, -56,0` has three commas and nothing says which one separates the numbers — so it is refused, the same reasoning as the ambiguous recipe quantities. Maps apps copy with decimal points regardless of locale, which is the case that matters.
+- A pair that only makes sense as longitude-then-latitude is refused, not swapped. Swapping would be right most of the time and silently wrong the rest, and a place filed in the wrong hemisphere is found by nobody.
+- "Open in maps" hands a `geo:` link to the system. Capacitor's bridge sends any link outside the app's own host to Android as an `ACTION_VIEW` intent; checked that a host-less URI such as `geo:` cannot trip its host matching. This is handing a place to another app, not rendering one — the roadmap's "stored, not rendered" stands.
