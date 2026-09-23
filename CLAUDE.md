@@ -206,6 +206,31 @@ that touches `items` or `items_fts`:
 10. Delete it again and **Purge**: its check-ins go with it.
 11. Export, reinstall, import: the streak reads the same.
 
+**Phase 4 acceptance** (`ROADMAP.md` Phase 4, *done when*), in airplane mode:
+
+1. **The one that matters.** Open a recipe, put the phone down, and wait past the screen
+   timeout. The screen stays lit. If a red line says the screen may sleep, it will not —
+   read the reason and report it:
+
+   ```bash
+   adb logcat -d | Select-String kitchen.wake_lock
+   ```
+
+2. Close the recipe and wait past the timeout again. The screen sleeps normally.
+3. With a recipe open, switch to another app and back. It still stays lit — the platform
+   drops the hold on hide, and the app has to take it back.
+4. Capture with the **Recipe** chip: it opens straight into the editor.
+5. Add an ingredient with only a name ("sal a gosto"). It saves, and shows with no number.
+6. Type `1,5` as a quantity. It saves as one and a half.
+7. Type `1.000` as a quantity. Save is refused with a message naming the ingredient.
+8. Remove an ingredient from the middle of the list. The rows either side keep their own
+   values.
+9. The recipe reads comfortably at arm's length on a counter.
+10. Close and Edit, Cancel and Save, are all reachable with the thumb of the hand holding
+    the phone.
+11. Export, reinstall, import: the recipe returns with every ingredient and step, and
+    "sal a gosto" still has no number.
+
 **GATE V1 — CLOSED 2026-09-21: FTS5 is available.** Verified on the device, logged in
 `DECISIONS.md`, and the probe that answered it has been deleted. Search takes the FTS5
 path and there is no `LIKE` fallback to fall into.

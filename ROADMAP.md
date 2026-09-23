@@ -150,10 +150,11 @@ things to take on trust — but the device still has to confirm them with a real
 
 ---
 
-## Phase 4 — Cookbook (§7 step 4)
+## Phase 4 — Cookbook (§7 step 4) — AWAITING DEVICE CHECK
 
 - `docs/modules/cookbook.md` first.
-- `recipe` payload per §4.3: `servings`, `ingredients[{qty, unit, name}]`, ordered `steps[]`.
+- `recipe` payload per §4.3: `servings`, `ingredients[{qty?, unit?, name}]`, ordered `steps[]`.
+  `qty` and `unit` became optional on 2026-09-23 (owner’s decision; see `DECISIONS.md`).
 - Payload validated on write and on read. It is JSON in a `TEXT` column and is never
   trusted to be well-formed, whatever the TypeScript types claim.
 - Kitchen mode (§6)
@@ -164,6 +165,13 @@ things to take on trust — but the device still has to confirm them with a real
 
 *Done when:* a recipe is followed start to finish on the phone, on a counter, without
 touching the screen to keep it lit.
+
+Built and green off device: the module spec, the amended payload, kitchen mode on the
+platform Screen Wake Lock API, the editor, and a recipe export round trip. The wake lock
+is the open question — the desktop test pane refused it with `NotAllowedError`, which is
+expected for a page that is not the focused foreground document, and only the phone can
+say whether the WebView grants it. If it refuses there, `@capacitor-community/keep-awake`
+comes back with an ADR.
 
 ---
 
