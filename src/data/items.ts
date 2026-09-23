@@ -1,8 +1,9 @@
 /**
  * Every statement against `items` lives here (CODESTYLE §4, §10).
  *
- * Every read filters `deleted_at IS NULL` except the purge paths, which say so in
- * their names. Parameterised queries only.
+ * Every read filters `deleted_at IS NULL` except `listDeleted`, which says so in its name.
+ * The other reads allowed to see deleted rows live in purge.ts and references.ts
+ * (CODESTYLE §10). Parameterised queries only.
  */
 
 import { StorageError } from '../lib/errors.ts';
@@ -14,6 +15,7 @@ import { nowTimestamp, systemClock } from '../lib/time.ts';
 import type { SqlDriver, SqlValue } from './driver.ts';
 import { queryOne } from './driver.ts';
 import { parsePayload, serialisePayload } from './payload.ts';
+import { checkReferencesOnWrite } from './references.ts';
 import type { Item, ItemPatch, ItemType, NewItem } from './types.ts';
 import { isItemType } from './types.ts';
 
@@ -72,6 +74,29 @@ export function toItem(row: ItemRow): Item {
   } as Item;
 }
 
+/**
+ * Read a row back inside its write's transaction and check the references its payload
+ * holds (SPECS §4.1). Throwing here rolls the write back, so a routine or log naming an
+ * exercise that does not exist never lands.
+ */
+async function readBackChecked(
+  driver: SqlDriver,
+  id: string,
+  operation: 'create' | 'update',
+): Promise<Item> {
+  const row = await queryOne<ItemRow>(
+    driver,
+    `SELECT ${COLUMNS} FROM items WHERE id = ? AND deleted_at IS NULL`,
+    [id],
+  );
+  if (row === null) {
+    throw new StorageError('item vanished during write', { operation, id });
+  }
+  const item = toItem(row);
+  await checkReferencesOnWrite(driver, item);
+  return item;
+}
+
 export interface ItemStoreOptions {
   clock?: Clock;
   newId?: IdGenerator;
@@ -99,9 +124,9 @@ export class ItemStore {
     const id = this.newId();
     const now = nowTimestamp(this.clock);
     const payload = serialisePayload(input.type, input.payload, id);
-    await this.driver.run(
-      `INSERT INTO items (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-      [
+    const driver = this.driver;
+    const created = await driver.transaction(async function insertItem(this: void) {
+      await driver.run(`INSERT INTO items (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`, [
         id,
         input.type,
         input.title,
@@ -111,17 +136,10 @@ export class ItemStore {
         payload,
         now,
         now,
-      ],
-    );
+      ]);
+      return readBackChecked(driver, id, 'create');
+    });
     log.debug('item.created', { type: input.type, id });
-    const created = await this.get(id);
-    if (created === null) {
-      throw new StorageError('item vanished immediately after insert', {
-        operation: 'create',
-        type: input.type,
-        id,
-      });
-    }
     return created;
   }
 
@@ -155,7 +173,7 @@ export class ItemStore {
     return rows.map(toItem);
   }
 
-  /** Soft-deleted rows, for the purge screen. The one read that ignores `deleted_at`. */
+  /** Soft-deleted rows, for the Deleted view. One of the named exceptions in CODESTYLE §10. */
   async listDeleted(): Promise<Item[]> {
     const rows = await this.driver.query<ItemRow>(
       `SELECT ${COLUMNS} FROM items WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`,
@@ -196,12 +214,11 @@ export class ItemStore {
     assignments.push('updated_at = ?');
     params.push(nowTimestamp(this.clock));
     params.push(id);
-    await this.driver.run(`UPDATE items SET ${assignments.join(', ')} WHERE id = ?`, params);
-    const updated = await this.get(id);
-    if (updated === null) {
-      throw new StorageError('item vanished during update', { operation: 'update', id });
-    }
-    return updated;
+    const driver = this.driver;
+    return driver.transaction(async function updateItem(this: void) {
+      await driver.run(`UPDATE items SET ${assignments.join(', ')} WHERE id = ?`, params);
+      return readBackChecked(driver, id, 'update');
+    });
   }
 
   /** SPECS §4.1: a soft delete sets `deleted_at` and retains any attached file. */

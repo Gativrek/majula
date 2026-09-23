@@ -76,7 +76,11 @@ export function BackupPanel({ context, onDataChanged }: BackupPanelProps) {
     await run('Purge', async function purge() {
       const result = await purgeNow(context);
       await onDataChanged();
-      return `Purged ${result.purgedRows} item(s) and ${result.removedFiles} file(s).`;
+      const kept =
+        result.keptReferenced === 0
+          ? ''
+          : ` Kept ${result.keptReferenced} still used by a routine or past workout.`;
+      return `Purged ${result.purgedRows} item(s) and ${result.removedFiles} file(s).${kept}`;
     });
   }
 

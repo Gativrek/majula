@@ -95,6 +95,8 @@ export async function countPurgeable(context: AppContext): Promise<number> {
 export interface PurgeSummary {
   purgedRows: number;
   removedFiles: number;
+  /** Deleted exercises and routines kept because a surviving workout still uses them. */
+  keptReferenced: number;
 }
 
 /**
@@ -103,7 +105,7 @@ export interface PurgeSummary {
  * rather than a row pointing at nothing.
  */
 export async function purgeNow(context: AppContext): Promise<PurgeSummary> {
-  const { purgedRows, orphanedFiles } = await purgeDeleted(context.driver);
+  const { purgedRows, orphanedFiles, keptReferenced } = await purgeDeleted(context.driver);
   let removedFiles = 0;
   for (const path of orphanedFiles) {
     try {
@@ -118,5 +120,5 @@ export async function purgeNow(context: AppContext): Promise<PurgeSummary> {
       });
     }
   }
-  return { purgedRows, removedFiles };
+  return { purgedRows, removedFiles, keptReferenced };
 }

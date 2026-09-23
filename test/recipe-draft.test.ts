@@ -3,12 +3,8 @@ import { describe, it } from 'node:test';
 import { validatePayload } from '../src/data/payload.ts';
 import { ValidationError } from '../src/lib/errors.ts';
 import type { RecipeDraft } from '../src/services/recipe-draft.ts';
-import {
-  buildRecipe,
-  draftFromRecipe,
-  formatIngredient,
-  parseQuantity,
-} from '../src/services/recipe-draft.ts';
+import { buildRecipe, draftFromRecipe, formatIngredient } from '../src/services/recipe-draft.ts';
+import { parseQuantity } from '../src/services/quantity.ts';
 
 function draft(overrides: Partial<RecipeDraft> = {}): RecipeDraft {
   return {
