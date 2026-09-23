@@ -5,6 +5,7 @@
  * on the device, and an in-memory one under `node --test`.
  */
 
+import { base64ToBytes, bytesToBase64 } from '../lib/base64.ts';
 import { StorageError } from '../lib/errors.ts';
 import { log } from '../lib/logger.ts';
 
@@ -19,6 +20,9 @@ export interface FileStore {
   ensureDirectory(root: StorageRoot, path: string): Promise<void>;
   writeText(root: StorageRoot, path: string, contents: string): Promise<void>;
   readText(root: StorageRoot, path: string): Promise<string>;
+  /** Binary files — attached PDFs (ADR-004). */
+  writeBytes(root: StorageRoot, path: string, bytes: Uint8Array): Promise<void>;
+  readBytes(root: StorageRoot, path: string): Promise<Uint8Array>;
   exists(root: StorageRoot, path: string): Promise<boolean>;
   listDirectory(root: StorageRoot, path: string): Promise<string[]>;
   copyFile(
@@ -77,6 +81,26 @@ export async function createDeviceFileStore(): Promise<FileStore> {
         throw new StorageError('expected UTF-8 text', { operation: 'readText' });
       }
       return result.data;
+    },
+
+    async writeBytes(root, path, bytes) {
+      // No `encoding`: the plugin then treats `data` as base64 and writes raw bytes.
+      await Filesystem.writeFile({
+        path,
+        data: bytesToBase64(bytes),
+        directory: directoryFor[root],
+        recursive: true,
+      });
+    },
+
+    async readBytes(root, path) {
+      const result = await Filesystem.readFile({ path, directory: directoryFor[root] });
+      if (typeof result.data !== 'string') {
+        throw new StorageError('expected base64 from the native bridge', {
+          operation: 'readBytes',
+        });
+      }
+      return base64ToBytes(result.data);
     },
 
     async exists(root, path) {

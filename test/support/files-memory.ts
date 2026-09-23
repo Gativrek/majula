@@ -13,7 +13,7 @@ export interface MemoryFileStore extends FileStore {
 }
 
 export function createMemoryFileStore(): MemoryFileStore {
-  const files: Record<StorageRoot, Map<string, string>> = {
+  const files: Record<StorageRoot, Map<string, string | Uint8Array>> = {
     export: new Map(),
     private: new Map(),
   };
@@ -22,7 +22,7 @@ export function createMemoryFileStore(): MemoryFileStore {
     private: new Set(),
   };
 
-  function readOrThrow(root: StorageRoot, path: string): string {
+  function readOrThrow(root: StorageRoot, path: string): string | Uint8Array {
     const contents = files[root].get(path);
     if (contents === undefined) throw new Error(`no such file: ${root}:${path}`);
     return contents;
@@ -46,7 +46,18 @@ export function createMemoryFileStore(): MemoryFileStore {
     },
 
     async readText(root, path) {
-      return readOrThrow(root, path);
+      const contents = readOrThrow(root, path);
+      if (typeof contents !== 'string') throw new Error(`binary file read as text: ${path}`);
+      return contents;
+    },
+
+    async writeBytes(root, path, bytes) {
+      files[root].set(path, new Uint8Array(bytes));
+    },
+
+    async readBytes(root, path) {
+      const contents = readOrThrow(root, path);
+      return typeof contents === 'string' ? new TextEncoder().encode(contents) : contents;
     },
 
     async exists(root, path) {

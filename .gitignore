@@ -14,3 +14,6 @@ android/local.properties
 android/capacitor-cordova-android-plugins/
 *.apk
 *.keystore
+
+# Generated from node_modules/pdfjs-dist by scripts/copy-pdfjs-assets.mjs.
+public/pdfjs/
