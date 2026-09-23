@@ -80,3 +80,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - Phase 2 acceptance: PASSED on the owner's phone, all eight checks, on the build carrying the corrected migration 002. Body-only search, prefix search, multi-word AND, soft-delete exclusion and restore, the four type views, tag capture and tag view, and search surviving an export/import round trip.
 - Check 5 is the one that matters most: an item captured in Phase 1, before `items_fts` existed, was found by a word in its body. That is the migration's `rebuild` doing its job on real data, and it is the failure that would otherwise have been invisible — search would simply never have found anything older than the index.
+
+---
+
+## 2026-09-23 — Phase 4 decisions
+
+- §4.3 recipe ingredients: `qty` and `unit` OPTIONAL, `name` required. Owner's decision. A required numeric `qty` cannot represent "sal a gosto" or "a pinch of salt", and would force either a made-up number or moving the ingredient into a step, where the list stops being scannable at the counter. Rejected: keeping `qty` required; and allowing `0` displayed as blank, which makes `0` stop meaning zero — a silent misreading of exactly the kind CODESTYLE §6 exists to prevent. Payload shape only; no migration.
+- Kitchen mode keep-awake: the platform's Screen Wake Lock API (`navigator.wakeLock`), not `@capacitor-community/keep-awake`. §6 names that plugin "or equivalent", but CODESTYLE §11 prefers a platform API over a package, and a package would need an ADR under §8. MDN's compatibility data marks Android WebView as mirroring Chrome Android, where the API is supported, and Capacitor serves the app from `https://localhost`, which satisfies its secure-context requirement. "Mirror" is inherited data rather than a tested result, so it is verified on the device like GATE V1 was: acquisition logs `kitchen.wake_lock` with its outcome, and a refusal is visible rather than silent. Only if the device refuses does the plugin come back, with an ADR.

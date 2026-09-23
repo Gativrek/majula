@@ -58,7 +58,7 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 - **Network log.** Capture only: name, where met, short context. No follow-up reminders.
 - **Habit streak.** Habit definitions; one tap logs today. Displays current streak. Tapping again on the same day undoes.
 - **Running-low list.** Tap to add an item when noticed; check off when bought. This is the grocery list. No quantities.
-- **Cookbook.** Recipes with ingredients (quantity, unit, name), ordered steps, servings. Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
+- **Cookbook.** Recipes with ingredients (optional quantity, optional unit, name), ordered steps, servings. Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
 - **Workout routine.** Routine templates (exercises with sets, reps, load) and session logs. Exercises come from a catalog of `exercise` entities referenced by id, not free text: ACCEPTED 2026-09-21. Built last.
 - **Places to try.** Name, optional note, optional coordinates.
 
@@ -228,7 +228,8 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
 { "type": "recipe", "title": "Feijão tropeiro",
   "payload": {
     "servings": 4,
-    "ingredients": [ { "qty": 500, "unit": "g", "name": "feijão" } ],
+    "ingredients": [ { "qty": 500, "unit": "g", "name": "feijão" },
+                     { "name": "sal a gosto" } ],
     "steps": [ "Cozinhe o feijão...", "..." ]
   } }
 
@@ -247,6 +248,12 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
 // place
 { "type": "place", "title": "Café on Rua X", "payload": { "lat": -12.34, "lon": -56.0 } }
 ```
+
+**Recipe ingredients.** ACCEPTED 2026-09-23: `qty` and `unit` are each optional; `name` is
+required. "Sal a gosto" and "a pinch of salt" are real ingredients with no number, and a
+required `qty` would force a made-up one or push the ingredient into a step where the
+list can no longer be scanned. `qty`, when present, is a finite number. No SQL change:
+this is the payload shape, validated in the data layer.
 
 **Exercise catalog.** ACCEPTED 2026-09-21: routines and logs reference `exercise` entities by
 id rather than storing free-text names. Renaming an exercise propagates to every routine and
