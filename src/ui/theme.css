@@ -489,3 +489,46 @@ body {
   font-weight: 600;
   text-align: right;
 }
+
+/* The PDF viewer: the page fills the width, and everything else gets out of its way. */
+.viewer__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--colour-background);
+}
+
+.viewer__page {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.viewer__actions {
+  align-items: center;
+}
+
+.viewer__position {
+  flex: 1;
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.viewer__actions .button {
+  flex: 0 0 auto;
+  min-width: var(--tap-target);
+}
+
+.reading__link {
+  color: var(--colour-gold);
+}
+
+.reading__pdf {
+  margin-top: var(--space-5);
+}

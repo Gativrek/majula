@@ -11,6 +11,9 @@ import { ItemRow } from './ItemRow.tsx';
  * done flag. Everything else shares one row.
  */
 
+/** Types that open into a screen of their own when tapped. */
+const OPENABLE_TYPES: readonly Item['type'][] = ['recipe', 'reading'];
+
 interface ItemListProps {
   items: readonly Item[];
   emptyMessage: string;
@@ -57,7 +60,7 @@ export function ItemList({
             onToggleDone={onToggleDone}
             onDelete={onDelete}
             {...(onRestore === undefined ? {} : { onRestore })}
-            {...(onOpen === undefined || item.type !== 'recipe' ? {} : { onOpen })}
+            {...(onOpen === undefined || !OPENABLE_TYPES.includes(item.type) ? {} : { onOpen })}
           />
         ),
       )}

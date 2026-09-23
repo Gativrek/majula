@@ -9,6 +9,12 @@ import type { RecipeDraft } from '../services/recipe-draft.ts';
 import { draftFromRecipe, newRecipeDraft } from '../services/recipe-draft.ts';
 import { addRecipe, getRecipe, saveRecipe } from '../services/recipes.ts';
 import {
+  attachPdf,
+  openReadingPdf,
+  saveLastPage,
+  saveReadingDetails,
+} from '../services/reading.ts';
+import {
   captureItem,
   deleteItem,
   listDeletedItems,
@@ -22,6 +28,8 @@ import { BackupPanel } from './BackupPanel.tsx';
 import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
 import { RecipeEditor } from './RecipeEditor.tsx';
+import { PdfViewer } from './PdfViewer.tsx';
+import { ReadingDetail } from './ReadingDetail.tsx';
 import { RecipeView } from './RecipeView.tsx';
 import { useBackStep } from './use-back-step.ts';
 import { ItemList } from './ItemList.tsx';
@@ -48,6 +56,12 @@ type OpenRecipe =
   | { mode: 'view'; recipe: ItemOfType<'recipe'> }
   | { mode: 'edit'; recipe: ItemOfType<'recipe'> }
   | { mode: 'new'; draft: RecipeDraft; tags: string[] };
+
+/** A reading entry open full-screen: its detail, or its PDF in the viewer. */
+interface OpenReading {
+  mode: 'detail' | 'pdf';
+  reading: ItemOfType<'reading'>;
+}
 
 interface StartupFailure {
   stage: 'open' | 'migrate' | 'files' | 'unknown';
@@ -89,6 +103,7 @@ export function App() {
   const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [tags, setTags] = useState<TagCount[]>([]);
   const [openRecipe, setOpenRecipe] = useState<OpenRecipe | null>(null);
+  const [openReading, setOpenReading] = useState<OpenReading | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -113,6 +128,17 @@ export function App() {
       cancelled = true;
     };
   }, []);
+
+  // The viewer opens its document in an effect keyed on this function, so it changes only
+  // when a different entry is opened — not when a page turn re-reads the same one.
+  const openReadingId = openReading?.reading.id;
+  const openPdf = useCallback(
+    async function openCurrentPdf() {
+      if (context === null || openReadingId === undefined) return { status: 'none' as const };
+      return openReadingPdf(context, openReadingId);
+    },
+    [context, openReadingId],
+  );
 
   const refresh = useCallback(
     async function refreshVisibleItems(): Promise<void> {
@@ -175,6 +201,7 @@ export function App() {
 
   function onOpen(item: Item): void {
     if (item.type === 'recipe') setOpenRecipe({ mode: 'view', recipe: item });
+    if (item.type === 'reading') setOpenReading({ mode: 'detail', reading: item });
   }
 
   async function onSaveRecipe(id: string, draft: RecipeDraft) {
@@ -209,6 +236,14 @@ export function App() {
   });
   useBackStep(openRecipe !== null, function closeRecipe() {
     setOpenRecipe(null);
+  });
+  useBackStep(openReading !== null, function closeReading() {
+    setOpenReading(null);
+  });
+  useBackStep(openReading?.mode === 'pdf', function closeViewer() {
+    setOpenReading((current) =>
+      current?.mode === 'pdf' ? { mode: 'detail', reading: current.reading } : current,
+    );
   });
   useBackStep(openRecipe?.mode === 'edit', function cancelEdit() {
     setOpenRecipe((current) =>
@@ -247,6 +282,48 @@ export function App() {
         recipe={recipe}
         onClose={() => setOpenRecipe(null)}
         onEdit={() => setOpenRecipe({ mode: 'edit', recipe })}
+      />
+    );
+  }
+
+  /** Re-read an entry after a change so the detail screen shows what was stored. */
+  async function reloadReading(id: string): Promise<void> {
+    if (context === null) return;
+    const fresh = await context.items.get(id);
+    setOpenReading((current) =>
+      current !== null && fresh?.type === 'reading' ? { ...current, reading: fresh } : current,
+    );
+    await refresh();
+  }
+
+  function renderReading(open: OpenReading, ready: AppContext) {
+    const { reading } = open;
+    if (open.mode === 'pdf') {
+      return (
+        <PdfViewer
+          title={reading.title}
+          open={openPdf}
+          onPageChange={(page) => void saveLastPage(ready, reading.id, page)}
+          onClose={() => void reloadReading(reading.id)}
+        />
+      );
+    }
+    return (
+      <ReadingDetail
+        key={reading.id}
+        reading={reading}
+        onSaveDetails={async (details) => {
+          const result = await saveReadingDetails(ready, reading.id, details);
+          if (result.ok) await reloadReading(reading.id);
+          return result;
+        }}
+        onAttach={async (bytes) => {
+          const result = await attachPdf(ready, reading.id, bytes);
+          if (result.ok) await reloadReading(reading.id);
+          return result;
+        }}
+        onOpenPdf={() => setOpenReading({ mode: 'pdf', reading })}
+        onClose={() => setOpenReading(null)}
       />
     );
   }
@@ -290,6 +367,9 @@ export function App() {
 
   if (openRecipe !== null) {
     return <div class="app">{renderRecipe(openRecipe)}</div>;
+  }
+  if (openReading !== null && context !== null) {
+    return <div class="app">{renderReading(openReading, context)}</div>;
   }
 
   return (

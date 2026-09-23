@@ -66,8 +66,10 @@ export async function openPdf(bytes: Uint8Array): Promise<PdfHandle> {
 
       canvas.width = Math.floor(viewport.width * density);
       canvas.height = Math.floor(viewport.height * density);
+      // Width only. The height follows from the canvas's own proportions (`height: auto` in
+      // the theme), so if the frame narrows before the next render — the phone rotating —
+      // the page shrinks evenly instead of being squeezed sideways.
       canvas.style.width = `${Math.floor(viewport.width)}px`;
-      canvas.style.height = `${Math.floor(viewport.height)}px`;
 
       await page.render({
         canvas,

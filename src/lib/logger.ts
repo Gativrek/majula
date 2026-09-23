@@ -35,7 +35,7 @@ function formatFields(fields: LogFields): string {
 function emit(level: LogLevel, event: string, fields: LogFields): void {
   if (LEVEL_ORDER[level] < LEVEL_ORDER[minimumLevel]) return;
   const formatted = formatFields(fields);
-  // eslint-disable-next-line no-console -- CODESTYLE §6: this is the single sink.
+  // CODESTYLE §6: the one place in the codebase that writes to the console.
   console[CONSOLE_METHOD[level]](formatted ? `${event} ${formatted}` : event);
 }
 

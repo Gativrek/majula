@@ -31,6 +31,14 @@ interface ItemRowProps {
   onOpen?: (item: Item) => void;
 }
 
+/** A reading entry's PDF progress, shown on its row. Everything else shows its type alone. */
+function metaFor(item: Item): string {
+  const label = TYPE_LABEL[item.type];
+  if (item.type !== 'reading' || item.payload.page_count === undefined) return label;
+  const page = item.payload.last_page ?? 1;
+  return `${label} · PDF · p. ${page} / ${item.payload.page_count}`;
+}
+
 export function ItemRow({ item, onToggleDone, onDelete, onRestore, onOpen }: ItemRowProps) {
   const isCheckable = CHECKABLE_TYPES.includes(item.type);
   const isDeleted = item.deletedAt !== null;
@@ -52,12 +60,12 @@ export function ItemRow({ item, onToggleDone, onDelete, onRestore, onOpen }: Ite
       {onOpen === undefined || isDeleted ? (
         <div class="item__content">
           <div class="item__title">{item.title}</div>
-          <div class="item__meta">{TYPE_LABEL[item.type]}</div>
+          <div class="item__meta">{metaFor(item)}</div>
         </div>
       ) : (
         <button type="button" class="item__content item__open" onClick={() => onOpen(item)}>
           <div class="item__title">{item.title}</div>
-          <div class="item__meta">{TYPE_LABEL[item.type]}</div>
+          <div class="item__meta">{metaFor(item)}</div>
         </button>
       )}
 

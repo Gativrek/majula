@@ -13,7 +13,7 @@ import type { ItemType } from '../data/types.ts';
  * (§2.1), and the default path — open, type, save — must not grow a field to skip past.
  */
 
-/** The types Phase 4 can capture. The rest arrive with the phases that build them. */
+/** The types Phase 5 can capture. The rest arrive with the phases that build them. */
 const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'note', label: 'Note' },
   { type: 'todo', label: 'To-do' },
@@ -21,6 +21,7 @@ const CAPTURABLE_TYPES: readonly { type: ItemType; label: string }[] = [
   { type: 'grocery', label: 'Running low' },
   { type: 'habit', label: 'Habit' },
   { type: 'recipe', label: 'Recipe' },
+  { type: 'reading', label: 'Reading' },
 ];
 
 /** Tags are separated by whitespace or commas, and stored exactly as typed. */

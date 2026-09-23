@@ -157,11 +157,16 @@ export type OpenedPdf =
   | { status: 'missing' }
   | { status: 'ok'; handle: PdfHandle; startPage: number };
 
-/** Open an entry's PDF for the viewer, on the page it was last left on (criterion 12). */
-export async function openReadingPdf(
-  context: AppContext,
-  reading: ItemOfType<'reading'>,
-): Promise<OpenedPdf> {
+/**
+ * Open an entry's PDF for the viewer, on the page it was last left on (criterion 12).
+ *
+ * Takes an id and reads the stored entry rather than accepting the caller's copy: a copy
+ * taken when the entry was opened carries the page from then, and reopening the viewer
+ * after reading on would start from the wrong page.
+ */
+export async function openReadingPdf(context: AppContext, readingId: string): Promise<OpenedPdf> {
+  const reading = await currentReading(context, readingId);
+  if (reading === null) return { status: 'none' };
   const lookup = await readPdf(context, reading);
   if (lookup.status !== 'ok') return lookup;
   const handle = await (await pdfModule()).openPdf(lookup.bytes);
