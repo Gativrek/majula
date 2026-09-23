@@ -238,3 +238,38 @@ describe('export and import with recipes', function recipeBackupSuite() {
     await target.close();
   });
 });
+
+/** ROADMAP Phase 6, done when: a place with and without coordinates both export cleanly. */
+describe('export and import with places', function placeBackupSuite() {
+  it('restores both, and the coordinates exactly', async function places() {
+    const source = openTestDatabase();
+    await runMigrations(source);
+    const store = storeFor(source, 1);
+    const located = await store.create({
+      type: 'place',
+      title: 'Café on Rua X',
+      body: 'the pão de queijo',
+      payload: { lat: -12.340001, lon: -56.000002 },
+    });
+    const unlocated = await store.create({ type: 'place', title: 'Somewhere in São Paulo' });
+
+    const files = createMemoryFileStore();
+    await exportDatabase(source, files);
+    await source.close();
+
+    const target = openTestDatabase();
+    await runMigrations(target);
+    await importDatabase(target, files);
+    const restored = storeFor(target, 2);
+
+    const back = await restored.get(located.id);
+    assert.equal(back?.type, 'place');
+    if (back?.type !== 'place') return;
+    assert.deepEqual(back.payload, { lat: -12.340001, lon: -56.000002 });
+    assert.equal(back.body, 'the pão de queijo');
+
+    const bare = await restored.get(unlocated.id);
+    assert.deepEqual(bare?.payload, {}, 'no coordinates stays no coordinates');
+    await target.close();
+  });
+});

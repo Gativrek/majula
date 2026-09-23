@@ -168,10 +168,16 @@ function workoutLogPayload(value: unknown, id: string | undefined): WorkoutLogPa
 
 function placePayload(value: unknown, id: string | undefined): PlacePayload {
   const raw = asObject(value, 'place', id);
-  const payload: PlacePayload = {};
-  if (raw.lat !== undefined) payload.lat = asFiniteNumber(raw.lat, 'lat', 'place', id);
-  if (raw.lon !== undefined) payload.lon = asFiniteNumber(raw.lon, 'lon', 'place', id);
-  return payload;
+  // places.md: both or neither. A latitude with no longitude is not a place.
+  if ((raw.lat === undefined) !== (raw.lon === undefined)) {
+    fail('payload', 'lat and lon must be both present or both absent', 'place', id);
+  }
+  if (raw.lat === undefined) return {};
+  const lat = asFiniteNumber(raw.lat, 'lat', 'place', id);
+  const lon = asFiniteNumber(raw.lon, 'lon', 'place', id);
+  if (lat < -90 || lat > 90) fail('payload.lat', 'must be between -90 and 90', 'place', id);
+  if (lon < -180 || lon > 180) fail('payload.lon', 'must be between -180 and 180', 'place', id);
+  return { lat, lon };
 }
 
 /**

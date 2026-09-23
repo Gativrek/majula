@@ -68,11 +68,25 @@ describe('payload validation', function payloadSuite() {
     assert.deepEqual(validatePayload('workout_log', payload), payload);
   });
 
-  it('treats a missing optional coordinate as absent, not as zero', function place() {
-    assert.deepEqual(validatePayload('place', { lat: -12.34 }), { lat: -12.34 });
+  it('accepts a place with no coordinates, or with both', function place() {
+    assert.deepEqual(validatePayload('place', {}), {});
+    assert.deepEqual(validatePayload('place', { lat: -12.34, lon: -56 }), {
+      lat: -12.34,
+      lon: -56,
+    });
+  });
+
+  it('refuses a latitude without a longitude (places.md)', function halfPair() {
+    assert.throws(() => validatePayload('place', { lat: -12.34 }), ValidationError);
+    assert.throws(() => validatePayload('place', { lon: -56 }), ValidationError);
+  });
+
+  it('refuses coordinates out of range', function outOfRange() {
+    assert.throws(() => validatePayload('place', { lat: 91, lon: 0 }), ValidationError);
+    assert.throws(() => validatePayload('place', { lat: 0, lon: -181 }), ValidationError);
   });
 
   it('rejects a coordinate that is not a finite number', function badCoordinate() {
-    assert.throws(() => validatePayload('place', { lat: 'south' }), ValidationError);
+    assert.throws(() => validatePayload('place', { lat: 'south', lon: 0 }), ValidationError);
   });
 });
