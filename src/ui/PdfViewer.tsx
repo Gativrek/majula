@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { log } from '../lib/logger.ts';
 import type { PdfHandle } from '../services/pdf-document.ts';
 import type { OpenedPdf } from '../services/reading.ts';
 
@@ -77,6 +78,10 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
     [open],
   );
 
+  /**
+   * Called with `void` from effects and resize, so it owns every failure itself: nothing
+   * it starts may reject unhandled (CODESTYLE §8).
+   */
   async function drawWantedPage(handle: PdfHandle): Promise<void> {
     if (rendering.current) return;
     rendering.current = true;
@@ -89,6 +94,17 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
         await handle.renderPage(target, surface, width);
         if (wantedPage.current === target) return;
       }
+    } catch (error) {
+      // Closing the viewer mid-render destroys the document, and PDF.js rejects the render
+      // in flight. That is the close working, not a fault.
+      if (error instanceof Error && error.name === 'RenderingCancelledException') {
+        log.debug('reading.render_cancelled', {});
+        return;
+      }
+      setStatus({
+        kind: 'failed',
+        message: error instanceof Error ? error.message : 'the page could not be drawn',
+      });
     } finally {
       rendering.current = false;
     }
