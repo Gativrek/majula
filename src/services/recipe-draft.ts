@@ -120,6 +120,14 @@ export function buildRecipe(draft: RecipeDraft): DraftResult {
   return { ok: true, title, payload: { servings, ingredients, steps } };
 }
 
+/**
+ * The editor's starting state for a recipe being added from quick capture. Nothing exists
+ * in the database yet, and nothing will until Save (cookbook.md criterion 1).
+ */
+export function newRecipeDraft(title: string): RecipeDraft {
+  return { title, servings: '1', ingredients: [], steps: [] };
+}
+
 /** The editor's starting state for an existing recipe. */
 export function draftFromRecipe(title: string, payload: RecipePayload): RecipeDraft {
   return {

@@ -6,7 +6,8 @@ import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
 import { initialiseApp, StartupError } from '../services/database.ts';
 import type { RecipeDraft } from '../services/recipe-draft.ts';
-import { createRecipe, getRecipe, saveRecipe } from '../services/recipes.ts';
+import { draftFromRecipe, newRecipeDraft } from '../services/recipe-draft.ts';
+import { addRecipe, getRecipe, saveRecipe } from '../services/recipes.ts';
 import {
   captureItem,
   deleteItem,
@@ -22,6 +23,7 @@ import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
 import { RecipeEditor } from './RecipeEditor.tsx';
 import { RecipeView } from './RecipeView.tsx';
+import { useBackStep } from './use-back-step.ts';
 import { ItemList } from './ItemList.tsx';
 import { QuickCapture } from './QuickCapture.tsx';
 
@@ -38,11 +40,14 @@ interface TagCount {
   count: number;
 }
 
-/** A recipe open full-screen, either read in kitchen mode or being edited. */
-interface OpenRecipe {
-  recipe: ItemOfType<'recipe'>;
-  mode: 'view' | 'edit';
-}
+/**
+ * A recipe open full-screen: read in kitchen mode, being edited, or being added. A new
+ * recipe is only a draft — it has no row until Save (SPECS §2.2, Back).
+ */
+type OpenRecipe =
+  | { mode: 'view'; recipe: ItemOfType<'recipe'> }
+  | { mode: 'edit'; recipe: ItemOfType<'recipe'> }
+  | { mode: 'new'; draft: RecipeDraft; tags: string[] };
 
 interface StartupFailure {
   stage: 'open' | 'migrate' | 'files' | 'unknown';
@@ -140,11 +145,9 @@ export function App() {
   async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
     if (context === null) return;
     if (type === 'recipe') {
-      // cookbook.md criterion 1: a captured recipe opens straight into the editor, so it
-      // is never left as a bare title without the owner seeing it.
-      const recipe = await createRecipe(context, title, itemTags);
-      setOpenRecipe({ recipe, mode: 'edit' });
-      await refresh();
+      // cookbook.md criterion 1: a captured recipe opens straight into the editor, and
+      // nothing is written until Save, so backing out of the add leaves no row.
+      setOpenRecipe({ mode: 'new', draft: newRecipeDraft(title), tags: itemTags });
       return;
     }
     await captureItem(context, { type, title, tags: itemTags });
@@ -171,7 +174,7 @@ export function App() {
   }
 
   function onOpen(item: Item): void {
-    if (item.type === 'recipe') setOpenRecipe({ recipe: item, mode: 'view' });
+    if (item.type === 'recipe') setOpenRecipe({ mode: 'view', recipe: item });
   }
 
   async function onSaveRecipe(id: string, draft: RecipeDraft) {
@@ -179,16 +182,73 @@ export function App() {
     const result = await saveRecipe(context, id, draft);
     if (result.ok) {
       const saved = await getRecipe(context, id);
-      setOpenRecipe(saved === null ? null : { recipe: saved, mode: 'view' });
+      setOpenRecipe(saved === null ? null : { mode: 'view', recipe: saved });
       await refresh();
     }
     return result;
   }
 
+  async function onAddRecipe(draft: RecipeDraft, recipeTags: readonly string[]) {
+    if (context === null) return { ok: false as const, field: 'app', message: 'Not ready.' };
+    const result = await addRecipe(context, draft, recipeTags);
+    if (result.ok) {
+      setOpenRecipe({ mode: 'view', recipe: result.recipe });
+      await refresh();
+    }
+    return result;
+  }
+
+  /*
+   * SPECS §2.2, Back. Each layer below is one step the back button undoes, newest first:
+   * an edit to an existing recipe returns to it unchanged; an open or new recipe closes,
+   * and a new one closes having written nothing; Deleted and Backup return to the list.
+   * On the list itself no step is active, so back leaves the app.
+   */
+  useBackStep(view !== 'items', function backToList() {
+    setView('items');
+  });
+  useBackStep(openRecipe !== null, function closeRecipe() {
+    setOpenRecipe(null);
+  });
+  useBackStep(openRecipe?.mode === 'edit', function cancelEdit() {
+    setOpenRecipe((current) =>
+      current?.mode === 'edit' ? { mode: 'view', recipe: current.recipe } : current,
+    );
+  });
+
   async function onRestore(item: Item): Promise<void> {
     if (context === null) return;
     await restoreItem(context, item.id);
     await refresh();
+  }
+
+  function renderRecipe(open: OpenRecipe) {
+    if (open.mode === 'new') {
+      return (
+        <RecipeEditor
+          initial={open.draft}
+          onSave={(draft) => onAddRecipe(draft, open.tags)}
+          onCancel={() => setOpenRecipe(null)}
+        />
+      );
+    }
+    const { recipe } = open;
+    if (open.mode === 'edit') {
+      return (
+        <RecipeEditor
+          initial={draftFromRecipe(recipe.title, recipe.payload)}
+          onSave={(draft) => onSaveRecipe(recipe.id, draft)}
+          onCancel={() => setOpenRecipe({ mode: 'view', recipe })}
+        />
+      );
+    }
+    return (
+      <RecipeView
+        recipe={recipe}
+        onClose={() => setOpenRecipe(null)}
+        onEdit={() => setOpenRecipe({ mode: 'edit', recipe })}
+      />
+    );
   }
 
   function renderMain() {
@@ -229,24 +289,7 @@ export function App() {
   }
 
   if (openRecipe !== null) {
-    const { recipe, mode } = openRecipe;
-    return (
-      <div class="app">
-        {mode === 'view' ? (
-          <RecipeView
-            recipe={recipe}
-            onClose={() => setOpenRecipe(null)}
-            onEdit={() => setOpenRecipe({ recipe, mode: 'edit' })}
-          />
-        ) : (
-          <RecipeEditor
-            recipe={recipe}
-            onSave={(draft) => onSaveRecipe(recipe.id, draft)}
-            onCancel={() => setOpenRecipe({ recipe, mode: 'view' })}
-          />
-        )}
-      </div>
-    );
+    return <div class="app">{renderRecipe(openRecipe)}</div>;
   }
 
   return (

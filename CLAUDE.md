@@ -231,6 +231,20 @@ that touches `items` or `items_fts`:
 11. Export, reinstall, import: the recipe returns with every ingredient and step, and
     "sal a gosto" still has no number.
 
+**Back button** (`SPECS.md` §2.2, Back) — undoes one step, never commits:
+
+1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
+   and **no recipe exists** — not in the list, not under **Deleted**.
+2. Open a recipe, tap Edit, change something, press back. You are back on the recipe and
+   the change is gone. Back again closes it.
+3. Save an edit with the Save button, then press back **once**. The recipe closes. (If it
+   takes two presses, a spent history entry is being consumed — that is the bug the back
+   stack exists to prevent.)
+4. Open **Backup** or **Deleted**, press back. You are on the list.
+5. On the list with nothing open, press back. The app leaves, as any Android app does.
+6. On Import or Purge's confirmation dialog, press back. The dialog closes and nothing
+   happens.
+
 **GATE V1 — CLOSED 2026-09-21: FTS5 is available.** Verified on the device, logged in
 `DECISIONS.md`, and the probe that answered it has been deleted. Search takes the FTS5
 path and there is no `LIKE` fallback to fall into.

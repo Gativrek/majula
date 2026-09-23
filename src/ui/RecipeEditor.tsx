@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import type { ItemOfType } from '../data/types.ts';
-import type { DraftResult, IngredientDraft, RecipeDraft } from '../services/recipe-draft.ts';
-import { draftFromRecipe, EMPTY_INGREDIENT } from '../services/recipe-draft.ts';
+import type { IngredientDraft, RecipeDraft } from '../services/recipe-draft.ts';
+import { EMPTY_INGREDIENT } from '../services/recipe-draft.ts';
 
 /**
  * The recipe editor (`docs/modules/cookbook.md` criteria 1–8).
@@ -27,9 +26,13 @@ function row<T>(value: T): Row<T> {
   return { key: nextRowKey, value };
 }
 
+/** All the editor needs from a save: it worked, or here is what to tell the owner. */
+type SaveOutcome = { ok: true } | { ok: false; message: string };
+
 interface RecipeEditorProps {
-  recipe: ItemOfType<'recipe'>;
-  onSave: (draft: RecipeDraft) => Promise<DraftResult>;
+  /** An existing recipe's state, or a new one's that is not in the database yet. */
+  initial: RecipeDraft;
+  onSave: (draft: RecipeDraft) => Promise<SaveOutcome>;
   onCancel: () => void;
 }
 
@@ -37,8 +40,7 @@ function inputValue(event: Event): string {
   return (event.currentTarget as HTMLInputElement | HTMLTextAreaElement).value;
 }
 
-export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
-  const initial = draftFromRecipe(recipe.title, recipe.payload);
+export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
   const [title, setTitle] = useState(initial.title);
   const [servings, setServings] = useState(initial.servings);
   const [ingredients, setIngredients] = useState<Row<IngredientDraft>[]>(() =>
