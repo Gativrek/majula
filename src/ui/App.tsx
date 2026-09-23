@@ -4,22 +4,9 @@ import { log } from '../lib/logger.ts';
 import type { HabitState } from '../services/habits.ts';
 import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
-import { initialiseApp, StartupError } from '../services/database.ts';
-import type { RecipeDraft } from '../services/recipe-draft.ts';
-import { draftFromRecipe, newRecipeDraft } from '../services/recipe-draft.ts';
-import { addRecipe, getRecipe, saveRecipe } from '../services/recipes.ts';
-import {
-  attachPdf,
-  openReadingPdf,
-  saveLastPage,
-  saveReadingDetails,
-} from '../services/reading.ts';
-import { locateHere } from '../services/location.ts';
-import {
-  clearPlaceCoordinates,
-  savePlaceDetails,
-  setPlaceCoordinates,
-} from '../services/places.ts';
+import { initialiseApp } from '../services/database.ts';
+import { newRecipeDraft } from '../services/recipe-draft.ts';
+import { newRoutineDraft } from '../services/workout-draft.ts';
 import {
   captureItem,
   deleteItem,
@@ -33,17 +20,13 @@ import {
 import { BackupPanel } from './BackupPanel.tsx';
 import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
-import { RecipeEditor } from './RecipeEditor.tsx';
-import { PdfViewer } from './PdfViewer.tsx';
-import { PlaceDetail } from './PlaceDetail.tsx';
-import type { WorkoutScreen } from './WorkoutScreens.tsx';
-import { WorkoutScreens } from './WorkoutScreens.tsx';
-import { newRoutineDraft } from '../services/workout-draft.ts';
-import { ReadingDetail } from './ReadingDetail.tsx';
-import { RecipeView } from './RecipeView.tsx';
-import { useBackStep } from './use-back-step.ts';
 import { ItemList } from './ItemList.tsx';
+import type { OpenScreen } from './OpenScreenView.tsx';
+import { OpenScreenView, screenFor } from './OpenScreenView.tsx';
+import type { StartupFailure } from './StartupBanner.tsx';
+import { StartupBanner, startupFailureFrom } from './StartupBanner.tsx';
 import { QuickCapture } from './QuickCapture.tsx';
+import { useBackStep } from './use-back-step.ts';
 
 type View = 'items' | 'deleted' | 'backup';
 
@@ -56,43 +39,6 @@ const VIEW_LABEL: Record<View, string> = {
 interface TagCount {
   tag: string;
   count: number;
-}
-
-/**
- * A recipe open full-screen: read in kitchen mode, being edited, or being added. A new
- * recipe is only a draft — it has no row until Save (SPECS §2.2, Back).
- */
-type OpenRecipe =
-  | { mode: 'view'; recipe: ItemOfType<'recipe'> }
-  | { mode: 'edit'; recipe: ItemOfType<'recipe'> }
-  | { mode: 'new'; draft: RecipeDraft; tags: string[] };
-
-/** A reading entry open full-screen: its detail, or its PDF in the viewer. */
-interface OpenReading {
-  mode: 'detail' | 'pdf';
-  reading: ItemOfType<'reading'>;
-}
-
-interface StartupFailure {
-  stage: 'open' | 'migrate' | 'files' | 'unknown';
-  detail: string;
-}
-
-/**
- * What to tell the owner. Each stage has a different cause and a different next step, so
- * the screen says which one it was rather than guessing at the most likely.
- */
-function startupAdvice(failure: StartupFailure): string {
-  switch (failure.stage) {
-    case 'open':
-      return 'SQLite is a native plugin, so this happens in a desktop browser. On the phone it means the database could not be opened at all.';
-    case 'migrate':
-      return 'The database opened but its schema could not be brought up to date. The data is untouched; the logs carry the failing migration under migration.start.';
-    case 'files':
-      return 'The database is fine, but app storage could not be reached, so export and import will not work.';
-    default:
-      return 'Startup failed before the app could tell what went wrong.';
-  }
 }
 
 function emptyMessage(view: View, query: string, filter: Filter): string {
@@ -112,10 +58,7 @@ export function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [tags, setTags] = useState<TagCount[]>([]);
-  const [openRecipe, setOpenRecipe] = useState<OpenRecipe | null>(null);
-  const [openReading, setOpenReading] = useState<OpenReading | null>(null);
-  const [openPlace, setOpenPlace] = useState<ItemOfType<'place'> | null>(null);
-  const [openWorkout, setOpenWorkout] = useState<WorkoutScreen | null>(null);
+  const [open, setOpen] = useState<OpenScreen | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -127,12 +70,7 @@ export function App() {
         log.error('app.startup_failed', {
           reason: error instanceof Error ? error.name : 'unknown',
         });
-        if (!cancelled) {
-          setStartupFailure({
-            stage: error instanceof StartupError ? error.stage : 'unknown',
-            detail: error instanceof Error ? error.message : 'an unknown failure',
-          });
-        }
+        if (!cancelled) setStartupFailure(startupFailureFrom(error));
       }
     }
     void start();
@@ -140,17 +78,6 @@ export function App() {
       cancelled = true;
     };
   }, []);
-
-  // The viewer opens its document in an effect keyed on this function, so it changes only
-  // when a different entry is opened — not when a page turn re-reads the same one.
-  const openReadingId = openReading?.reading.id;
-  const openPdf = useCallback(
-    async function openCurrentPdf() {
-      if (context === null || openReadingId === undefined) return { status: 'none' as const };
-      return openReadingPdf(context, openReadingId);
-    },
-    [context, openReadingId],
-  );
 
   const refresh = useCallback(
     async function refreshVisibleItems(): Promise<void> {
@@ -184,19 +111,25 @@ export function App() {
     if (context === null) return;
     if (type === 'routine') {
       // workout.md criterion 4: like a recipe, nothing is written until Save.
-      setOpenWorkout({ kind: 'routine-new', draft: newRoutineDraft(title), tags: itemTags });
+      setOpen({
+        module: 'workout',
+        initial: { kind: 'routine-new', draft: newRoutineDraft(title), tags: itemTags },
+      });
       return;
     }
     if (type === 'recipe') {
       // cookbook.md criterion 1: a captured recipe opens straight into the editor, and
       // nothing is written until Save, so backing out of the add leaves no row.
-      setOpenRecipe({ mode: 'new', draft: newRecipeDraft(title), tags: itemTags });
+      setOpen({
+        module: 'recipe',
+        initial: { mode: 'new', draft: newRecipeDraft(title), tags: itemTags },
+      });
       return;
     }
     const captured = await captureItem(context, { type, title, tags: itemTags });
     // places.md criterion 1: a new place opens with Here one tap away. It is already saved,
     // so this only opens it; back closes it and keeps the place.
-    if (captured.type === 'place') setOpenPlace(captured);
+    if (captured.type === 'place') setOpen({ module: 'place', place: captured });
     if (view !== 'items') setView('items');
     await refresh();
   }
@@ -220,63 +153,22 @@ export function App() {
   }
 
   function onOpen(item: Item): void {
-    if (item.type === 'recipe') setOpenRecipe({ mode: 'view', recipe: item });
-    if (item.type === 'reading') setOpenReading({ mode: 'detail', reading: item });
-    if (item.type === 'place') setOpenPlace(item);
-    if (item.type === 'routine') setOpenWorkout({ kind: 'routine', routine: item });
-    if (item.type === 'workout_log') setOpenWorkout({ kind: 'log', log: item });
-    if (item.type === 'exercise') setOpenWorkout({ kind: 'exercise', exercise: item });
-  }
-
-  async function onSaveRecipe(id: string, draft: RecipeDraft) {
-    if (context === null) return { ok: false as const, field: 'app', message: 'Not ready.' };
-    const result = await saveRecipe(context, id, draft);
-    if (result.ok) {
-      const saved = await getRecipe(context, id);
-      setOpenRecipe(saved === null ? null : { mode: 'view', recipe: saved });
-      await refresh();
-    }
-    return result;
-  }
-
-  async function onAddRecipe(draft: RecipeDraft, recipeTags: readonly string[]) {
-    if (context === null) return { ok: false as const, field: 'app', message: 'Not ready.' };
-    const result = await addRecipe(context, draft, recipeTags);
-    if (result.ok) {
-      setOpenRecipe({ mode: 'view', recipe: result.recipe });
-      await refresh();
-    }
-    return result;
+    const screen = screenFor(item);
+    if (screen !== null) setOpen(screen);
   }
 
   /*
-   * SPECS §2.2, Back. Each layer below is one step the back button undoes, newest first:
-   * an edit to an existing recipe returns to it unchanged; an open or new recipe closes,
-   * and a new one closes having written nothing; Deleted and Backup return to the list.
-   * On the list itself no step is active, so back leaves the app.
+   * SPECS §2.2, Back. Deleted and Backup return to the list; each open module registers
+   * its own steps above this one. On the list with nothing open, no step is active and
+   * back leaves the app.
    */
   useBackStep(view !== 'items', function backToList() {
     setView('items');
   });
-  useBackStep(openRecipe !== null, function closeRecipe() {
-    setOpenRecipe(null);
-  });
-  useBackStep(openPlace !== null, function closePlace() {
-    setOpenPlace(null);
-  });
-  useBackStep(openReading !== null, function closeReading() {
-    setOpenReading(null);
-  });
-  useBackStep(openReading?.mode === 'pdf', function closeViewer() {
-    setOpenReading((current) =>
-      current?.mode === 'pdf' ? { mode: 'detail', reading: current.reading } : current,
-    );
-  });
-  useBackStep(openRecipe?.mode === 'edit', function cancelEdit() {
-    setOpenRecipe((current) =>
-      current?.mode === 'edit' ? { mode: 'view', recipe: current.recipe } : current,
-    );
-  });
+
+  const closeOpen = useCallback(function closeOpenScreen() {
+    setOpen(null);
+  }, []);
 
   async function onRestore(item: Item): Promise<void> {
     if (context === null) return;
@@ -284,122 +176,8 @@ export function App() {
     await refresh();
   }
 
-  function renderRecipe(open: OpenRecipe) {
-    if (open.mode === 'new') {
-      return (
-        <RecipeEditor
-          initial={open.draft}
-          onSave={(draft) => onAddRecipe(draft, open.tags)}
-          onCancel={() => setOpenRecipe(null)}
-        />
-      );
-    }
-    const { recipe } = open;
-    if (open.mode === 'edit') {
-      return (
-        <RecipeEditor
-          initial={draftFromRecipe(recipe.title, recipe.payload)}
-          onSave={(draft) => onSaveRecipe(recipe.id, draft)}
-          onCancel={() => setOpenRecipe({ mode: 'view', recipe })}
-        />
-      );
-    }
-    return (
-      <RecipeView
-        recipe={recipe}
-        onClose={() => setOpenRecipe(null)}
-        onEdit={() => setOpenRecipe({ mode: 'edit', recipe })}
-      />
-    );
-  }
-
-  /** Re-read an entry after a change so the detail screen shows what was stored. */
-  async function reloadReading(id: string): Promise<void> {
-    if (context === null) return;
-    const fresh = await context.items.get(id);
-    setOpenReading((current) =>
-      current !== null && fresh?.type === 'reading' ? { ...current, reading: fresh } : current,
-    );
-    await refresh();
-  }
-
-  function renderReading(open: OpenReading, ready: AppContext) {
-    const { reading } = open;
-    if (open.mode === 'pdf') {
-      return (
-        <PdfViewer
-          title={reading.title}
-          open={openPdf}
-          onPageChange={(page) => void saveLastPage(ready, reading.id, page)}
-          onClose={() => void reloadReading(reading.id)}
-        />
-      );
-    }
-    return (
-      <ReadingDetail
-        key={reading.id}
-        reading={reading}
-        onSaveDetails={async (details) => {
-          const result = await saveReadingDetails(ready, reading.id, details);
-          if (result.ok) await reloadReading(reading.id);
-          return result;
-        }}
-        onAttach={async (bytes) => {
-          const result = await attachPdf(ready, reading.id, bytes);
-          if (result.ok) await reloadReading(reading.id);
-          return result;
-        }}
-        onOpenPdf={() => setOpenReading({ mode: 'pdf', reading })}
-        onClose={() => setOpenReading(null)}
-      />
-    );
-  }
-
-  const closeWorkout = useCallback(function closeWorkout() {
-    setOpenWorkout(null);
-  }, []);
-
-  /** Re-read a place after a change so its screen shows what was stored. */
-  async function reloadPlace(id: string): Promise<void> {
-    if (context === null) return;
-    const fresh = await context.items.get(id);
-    setOpenPlace((current) => (current !== null && fresh?.type === 'place' ? fresh : current));
-    await refresh();
-  }
-
-  function renderPlace(place: ItemOfType<'place'>, ready: AppContext) {
-    return (
-      <PlaceDetail
-        key={place.id}
-        place={place}
-        onSaveDetails={async (details) => {
-          const result = await savePlaceDetails(ready, place.id, details);
-          if (result.ok) await reloadPlace(place.id);
-          return result;
-        }}
-        onLocate={() => locateHere()}
-        onSetCoordinates={async (coordinates) => {
-          await setPlaceCoordinates(ready, place.id, coordinates);
-          await reloadPlace(place.id);
-        }}
-        onClearCoordinates={async () => {
-          await clearPlaceCoordinates(ready, place.id);
-          await reloadPlace(place.id);
-        }}
-        onClose={() => setOpenPlace(null)}
-      />
-    );
-  }
-
   function renderMain() {
-    if (startupFailure !== null) {
-      return (
-        <p class="banner banner--error">
-          Majula could not start ({startupFailure.stage}): {startupFailure.detail}.{' '}
-          {startupAdvice(startupFailure)}
-        </p>
-      );
-    }
+    if (startupFailure !== null) return <StartupBanner failure={startupFailure} />;
     if (context === null) return <p class="empty">Opening…</p>;
     if (view === 'backup') return <BackupPanel context={context} onDataChanged={refresh} />;
 
@@ -428,25 +206,10 @@ export function App() {
     );
   }
 
-  if (openRecipe !== null) {
-    return <div class="app">{renderRecipe(openRecipe)}</div>;
-  }
-  if (openReading !== null && context !== null) {
-    return <div class="app">{renderReading(openReading, context)}</div>;
-  }
-  if (openPlace !== null && context !== null) {
-    return <div class="app">{renderPlace(openPlace, context)}</div>;
-  }
-  if (openWorkout !== null && context !== null) {
-    // The workout screens keep their own stack and back steps (WorkoutScreens.tsx).
+  if (open !== null && context !== null) {
     return (
       <div class="app">
-        <WorkoutScreens
-          context={context}
-          initial={openWorkout}
-          onClose={closeWorkout}
-          onChanged={refresh}
-        />
+        <OpenScreenView screen={open} context={context} onClose={closeOpen} onChanged={refresh} />
       </div>
     );
   }
