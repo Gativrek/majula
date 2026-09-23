@@ -14,6 +14,12 @@ import {
   saveLastPage,
   saveReadingDetails,
 } from '../services/reading.ts';
+import { locateHere } from '../services/location.ts';
+import {
+  clearPlaceCoordinates,
+  savePlaceDetails,
+  setPlaceCoordinates,
+} from '../services/places.ts';
 import {
   captureItem,
   deleteItem,
@@ -29,6 +35,7 @@ import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
 import { RecipeEditor } from './RecipeEditor.tsx';
 import { PdfViewer } from './PdfViewer.tsx';
+import { PlaceDetail } from './PlaceDetail.tsx';
 import { ReadingDetail } from './ReadingDetail.tsx';
 import { RecipeView } from './RecipeView.tsx';
 import { useBackStep } from './use-back-step.ts';
@@ -104,6 +111,7 @@ export function App() {
   const [tags, setTags] = useState<TagCount[]>([]);
   const [openRecipe, setOpenRecipe] = useState<OpenRecipe | null>(null);
   const [openReading, setOpenReading] = useState<OpenReading | null>(null);
+  const [openPlace, setOpenPlace] = useState<ItemOfType<'place'> | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -176,7 +184,10 @@ export function App() {
       setOpenRecipe({ mode: 'new', draft: newRecipeDraft(title), tags: itemTags });
       return;
     }
-    await captureItem(context, { type, title, tags: itemTags });
+    const captured = await captureItem(context, { type, title, tags: itemTags });
+    // places.md criterion 1: a new place opens with Here one tap away. It is already saved,
+    // so this only opens it; back closes it and keeps the place.
+    if (captured.type === 'place') setOpenPlace(captured);
     if (view !== 'items') setView('items');
     await refresh();
   }
@@ -202,6 +213,7 @@ export function App() {
   function onOpen(item: Item): void {
     if (item.type === 'recipe') setOpenRecipe({ mode: 'view', recipe: item });
     if (item.type === 'reading') setOpenReading({ mode: 'detail', reading: item });
+    if (item.type === 'place') setOpenPlace(item);
   }
 
   async function onSaveRecipe(id: string, draft: RecipeDraft) {
@@ -236,6 +248,9 @@ export function App() {
   });
   useBackStep(openRecipe !== null, function closeRecipe() {
     setOpenRecipe(null);
+  });
+  useBackStep(openPlace !== null, function closePlace() {
+    setOpenPlace(null);
   });
   useBackStep(openReading !== null, function closeReading() {
     setOpenReading(null);
@@ -328,6 +343,38 @@ export function App() {
     );
   }
 
+  /** Re-read a place after a change so its screen shows what was stored. */
+  async function reloadPlace(id: string): Promise<void> {
+    if (context === null) return;
+    const fresh = await context.items.get(id);
+    setOpenPlace((current) => (current !== null && fresh?.type === 'place' ? fresh : current));
+    await refresh();
+  }
+
+  function renderPlace(place: ItemOfType<'place'>, ready: AppContext) {
+    return (
+      <PlaceDetail
+        key={place.id}
+        place={place}
+        onSaveDetails={async (details) => {
+          const result = await savePlaceDetails(ready, place.id, details);
+          if (result.ok) await reloadPlace(place.id);
+          return result;
+        }}
+        onLocate={() => locateHere()}
+        onSetCoordinates={async (coordinates) => {
+          await setPlaceCoordinates(ready, place.id, coordinates);
+          await reloadPlace(place.id);
+        }}
+        onClearCoordinates={async () => {
+          await clearPlaceCoordinates(ready, place.id);
+          await reloadPlace(place.id);
+        }}
+        onClose={() => setOpenPlace(null)}
+      />
+    );
+  }
+
   function renderMain() {
     if (startupFailure !== null) {
       return (
@@ -370,6 +417,9 @@ export function App() {
   }
   if (openReading !== null && context !== null) {
     return <div class="app">{renderReading(openReading, context)}</div>;
+  }
+  if (openPlace !== null && context !== null) {
+    return <div class="app">{renderPlace(openPlace, context)}</div>;
   }
 
   return (

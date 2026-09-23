@@ -532,3 +532,27 @@ body {
 .reading__pdf {
   margin-top: var(--space-5);
 }
+
+/* Places. A link styled as a button needs the button's box, which an anchor lacks. */
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.place__location {
+  margin-top: var(--space-5);
+}
+
+.place__coordinates {
+  margin: 0 0 var(--space-3);
+  color: var(--colour-gold);
+  font-size: var(--size-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.place__here {
+  width: 100%;
+  margin: var(--space-3) 0;
+}

@@ -31,9 +31,15 @@ interface ItemRowProps {
   onOpen?: (item: Item) => void;
 }
 
-/** A reading entry's PDF progress, shown on its row. Everything else shows its type alone. */
+/**
+ * A reading entry's PDF progress, or whether a place has a location, shown on its row.
+ * Everything else shows its type alone.
+ */
 function metaFor(item: Item): string {
   const label = TYPE_LABEL[item.type];
+  if (item.type === 'place') {
+    return item.payload.lat === undefined ? label : `${label} · location saved`;
+  }
   if (item.type !== 'reading' || item.payload.page_count === undefined) return label;
   const page = item.payload.last_page ?? 1;
   return `${label} · PDF · p. ${page} / ${item.payload.page_count}`;

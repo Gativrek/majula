@@ -4,7 +4,7 @@ import type { ItemType } from '../data/types.ts';
  * Search, and the type and tag views over the one list (SPECS §2.2).
  *
  * Each module is a chip. There is no per-module screen and no per-module storage: notes,
- * to-do, network log, running-low, habits, recipes and the reading queue are all filters over `items`, which is why
+ * to-do, network log, running-low, habits, recipes, the reading queue and places are all filters over `items`, which is why
  * adding one costs a row in this array and nothing else.
  */
 
@@ -16,6 +16,7 @@ export const TYPE_VIEWS: readonly { type: ItemType; label: string }[] = [
   { type: 'habit', label: 'Habits' },
   { type: 'recipe', label: 'Recipes' },
   { type: 'reading', label: 'Reading' },
+  { type: 'place', label: 'Places' },
 ];
 
 export interface Filter {

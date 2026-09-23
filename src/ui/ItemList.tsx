@@ -12,7 +12,7 @@ import { ItemRow } from './ItemRow.tsx';
  */
 
 /** Types that open into a screen of their own when tapped. */
-const OPENABLE_TYPES: readonly Item['type'][] = ['recipe', 'reading'];
+const OPENABLE_TYPES: readonly Item['type'][] = ['recipe', 'reading', 'place'];
 
 interface ItemListProps {
   items: readonly Item[];
