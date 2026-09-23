@@ -274,6 +274,19 @@ that touches `items` or `items_fts`:
 6. On Import or Purge's confirmation dialog, press back. The dialog closes and nothing
    happens.
 
+**Permissions** (`DECISIONS.md`, 2026-09-23): the APK declares no `INTERNET`, no
+biometrics, only location. Re-check after any manifest or dependency change, since a
+plugin can merge a permission back in:
+
+1. The app starts and the list loads, with and without airplane mode.
+2. Open a reading entry with a PDF: it renders.
+3. On a place, **Here** still asks for location the first time and gets a fix.
+4. The installed app requests nothing else:
+
+   ```bash
+   adb shell dumpsys package dev.majula.app | Select-String "permission"
+   ```
+
 **GATE V1 — CLOSED 2026-09-21: FTS5 is available.** Verified on the device, logged in
 `DECISIONS.md`, and the probe that answered it has been deleted. Search takes the FTS5
 path and there is no `LIKE` fallback to fall into.

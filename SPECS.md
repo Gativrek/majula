@@ -287,7 +287,7 @@ Required because of ADR-003.
 
 ## 6. Non-functional requirements
 
-- **Offline:** every feature works with no network. Non-negotiable. Verify in airplane mode, not by assertion.
+- **Offline:** every feature works with no network. Non-negotiable. Verify in airplane mode, not by assertion. The APK does not declare the `INTERNET` permission, so Android enforces this rather than convention: ACCEPTED 2026-09-23. It declares only what a feature uses. Today that is the location permissions for places (§2.1).
 - **Capture latency:** app cold start to typing in quick capture in under ~2 seconds on the owner's phone. Verify on device.
 - **Kitchen mode:** open recipe keeps screen awake (`@capacitor-community/keep-awake` or equivalent) and uses large type.
 - **One-handed:** primary actions reachable in the lower half of the screen.

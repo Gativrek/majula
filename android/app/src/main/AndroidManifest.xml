@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -37,7 +38,17 @@
 
     <!-- Permissions -->
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+      INTERNET is deliberately not declared. ADR-003 and SPECS §6 make offline the only
+      mode, and without the permission Android enforces it. The app still loads: Capacitor
+      serves it from https://localhost by answering every request inside the WebView, so no
+      socket is ever opened (DECISIONS.md, 2026-09-23).
+
+      @capacitor-community/sqlite merges in the biometric permissions for its locked
+      databases. SPECS §1.1 item 4 rules out credentials of any kind, so they are removed.
+    -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
 
     <!--
       Places: the Here button (SPECS §2.1, docs/modules/places.md). Requested at runtime the
