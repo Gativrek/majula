@@ -134,7 +134,7 @@ device (see `DECISIONS.md`, 2026-09-22).
 
 ---
 
-## Phase 3 — Habit streak (§7 step 3) — AWAITING DEVICE CHECK
+## Phase 3 — Habit streak (§7 step 3) — CLOSED 2026-10-13
 
 - `docs/modules/habits.md` first.
 - Migration adds `habit_checks` (`habit_id`, `date` as `YYYY-MM-DD` local, composite PK).
@@ -156,7 +156,7 @@ things to take on trust — but the device still has to confirm them with a real
 
 ---
 
-## Phase 4 — Cookbook (§7 step 4) — AWAITING DEVICE CHECK
+## Phase 4 — Cookbook (§7 step 4) — CLOSED 2026-10-13
 
 - `docs/modules/cookbook.md` first.
 - `recipe` payload per §4.3: `servings`, `ingredients[{qty?, unit?, name}]`, ordered `steps[]`.
@@ -181,7 +181,7 @@ comes back with an ADR.
 
 ---
 
-## Phase 5 — Reading queue with PDF viewer (§7 step 5) — AWAITING DEVICE CHECK
+## Phase 5 — Reading queue with PDF viewer (§7 step 5) — ONE LAYOUT ISSUE OPEN
 
 - `docs/modules/reading-queue.md` first.
 - Entry: title, optional URL, optional attached PDF, read status.
@@ -208,7 +208,7 @@ real file, and that the copy survives the original being deleted.
 
 ---
 
-## Phase 6 — Places to try (§7 step 6) — AWAITING DEVICE CHECK
+## Phase 6 — Places to try (§7 step 6) — CLOSED 2026-10-13
 
 - `docs/modules/places.md` first.
 - Name, optional note, optional `lat`/`lon` in payload.
@@ -224,7 +224,7 @@ that a GPS fix arrives in airplane mode.
 
 ---
 
-## Phase 7 — Workout routine and exercise catalog (§7 step 7, built last) — AWAITING DEVICE CHECK
+## Phase 7 — Workout routine and exercise catalog (§7 step 7, built last) — CLOSED 2026-10-13
 
 - `docs/modules/workout.md` first. This module spec carries more weight than the others,
   because the catalog decision pushes real questions into it.

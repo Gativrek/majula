@@ -146,3 +146,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Verified on the owner's phone rather than by that argument, on a build without the permission, through the debug WebView's devtools protocol. The app started and opened its database. The lazy PDF chunk loaded. The PDF.js worker started and fetched its standard font and character map from the bundled assets, and a generated one-page PDF rendered text to a canvas. `fetch('https://example.com/')` failed, which confirms the OS block is real. `navigator.geolocation` was present with permission state `prompt`. The Here prompt itself and a PDF opened through the UI are left to the owner's device checks in `CLAUDE.md`.
 - `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` KEPT (Phase 6, places). `dev.majula.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` KEPT. It is an AndroidX signature permission that guards the app's own receivers and grants nothing outside the app.
 - Consequence: any future feature that truly needs the network has to add `INTERNET` back to the manifest, which makes it a visible manifest change that needs a new ADR (ADR-003).
+
+---
+
+## 2026-10-13 — Device checks: Phases 3, 4, 6, 7 and the back button
+
+- PASSED on the owner's phone: Phase 3 (habits), Phase 4 (cookbook, including the screen held awake by the platform Screen Wake Lock API, so `@capacitor-community/keep-awake` is not needed), Phase 6 (places), Phase 7 (workouts), and the back button.
+- Phase 5 (reading queue): one issue reported. An A4 page does not fill the phone's screen, which makes it hard to read; the owner asked for it bigger if possible, otherwise centred. Handled below.
+- Places: the owner asked for a way to take a place from a Google Maps listing, such as a restaurant seen there. Not a defect against the module spec; a new capability, raised with the owner as a decision.
+- The permission checks from the audit were not reported on, so they stay open.

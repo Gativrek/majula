@@ -201,7 +201,8 @@ that touches `items` or `items_fts`:
 8. **Backup → Export**, then reinstall and **Import**. Everything returns, and search still
    finds a word from a restored item — the index is rebuilt on import, not exported.
 
-**Phase 3 acceptance** (`ROADMAP.md` Phase 3, *done when*), in airplane mode:
+**Phase 3 acceptance** — PASSED 2026-10-13. Re-run checks 4–8 after anything that touches
+dates or `habit_checks`:
 
 1. Capture a habit with the **Habit** chip. It reads `Streak 0 days` and has no done flag.
 2. Tap it. It reads `Streak 1 day` — singular — and the row is outlined in gold.
@@ -216,7 +217,7 @@ that touches `items` or `items_fts`:
 10. Delete it again and **Purge**: its check-ins go with it.
 11. Export, reinstall, import: the streak reads the same.
 
-**Phase 4 acceptance** (`ROADMAP.md` Phase 4, *done when*), in airplane mode:
+**Phase 4 acceptance** — PASSED 2026-10-13, screen held awake on the device:
 
 1. **The one that matters.** Open a recipe, put the phone down, and wait past the screen
    timeout. The screen stays lit. If a red line says the screen may sleep, it will not —
@@ -258,7 +259,7 @@ that touches `items` or `items_fts`:
     **Export without PDFs** and import that: the entry opens with a plain message that
     its PDF isn't on this phone, not a crash.
 
-**Phase 6 acceptance** (`ROADMAP.md` Phase 6, *done when*):
+**Phase 6 acceptance** — PASSED 2026-10-13:
 
 1. Capture with the **Place** chip. Its screen opens with **Here** one tap away.
 2. Tap **Here**. Android asks for location permission — this once, not at install.
@@ -270,7 +271,7 @@ that touches `items` or `items_fts`:
 7. Rows show "location saved" for places that have one.
 8. Export, reinstall, import: a place with coordinates and one without both come back.
 
-**Phase 7 acceptance** (`ROADMAP.md` Phase 7, *done when*):
+**Phase 7 acceptance** — PASSED 2026-10-13:
 
 1. Capture with the **Routine** chip. The editor opens; back out of it: no routine exists.
 2. Capture again, **Add exercise**, type a new name, tap **Create**. It joins the routine
@@ -287,7 +288,7 @@ that touches `items` or `items_fts`:
 8. Export, reinstall, import: routines, logs and history all come back.
 9. Back from a log returns to the routine it came from; back again closes it.
 
-**Back button** (`SPECS.md` §2.2, Back) — undoes one step, never commits:
+**Back button** (`SPECS.md` §2.2, Back) — PASSED 2026-10-13. Undoes one step, never commits:
 
 1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
    and **no recipe exists** — not in the list, not under **Deleted**.
