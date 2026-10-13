@@ -42,7 +42,8 @@ function metaFor(item: Item): string {
     return `${label} \u00b7 ${count} exercise${count === 1 ? '' : 's'}`;
   }
   if (item.type === 'place') {
-    return item.payload.lat === undefined ? label : `${label} · location saved`;
+    if (item.payload.lat !== undefined) return `${label} \u00b7 location saved`;
+    return item.url === null ? label : `${label} \u00b7 Maps listing`;
   }
   if (item.type !== 'reading' || item.payload.page_count === undefined) return label;
   const page = item.payload.last_page ?? 1;

@@ -716,3 +716,12 @@ a.button {
 .history__sets {
   font-variant-numeric: tabular-nums;
 }
+
+/* A notice above the list, such as a refused share. Dismissable, never blocking. */
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}

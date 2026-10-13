@@ -21,6 +21,8 @@ import { BackupPanel } from './BackupPanel.tsx';
 import type { Filter } from './FilterBar.tsx';
 import { FilterBar } from './FilterBar.tsx';
 import { ItemList } from './ItemList.tsx';
+import { NoticeBanner } from './NoticeBanner.tsx';
+import { useShareReceiver } from './use-share-receiver.ts';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { OpenScreenView, screenFor } from './OpenScreenView.tsx';
 import type { StartupFailure } from './StartupBanner.tsx';
@@ -59,6 +61,7 @@ export function App() {
   const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [tags, setTags] = useState<TagCount[]>([]);
   const [open, setOpen] = useState<OpenScreen | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -106,6 +109,16 @@ export function App() {
     },
     [refresh],
   );
+
+  // places.md 15–17: a Google Maps share opens as a place; anything else is refused.
+  useShareReceiver(context, {
+    onPlace(place) {
+      setNotice(null);
+      setOpen({ module: 'place', place });
+      void refresh();
+    },
+    onProblem: setNotice,
+  });
 
   async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
     if (context === null) return;
@@ -180,9 +193,9 @@ export function App() {
     if (startupFailure !== null) return <StartupBanner failure={startupFailure} />;
     if (context === null) return <p class="empty">Opening…</p>;
     if (view === 'backup') return <BackupPanel context={context} onDataChanged={refresh} />;
-
     return (
       <>
+        <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />
         {view === 'items' ? (
           <FilterBar
             query={query}

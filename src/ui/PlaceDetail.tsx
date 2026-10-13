@@ -2,12 +2,14 @@ import { useState } from 'react';
 import type { ItemOfType } from '../data/types.ts';
 import { formatCoordinates, geoLink, parseCoordinates } from '../services/coordinates.ts';
 import type { Fix } from '../services/location.ts';
+import type { Coordinates } from '../services/maps-link.ts';
+import { coordinatesFromMapsLink, findMapsLink, isMapsLink } from '../services/maps-link.ts';
 import type { PlaceResult } from '../services/places.ts';
 
 /**
- * A place (`docs/modules/places.md`): its name and note, and its coordinates — taken from
- * here, pasted from a maps app, or cleared. No map is drawn; **Open in maps** hands the
- * place to the device's own maps app.
+ * A place (`docs/modules/places.md`): its name and note, its coordinates — taken from
+ * here, or pasted — and a Google Maps link, shared or pasted. No map is drawn; **Open in
+ * maps** hands the listing, or else the coordinates, to the device's own maps app.
  */
 
 interface PlaceDetailProps {
@@ -15,6 +17,7 @@ interface PlaceDetailProps {
   onSaveDetails: (details: { name: string; note: string }) => Promise<PlaceResult>;
   onLocate: () => Promise<Fix>;
   onSetCoordinates: (coordinates: { lat: number; lon: number }) => Promise<void>;
+  onSetLink: (link: { url: string; coordinates: Coordinates | null }) => Promise<void>;
   onClearCoordinates: () => Promise<void>;
   onClose: () => void;
 }
@@ -26,6 +29,7 @@ export function PlaceDetail({
   onSaveDetails,
   onLocate,
   onSetCoordinates,
+  onSetLink,
   onClearCoordinates,
   onClose,
 }: PlaceDetailProps) {
@@ -37,6 +41,10 @@ export function PlaceDetail({
 
   const { lat, lon } = place.payload;
   const hasCoordinates = lat !== undefined && lon !== undefined;
+  // Re-checked on render: a stored url may have come from an import, not from this screen.
+  const mapsUrl = place.url !== null && isMapsLink(place.url) ? place.url : null;
+  // places.md 20: the listing when there is one — reviews, hours — else the coordinates.
+  const openHref = mapsUrl ?? (hasCoordinates ? geoLink(lat, lon, place.title) : null);
   const isDirty = name !== place.title || note !== (place.body ?? '');
 
   async function run(work: () => Promise<Message>): Promise<void> {
@@ -73,6 +81,19 @@ export function PlaceDetail({
 
   function setFromPaste(): Promise<void> {
     return run(async function usePasted() {
+      const link = findMapsLink(pasted);
+      if (link !== null) {
+        const coordinates = coordinatesFromMapsLink(link);
+        await onSetLink({ url: link, coordinates });
+        setPasted('');
+        return {
+          kind: 'info',
+          text:
+            coordinates === null
+              ? 'Maps link kept. Open in maps opens the listing.'
+              : 'Maps link kept, with the coordinates it contains.',
+        };
+      }
       const parsed = parseCoordinates(pasted);
       if (!parsed.ok) return { kind: 'error', text: parsed.message };
       await onSetCoordinates({ lat: parsed.lat, lon: parsed.lon });
@@ -123,25 +144,24 @@ export function PlaceDetail({
 
         <section class="kitchen__section place__location">
           <h3 class="kitchen__heading">Location</h3>
-          {hasCoordinates ? (
-            <>
-              <p class="place__coordinates">{formatCoordinates(lat, lon)}</p>
-              <div class="panel__row">
-                <a class="button" href={geoLink(lat, lon, place.title)}>
-                  Open in maps
-                </a>
-                <button
-                  type="button"
-                  class="button button--quiet"
-                  disabled={busy}
-                  onClick={() => void clear()}
-                >
-                  Clear
-                </button>
-              </div>
-            </>
-          ) : (
+          {hasCoordinates ? <p class="place__coordinates">{formatCoordinates(lat, lon)}</p> : null}
+          {mapsUrl === null ? null : <p class="panel__note">Google Maps listing kept.</p>}
+          {openHref === null ? (
             <p class="panel__note">No location yet.</p>
+          ) : (
+            <div class="panel__row">
+              <a class="button" href={openHref}>
+                Open in maps
+              </a>
+              <button
+                type="button"
+                class="button button--quiet"
+                disabled={busy}
+                onClick={() => void clear()}
+              >
+                Clear
+              </button>
+            </div>
           )}
 
           <button
@@ -160,8 +180,8 @@ export function PlaceDetail({
               inputMode="text"
               autoComplete="off"
               value={pasted}
-              placeholder="-12.3400, -56.0000"
-              aria-label="Coordinates to paste"
+              placeholder="Coordinates or a Maps link"
+              aria-label="Coordinates or a Google Maps link to paste"
               onInput={(event) => setPasted((event.currentTarget as HTMLInputElement).value)}
             />
             <button

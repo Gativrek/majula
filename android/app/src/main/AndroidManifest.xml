@@ -23,6 +23,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!--
+              Places from Google Maps: Share → Majula on a listing (docs/modules/places.md 15).
+              Android cannot filter text shares by their content, so Majula is offered for any
+              text; the web layer accepts only Google Maps links and refuses the rest.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
         </activity>
 
         <provider

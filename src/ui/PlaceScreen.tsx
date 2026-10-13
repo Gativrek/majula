@@ -6,6 +6,7 @@ import {
   clearPlaceCoordinates,
   savePlaceDetails,
   setPlaceCoordinates,
+  setPlaceLink,
 } from '../services/places.ts';
 import { PlaceDetail } from './PlaceDetail.tsx';
 import { useBackStep } from './use-back-step.ts';
@@ -44,6 +45,10 @@ export function PlaceScreen({ context, place: initial, onClose, onChanged }: Pla
       onLocate={() => locateHere()}
       onSetCoordinates={async (coordinates) => {
         await setPlaceCoordinates(context, placeId, coordinates);
+        await reload();
+      }}
+      onSetLink={async (link) => {
+        await setPlaceLink(context, placeId, link);
         await reload();
       }}
       onClearCoordinates={async () => {
