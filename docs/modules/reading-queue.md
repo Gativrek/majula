@@ -40,7 +40,9 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 
 **Reading — the viewer**
 
-10. **Open PDF** shows one page at a time, fitted to the screen width.
+10. **Open PDF** shows one page at a time, fitted to the screen width edge to edge, and
+    centred vertically when the page is shorter than the screen — as an A4 page is on a
+    phone held upright (owner’s device check, 2026-10-13).
 11. **Previous** and **Next** are in the lower half of the screen (`SPECS.md` §6), with the
     page number and the total between them.
 12. The viewer **opens on the page it was last left on**, across closing the viewer,

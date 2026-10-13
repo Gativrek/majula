@@ -34,6 +34,8 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
   // finishes is the next one drawn: taps during a render collapse into one.
   const wantedPage = useRef(1);
   const rendering = useRef(false);
+  /** The width the canvas was last drawn for, so a refit happens only on a real change. */
+  const renderedWidth = useRef(0);
 
   // The page as of the last tap, not the last render. Taps faster than a re-render would
   // otherwise all read the same `page` and step to the same target: a double tap would
@@ -92,7 +94,9 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
         const width = frame.current?.clientWidth ?? 0;
         if (surface === null || width === 0) return;
         await handle.renderPage(target, surface, width);
-        if (wantedPage.current === target) return;
+        renderedWidth.current = width;
+        // Draw again if the page or the width moved on while this render ran.
+        if (wantedPage.current === target && frame.current?.clientWidth === width) return;
       }
     } catch (error) {
       // Closing the viewer mid-render destroys the document, and PDF.js rejects the render
@@ -111,21 +115,33 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
   }
 
   useEffect(
-    function renderOnPageOrResize() {
-      if (status.kind !== 'ready') return undefined;
-      const { handle } = status;
+    function renderOnPageChange() {
+      if (status.kind !== 'ready') return;
       wantedPage.current = page;
-      void drawWantedPage(handle);
-      function redraw(): void {
-        void drawWantedPage(handle);
-      }
-      // Rotating the phone changes the width the page must fit.
-      window.addEventListener('resize', redraw);
-      return function stopRedrawing() {
-        window.removeEventListener('resize', redraw);
-      };
+      void drawWantedPage(status.handle);
     },
     [status, page],
+  );
+
+  // The page must refit whenever the viewer's own width changes: rotating the phone, split
+  // screen, anything. Watching the element rather than the window catches all of them —
+  // a window resize event is not guaranteed to arrive for every one.
+  useEffect(
+    function refitWhenWidthChanges() {
+      const target = frame.current;
+      if (status.kind !== 'ready' || target === null) return undefined;
+      const { handle } = status;
+      const observer = new ResizeObserver(function onResize() {
+        // The observer also reports once on observe; skip it when nothing changed, so
+        // opening a PDF does not draw its first page twice.
+        if (target.clientWidth !== renderedWidth.current) void drawWantedPage(handle);
+      });
+      observer.observe(target);
+      return function stopObserving() {
+        observer.disconnect();
+      };
+    },
+    [status],
   );
 
   function step(by: number): void {

@@ -491,21 +491,43 @@ body {
 }
 
 /* The PDF viewer: the page fills the width, and everything else gets out of its way. */
+/*
+ * No side padding: the page is fitted to the width, so every pixel of padding is a pixel
+ * of text size lost. A flex column so the page can be centred vertically — an A4 page
+ * held upright is shorter than a phone screen (reading-queue.md criterion 10).
+ */
 .viewer__body {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-3);
+  padding: var(--space-3) 0;
   background: var(--colour-background);
 }
 
+/*
+ * Auto margins rather than justify-content: centre. Both centre a page shorter than the
+ * screen, but justify-content clips the top of one that is taller — a page in landscape —
+ * where auto margins fall back to ordinary scrolling.
+ */
 .viewer__page {
   display: block;
   max-width: 100%;
   height: auto;
-  margin: 0 auto;
-  border-radius: 2px;
+  margin: auto;
   background: #fff;
+}
+
+/* `display: block` above would otherwise override the hidden attribute and show a blank
+   white page under the loading and missing-PDF messages. */
+.viewer__page[hidden] {
+  display: none;
+}
+
+.viewer__body > .banner,
+.viewer__body > .empty {
+  margin: auto var(--space-4);
 }
 
 .viewer__actions {
