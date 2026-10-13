@@ -49,6 +49,30 @@ present or both absent — a latitude without a longitude is not a place.
     device's maps app. The app itself never draws a map (no map dependency, `SPECS.md` §8).
 11. Rows show whether a place has a location.
 
+**From Google Maps — added 2026-10-13 at the owner’s request**
+
+A Google Maps share is a name, perhaps an address, and a link. The short links it shares
+(`maps.app.goo.gl/…`) carry no coordinates, and resolving one takes the network, which
+Majula does not have (ADR-003). The link itself is what gets the owner back: Google Maps
+resolves it.
+
+15. In Google Maps, **Share → Majula** on a listing creates a place named after it, with
+    the Maps link kept, and opens it. One step; nothing to type.
+16. Sharing a listing that is already a live place opens that place instead of making a
+    second one.
+17. A share with no Google Maps link in it — from any other app — is refused with a
+    message, and nothing is written. Majula takes shares for places only.
+18. On a place’s screen, pasting a Google Maps link (**Share → Copy link** in Maps) into
+    the same field as coordinates keeps the link on that place.
+19. When a link contains coordinates — the long `google.com/maps/…` form does, the short
+    form does not — they are filled in too, preferring the listing’s own position
+    (`!3d…!4d…`) over the map view’s centre (`@…`).
+20. **Open in maps** opens the kept link when there is one — the exact listing, with its
+    reviews and hours — and the coordinates otherwise. A place with a link but no
+    coordinates still offers it.
+21. Shared text is untrusted input: only links to Google Maps hosts are accepted, and
+    nothing in a share is ever opened automatically.
+
 **Everything else**
 
 12. **Places** appears as a type view. A place is found by global search on its name or
@@ -63,4 +87,6 @@ present or both absent — a latitude without a longitude is not a place.
 - No distance, no "nearby", no sorting by proximity, no geofenced reminders.
 - No background location, no location history. The only read of the position is the one
   the owner triggers with **Here**.
-- No address lookup or reverse geocoding. That is network (ADR-003).
+- No address lookup or reverse geocoding, and no resolving short links. That is network
+  (ADR-003).
+- No shares from apps other than Google Maps, and no shares of anything but text.

@@ -54,13 +54,13 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 
 - **Notes.** Free text, optional tags. Created from quick capture.
 - **To-do.** Text, done flag. No due date: ACCEPTED 2026-09-21. A due date field leads to a sort-by-date view, then a due-today view, then reminders, which is the calendar §1.1 item 6 forbids.
-- **Reading queue.** Title, optional URL, optional attached PDF. Read status. PDF viewer opens attached file and restores last page. No annotation.
+- **Reading queue.** Title, optional URL, optional attached PDF. Read status. PDF viewer opens attached file and restores last page. No annotation. The viewer can trim a page’s white margins and zoom in, both remembered per document: ACCEPTED 2026-10-13 (owner’s decision, after an A4 page read too small on the phone).
 - **Network log.** Capture only: name, where met, short context. No follow-up reminders.
 - **Habit streak.** Habit definitions; one tap logs today. Displays current streak. Tapping again on the same day undoes.
 - **Running-low list.** Tap to add an item when noticed; check off when bought. This is the grocery list. No quantities.
 - **Cookbook.** Recipes with ingredients (optional quantity, optional unit, name), ordered steps, servings. Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
 - **Workout routine.** Routine templates (exercises with sets, reps, load) and session logs. Exercises come from a catalog of `exercise` entities referenced by id, not free text: ACCEPTED 2026-09-21. Built last.
-- **Places to try.** Name, optional note, optional coordinates. Coordinates come from the device’s current location (one tap, GPS, works without signal) or are pasted from a maps app: ACCEPTED 2026-09-23 (owner’s decision). This adds the Android location permission, requested the first time the owner asks for the current location and never at install. Location never leaves the phone and is never logged. Coordinates are stored, not rendered: there is no map in the app, but a place can be handed to the device’s maps app.
+- **Places to try.** Name, optional note, optional coordinates. Coordinates come from the device’s current location (one tap, GPS, works without signal) or are pasted from a maps app: ACCEPTED 2026-09-23 (owner’s decision). This adds the Android location permission, requested the first time the owner asks for the current location and never at install. Location never leaves the phone and is never logged. Coordinates are stored, not rendered: there is no map in the app, but a place can be handed to the device’s maps app. A place can also come **from Google Maps**, by sharing a listing to Majula or by pasting its link: ACCEPTED 2026-10-13 (owner’s decision). The link is kept in the generic `url` column and **Open in maps** opens that exact listing. Google Maps shares short links that carry no coordinates, and resolving one needs the network, which the app does not have (ADR-003, §6); so coordinates are filled in only when the link itself contains them, and otherwise stay optional as before. Majula receives text shares only for this: a share with no Google Maps link in it is refused, and nothing is written.
 
 ### 2.2 Cross-cutting features
 
@@ -220,7 +220,8 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
 
 // reading
 { "type": "reading", "title": "Tightly coupled GNSS/INS review", "url": "https://...",
-  "payload": { "pdf_path": "pdfs/<uuid>.pdf", "page_count": 14, "last_page": 6 } }
+  "payload": { "pdf_path": "pdfs/<uuid>.pdf", "page_count": 14, "last_page": 6,
+               "zoom": 1.5, "trim_margins": true } }
 
 // habit (check-ins live in habit_checks)
 { "type": "habit", "title": "Stretch" }
@@ -247,7 +248,8 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
     "performed": [ { "exercise_id": "<uuid>", "sets": [ { "reps": 8, "load_kg": 60 } ] } ] } }
 
 // place
-{ "type": "place", "title": "Café on Rua X", "payload": { "lat": -12.34, "lon": -56.0 } }
+{ "type": "place", "title": "Café on Rua X", "url": "https://maps.app.goo.gl/AbC123",
+  "payload": { "lat": -12.34, "lon": -56.0 } }
 ```
 
 **Recipe ingredients.** ACCEPTED 2026-09-23: `qty` and `unit` are each optional; `name` is

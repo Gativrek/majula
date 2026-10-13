@@ -6,7 +6,8 @@ status (`SPECS.md` §2.1). The read status is the generic `done` flag.
 ## Payload
 
 ```jsonc
-{ "pdf_path": "pdfs/<uuid>.pdf", "page_count": 14, "last_page": 6 }
+{ "pdf_path": "pdfs/<uuid>.pdf", "page_count": 14, "last_page": 6,
+  "zoom": 1.5, "trim_margins": true }
 ```
 
 Every field is optional; an entry with no PDF has an empty payload. `pdf_path` is relative
@@ -50,6 +51,19 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 13. The back button closes the viewer (`SPECS.md` §2.2, Back); back again closes the
     detail.
 14. No annotation, highlighting or margin notes of any kind (`SPECS.md` §1.1 item 8).
+
+**Reading size — added 2026-10-13 at the owner’s request, after an A4 page read too small**
+
+15a. **Trim margins** crops each page’s white margins so its text fills the width. The
+     crop is found by looking at the rendered page, so it works on any PDF; a page with
+     no blank margin, or a blank page, is shown whole. Pages with different margins
+     enlarge by different amounts.
+15b. **Zoom** steps through 100%, 150%, 200% and 250%. Above 100% the page is wider
+     than the screen and scrolls sideways as well as down.
+15c. Both are remembered per document, alongside the last page, and survive a restart
+     and an export/import. They change only how the page is drawn, never the PDF.
+15d. The zoom and margin controls sit above the page; Previous, Next and Close stay at
+     the thumb (`SPECS.md` §6).
 15. If the entry names a PDF that is not on the phone — an import from an export made
     without PDFs — the viewer says so plainly instead of failing, and the entry is
     otherwise untouched. The path is logged as `reading.pdf_missing` (`CODESTYLE.md` §6).
@@ -77,6 +91,7 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 - No annotation, highlighting, bookmarks or notes on pages (`SPECS.md` §1.1 item 8).
 - No downloading a PDF from the URL. That is network, and the app has none (ADR-003).
 - No text search inside PDFs, no reflow, no reading statistics.
-- No zoom beyond fit-to-width in v1. Two-column academic PDFs read poorly on a phone
-  regardless; ADR-004 accepts that, since the use case is short articles.
+- No pinch-to-zoom or free zoom levels: the four steps above are the interface.
+- No text reflow. Two-column academic PDFs still read poorly on a phone; ADR-004 accepts
+  that, since the use case is short articles.
 - No replacing an attached PDF (criterion 9).

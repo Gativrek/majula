@@ -155,3 +155,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Phase 5 (reading queue): one issue reported. An A4 page does not fill the phone's screen, which makes it hard to read; the owner asked for it bigger if possible, otherwise centred. Handled below.
 - Places: the owner asked for a way to take a place from a Google Maps listing, such as a restaurant seen there. Not a defect against the module spec; a new capability, raised with the owner as a decision.
 - The permission checks from the audit were not reported on, so they stay open.
+
+---
+
+## 2026-10-13 — Owner's requests after the device checks
+
+- PDF viewer: pages now run edge to edge and are centred vertically (commit ad40ca0). Upright, an A4 page cannot fill a phone screen without stretching, being proportionally wider.
+- PDF reading size: BOTH trim margins and zoom. Owner's decision. Trim crops each page's white margins, found by inspecting the rendered page, so text fills the width with no sideways scrolling; zoom steps 100/150/200/250%, scrolling both ways above 100%. Both remembered per document in the reading payload (`zoom`, `trim_margins`), beside `last_page` — SPECS §4.3 amended, no migration, since the payload is JSON. Fixed steps rather than pinch-zoom: four buttons are one-handed and predictable, and pinch on a canvas would mean re-rendering on every gesture. 250% is the ceiling because the canvas grows with the square of the zoom at the device's pixel density.
+- Places from Google Maps: BOTH sharing a listing to Majula and pasting its link. Owner's decision. The link goes in the generic `url` column and **Open in maps** opens it, so the exact listing comes back. Short links carry no coordinates and resolving them needs the network, which the app no longer has (ADR-003, and the permissions audit); coordinates are taken from a link only when it contains them. Rejected: resolving short links, which would need `INTERNET` back and an ADR.
+- Receiving shares: an intent filter for `ACTION_SEND` text on the existing activity, and a small Capacitor plugin written inside the app (`ShareInboxPlugin`) that hands the shared text to the web layer, using `notifyListeners` with `retainUntilConsumed` so a share that cold-starts the app waits for the page to start listening. No package, so no ADR, by the same reasoning as the back button. Only text with a Google Maps link becomes a place; any other share is refused and writes nothing, so Majula never files shared text under a type it guessed.
