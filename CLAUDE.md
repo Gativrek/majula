@@ -350,6 +350,7 @@ _The list_ (`SPECS.md` §2.2, The list):
 8. In search, tap a tag: the list shows that tag across categories. Back clears it.
 9. **⋮** opens Deleted and Backup. Restore works from Deleted, **Purge deleted** sits under
    it, and Export and Import are under Backup.
+   Backup shows two cards, Export and Import, and the export path under Documents.
 
 _Screens_:
 

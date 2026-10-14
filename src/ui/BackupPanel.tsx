@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AppContext } from '../services/database.ts';
 import { exportDatabase, importDatabase } from '../services/backup.ts';
 import { EXPORT_DIRECTORY, EXPORT_FILE_NAME } from '../services/files.ts';
+import { Icon } from './Icon.tsx';
 
 /**
  * Export and import (SPECS §5). Purge sits under Deleted (`PurgeButton`).
@@ -64,39 +65,59 @@ export function BackupPanel({ context, onDataChanged }: BackupPanelProps) {
 
   return (
     <div class="panel">
-      <p class="panel__note">
-        Nothing leaves this phone, so losing the phone loses the data unless it has been exported.
-        The export is a directory:{' '}
-        <code>
-          {EXPORT_DIRECTORY}/{EXPORT_FILE_NAME}
-        </code>{' '}
-        beside a <code>pdfs/</code> directory.
-      </p>
+      <section class="card">
+        <div class="card__row">
+          <span class="tile tile--accent">
+            <Icon name="backup" />
+          </span>
+          <span class="row__text">
+            <span class="row__title">Export</span>
+            <span class="row__meta row__meta--wrap">
+              {`Documents/${EXPORT_DIRECTORY}/${EXPORT_FILE_NAME}`}, beside a <code>pdfs/</code>{' '}
+              folder
+            </span>
+          </span>
+        </div>
+        <p class="card__note">
+          <Icon name="shield" size={16} />
+          Nothing leaves this phone. Losing it loses the data unless it has been exported.
+        </p>
+        <div class="button-row">
+          <button class="button" type="button" disabled={busy} onClick={() => void onExport(true)}>
+            Export
+          </button>
+          <button
+            class="button button--quiet"
+            type="button"
+            disabled={busy}
+            onClick={() => void onExport(false)}
+          >
+            Without PDFs
+          </button>
+        </div>
+      </section>
 
-      <div class="panel__row">
-        <button class="button" type="button" disabled={busy} onClick={() => void onExport(true)}>
-          Export
-        </button>
+      <section class="card">
+        <div class="card__row">
+          <span class="tile">
+            <Icon name="restore" />
+          </span>
+          <span class="row__text">
+            <span class="row__title">Import</span>
+            <span class="row__meta row__meta--wrap">
+              Replaces everything on this phone with the export. It does not merge.
+            </span>
+          </span>
+        </div>
         <button
-          class="button button--quiet"
-          type="button"
-          disabled={busy}
-          onClick={() => void onExport(false)}
-        >
-          Export without PDFs
-        </button>
-      </div>
-
-      <div class="panel__row">
-        <button
-          class="button button--quiet"
+          class="button button--outline"
           type="button"
           disabled={busy}
           onClick={() => void onImport()}
         >
-          Import (replaces everything)
+          Import
         </button>
-      </div>
+      </section>
 
       {status === null ? null : (
         <p class={status.kind === 'error' ? 'banner banner--error' : 'banner banner--info'}>

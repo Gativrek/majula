@@ -254,3 +254,11 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - A routine's **Edit** stays at the thumb beside **Start workout** (`workout.md` criterion 8); Close moved to the header's back. The routine editor's Cancel is the header's ×, and the exercise detail edits behind a pencil like a place, with back cancelling the edit.
 - A logged session reads as the same kg and reps grid a workout is typed into, so a log looks like the session it came from.
 - Unused rules for the old layouts of these screens were removed from the stylesheet.
+
+---
+
+## 2026-10-14 — Viewer, Backup and startup screens
+
+- The PDF viewer keeps Close, Previous and Next at the bottom, as `reading-queue.md` 15d requires, now as square icon buttons around `p. 6 of 15`, leaving the page the width between them. The zoom steps sit in one pill.
+- Backup is two cards, Export and Import, each saying what it does and where the export goes, instead of a paragraph above a run of buttons. Purge stays under Deleted.
+- While the database opens, and if startup fails, the bonfire stands above the message, so the first thing the app shows is its own mark.

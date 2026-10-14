@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { log } from '../lib/logger.ts';
 import type { AppContext } from '../services/database.ts';
+import { BonfireMark } from './BonfireMark.tsx';
 import { initialiseApp } from '../services/database.ts';
 import type { CategoryId } from './categories.ts';
 import { DEFAULT_CATEGORY } from './categories.ts';
@@ -95,6 +96,7 @@ export function App() {
   if (startupFailure !== null) {
     return (
       <div class="app app--message">
+        <BonfireMark size={72} />
         <StartupBanner failure={startupFailure} />
       </div>
     );
@@ -102,6 +104,7 @@ export function App() {
   if (context === null) {
     return (
       <div class="app app--message">
+        <BonfireMark size={72} />
         <p class="empty">Opening…</p>
       </div>
     );

@@ -219,12 +219,17 @@ export function PdfViewer({
       </main>
 
       <footer class="kitchen__actions viewer__actions">
-        <button type="button" class="button button--quiet" onClick={onClose}>
-          Close
+        <button
+          type="button"
+          class="button button--quiet button--square"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          <Icon name="close" />
         </button>
         <button
           type="button"
-          class="button button--quiet"
+          class="button button--quiet button--square"
           disabled={status.kind !== 'ready' || page <= 1}
           aria-label="Previous page"
           onClick={() => step(-1)}
@@ -232,11 +237,11 @@ export function PdfViewer({
           <Icon name="back" />
         </button>
         <span class="viewer__position" aria-live="polite">
-          {pageCount > 0 ? `${page} / ${pageCount}` : ''}
+          {pageCount > 0 ? `p. ${page} of ${pageCount}` : ''}
         </span>
         <button
           type="button"
-          class="button"
+          class="button button--square"
           disabled={status.kind !== 'ready' || page >= pageCount}
           aria-label="Next page"
           onClick={() => step(1)}

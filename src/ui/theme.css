@@ -78,8 +78,17 @@ input {
 }
 
 .app--message {
+  align-items: center;
   justify-content: center;
+  gap: var(--space-4);
   padding: var(--space-4);
+}
+
+/* The mark on its own, before the list exists: the bonfire on its glow. */
+.app--message > .bonfire {
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 68%, rgba(227, 176, 75, 0.3), #0b0a07 62%);
+  color: var(--colour-gold);
 }
 
 /* Icons draw in the text colour of whatever holds them. */
@@ -1409,7 +1418,7 @@ a.button {
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--colour-border);
-  background: var(--colour-surface);
+  background: var(--colour-nav);
 }
 
 .viewer__toolbar .chip {
@@ -1419,7 +1428,10 @@ a.button {
 .viewer__zoom {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  border-radius: 999px;
+  background: var(--colour-surface-raised);
 }
 
 .viewer__zoom-level {
@@ -1554,6 +1566,7 @@ a.button {
 
 .row__meta--wrap {
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .tile--accent {
@@ -1880,4 +1893,11 @@ mark {
   font-size: 1.125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* Two actions side by side in a card, sharing its width. */
+.button-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
