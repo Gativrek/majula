@@ -181,7 +181,7 @@ comes back with an ADR.
 
 ---
 
-## Phase 5 — Reading queue with PDF viewer (§7 step 5) — AWAITING RE-CHECK
+## Phase 5 — Reading queue with PDF viewer (§7 step 5) — CLOSED 2026-10-14
 
 - `docs/modules/reading-queue.md` first.
 - Entry: title, optional URL, optional attached PDF, read status.

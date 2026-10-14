@@ -170,3 +170,7 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 ## 2026-10-14 — Device check: swiping between PDF pages
 
 - Swiping turns pages on the owner's phone (CLAUDE.md, *PDF size and swiping*, check 7). The zoomed-edge behaviour (check 8) and the other PDF size, Places from Google Maps, Phase 5 re-check and permission checks were not reported on, so they stay open.
+
+## 2026-10-14 — Device checks: all open checks passed
+
+- PASSED on the owner's phone: the Phase 5 re-check (reading queue), PDF size and swiping including the zoomed-edge rule, places from Google Maps, and the permissions audit (no `INTERNET`, only location). Phase 5 is closed; every phase in `ROADMAP.md` is now closed.

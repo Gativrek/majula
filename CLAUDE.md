@@ -48,16 +48,16 @@ through `cmd.exe`, and Git Bash exports `NoDefaultCurrentDirectoryInExePath`, wh
 `cmd` finding an executable in the working directory, so both `./gradlew` and a bare
 `gradlew` fail there.
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Vite dev server. The UI renders; the database does not open (see below). |
-| `npm run typecheck` | `tsc --noEmit`, strict. |
-| `npm test` | Node's test runner over `test/*.test.ts`. |
-| `npm run build` | Typecheck, then bundle to `dist/`. |
-| `npm run format` | Prettier over the repository. |
-| `npm run sync` | Build, then `cap sync android`. Run after any dependency change. |
-| `npm run apk` | Sync, then `assembleDebug`. Output in `android/app/build/outputs/apk/debug/`. |
-| `npm run install:apk` | `adb install -r` the debug APK onto the connected phone. |
+| Command               | What it does                                                                  |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`         | Vite dev server. The UI renders; the database does not open (see below).      |
+| `npm run typecheck`   | `tsc --noEmit`, strict.                                                       |
+| `npm test`            | Node's test runner over `test/*.test.ts`.                                     |
+| `npm run build`       | Typecheck, then bundle to `dist/`.                                            |
+| `npm run format`      | Prettier over the repository.                                                 |
+| `npm run sync`        | Build, then `cap sync android`. Run after any dependency change.              |
+| `npm run apk`         | Sync, then `assembleDebug`. Output in `android/app/build/outputs/apk/debug/`. |
+| `npm run install:apk` | `adb install -r` the debug APK onto the connected phone.                      |
 
 **`npm run dev` cannot open the database.** SQLite is a native plugin (ADR-002), so in a
 desktop browser `initialiseApp` throws and the app says so in a banner. That failure is
@@ -242,7 +242,7 @@ dates or `habit_checks`:
 11. Export, reinstall, import: the recipe returns with every ingredient and step, and
     "sal a gosto" still has no number.
 
-**Phase 5 acceptance** (`ROADMAP.md` Phase 5, *done when*), in airplane mode:
+**Phase 5 acceptance** — PASSED 2026-10-14, in airplane mode (`ROADMAP.md` Phase 5, _done when_):
 
 1. Capture with the **Reading** chip. Tap the entry: title, URL, and **Attach PDF**.
 2. Attach a PDF from the phone's storage. The page count appears.
@@ -288,9 +288,9 @@ dates or `habit_checks`:
 8. Export, reinstall, import: routines, logs and history all come back.
 9. Back from a log returns to the routine it came from; back again closes it.
 
-**Owner’s requests of 2026-10-13** — to check on the phone:
+**Owner’s requests of 2026-10-13** — PASSED 2026-10-14:
 
-*PDF size and swiping* (`reading-queue.md` 10, 11a, 15a–15d):
+_PDF size and swiping_ (`reading-queue.md` 10, 11a, 15a–15d):
 
 1. Open an A4 PDF upright. The page runs edge to edge and sits centred, not at the top.
 2. **Trim margins**: the white side margins go and the text gets larger. A blank page,
@@ -302,11 +302,10 @@ dates or `habit_checks`:
    so is the page.
 6. Rotate while zoomed: it refits without stretching.
 7. Swipe left: next page. Swipe right: previous. Scrolling down a page never turns it.
-   — PASSED 2026-10-14.
 8. Zoomed in, swipe left mid-page: it pans, no turn. Once at the right edge, swipe left
    again: next page. Likewise right from the left edge goes back (`reading-queue.md` 11a).
 
-*Places from Google Maps* (`places.md` 15–21):
+_Places from Google Maps_ (`places.md` 15–21):
 
 1. In Google Maps, open a restaurant, **Share → Majula**. Majula opens on a new place
    named after it, with "Google Maps listing kept". Works from cold and with Majula open.
@@ -331,7 +330,7 @@ dates or `habit_checks`:
 6. On Import or Purge's confirmation dialog, press back. The dialog closes and nothing
    happens.
 
-**Permissions** (`DECISIONS.md`, 2026-09-23): the APK declares no `INTERNET`, no
+**Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:
 
