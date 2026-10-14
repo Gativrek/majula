@@ -87,7 +87,25 @@ export interface AttachOptions {
 }
 
 /**
+ * Delete a PDF copy no entry refers to any longer (reading-queue.md criterion 9). Called
+ * only after the entry has been updated, so a failure leaves the old PDF in use rather
+ * than an entry pointing at nothing. A copy that cannot be deleted is logged: it is the one
+ * file purge would never reach.
+ */
+async function discardCopy(context: AppContext, path: string | undefined): Promise<void> {
+  if (path === undefined) return;
+  try {
+    if (await context.files.exists('private', path))
+      await context.files.deleteFile('private', path);
+  } catch (cause) {
+    log.warn('reading.old_pdf_kept', { reason: cause instanceof Error ? cause.name : 'unknown' });
+  }
+}
+
+/**
  * Copy a picked PDF into private storage and attach it (ADR-004).
+ * If the entry already has one, this replaces it, and the old copy is deleted once the
+ * entry refers to the new one (criterion 9).
  *
  * The entry refers to the copy, so the original can then be moved or deleted
  * (reading-queue.md criteria 5–6). Nothing is written until the bytes have proved to be a
@@ -103,10 +121,6 @@ export async function attachPdf(
   const reading = await currentReading(context, readingId);
   if (reading === null) {
     return refuse(readingId, 'not_found', 'This entry no longer exists.');
-  }
-  if (reading.payload.pdf_path !== undefined) {
-    // reading-queue.md criterion 9: replacing would orphan the old copy.
-    return refuse(readingId, 'already_attached', 'This entry already has a PDF.');
   }
   if (!(await startsLikePdf(file))) {
     return refuse(readingId, 'not_pdf', 'That file is not a PDF.');
@@ -151,6 +165,7 @@ export async function attachPdf(
       });
     }
     log.info('reading.pdf_attached', { id: readingId, pages: pageCount });
+    await discardCopy(context, reading.payload.pdf_path);
     return { ok: true, reading: updated };
   } catch (cause) {
     await context.files.deleteFile('private', path);
@@ -160,6 +175,23 @@ export async function attachPdf(
       { cause },
     );
   }
+}
+
+/**
+ * Take an entry's PDF off it (reading-queue.md criterion 9). The payload loses the page
+ * and view it carried, which belonged to that document, and the copy is deleted after.
+ */
+export async function removePdf(
+  context: AppContext,
+  readingId: string,
+): Promise<ItemOfType<'reading'> | null> {
+  const reading = await currentReading(context, readingId);
+  if (reading === null) return null;
+  const updated = await context.items.update<'reading'>(readingId, { payload: {} });
+  if (updated.type !== 'reading') return null;
+  log.info('reading.pdf_removed', { id: readingId });
+  await discardCopy(context, reading.payload.pdf_path);
+  return updated;
 }
 
 export type PdfLookup = { status: 'none' } | { status: 'missing' } | { status: 'ok'; url: string };

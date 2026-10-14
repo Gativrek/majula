@@ -21,6 +21,7 @@ interface ReadingDetailProps {
   onSaveDetails: (details: { title: string; url: string }) => Promise<DetailsResult>;
   onAttach: (file: Blob) => Promise<AttachResult>;
   onToggleRead: () => Promise<void>;
+  onRemovePdf: () => Promise<void>;
   onOpenPdf: () => void;
   onClose: () => void;
 }
@@ -64,6 +65,20 @@ export function ReadingDetail(props: ReadingDetailProps) {
     }
   }
 
+  async function removePdf(): Promise<void> {
+    if (!confirm('Remove the PDF from this entry? Its copy in Majula is deleted.')) return;
+    setBusy(true);
+    try {
+      await props.onRemovePdf();
+      setMessage({ kind: 'info', text: 'PDF removed.' });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown failure';
+      setMessage({ kind: 'error', text: `Removing failed: ${reason}.` });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onPicked(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
@@ -76,7 +91,12 @@ export function ReadingDetail(props: ReadingDetailProps) {
       const result = await props.onAttach(file);
       setMessage(
         result.ok
-          ? { kind: 'info', text: 'Attached. The original can now be moved or deleted.' }
+          ? {
+              kind: 'info',
+              text: hasPdf
+                ? 'Replaced. The old copy is deleted.'
+                : 'Attached. The original can now be moved or deleted.',
+            }
           : { kind: 'error', text: result.message },
       );
     } catch (error) {
@@ -152,7 +172,12 @@ export function ReadingDetail(props: ReadingDetailProps) {
         )}
 
         {hasPdf ? (
-          <PdfCard reading={reading} />
+          <PdfCard
+            reading={reading}
+            busy={busy}
+            onReplace={() => picker.current?.click()}
+            onRemove={() => void removePdf()}
+          />
         ) : (
           <p class="panel__note">
             No PDF yet. Attaching copies the file into Majula, so the original can be moved or

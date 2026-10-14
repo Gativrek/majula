@@ -38,9 +38,12 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 8a. A large PDF — tens of megabytes — attaches and opens without the app closing. Its bytes
     are never carried across the native bridge whole: the copy is written a piece at a
     time, and the viewer reads the stored file from disk.
-9. An entry has at most one PDF. Attach is offered only while there is none. To change the
-   PDF, delete the entry and create another — replacing would leave the old copy
-   referenced by nothing, and purge only removes files belonging to deleted rows.
+9. An entry has at most one PDF. While it has one, **Replace PDF** picks another: the new
+   file is copied in, checked like any attach, and the entry then starts on its first page
+   with the default size. **Remove PDF** takes it off the entry after asking. Either way
+   the old copy is deleted as soon as nothing refers to it, so no file is left that purge
+   would never reach. A file refused on Replace leaves the old PDF as it was.
+   ACCEPTED 2026-10-14 (owner's request; until then a PDF could not be changed).
 
 **Reading — the viewer**
 

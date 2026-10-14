@@ -3,9 +3,18 @@ import { Icon } from './Icon.tsx';
 
 /**
  * A reading entry's PDF: its page count and where reading stopped, plus the trim and zoom
- * the viewer will reopen with (`docs/modules/reading-queue.md` criteria 8, 10).
+ * the viewer will reopen with (`docs/modules/reading-queue.md` criteria 8, 10), and
+ * Replace and Remove (criterion 9).
  */
-export function PdfCard({ reading }: { reading: ItemOfType<'reading'> }) {
+
+interface PdfCardProps {
+  reading: ItemOfType<'reading'>;
+  busy: boolean;
+  onReplace: () => void;
+  onRemove: () => void;
+}
+
+export function PdfCard({ reading, busy, onReplace, onRemove }: PdfCardProps) {
   const { page_count: pages, last_page: lastPage, zoom, trim_margins: trimmed } = reading.payload;
   const page = lastPage ?? 1;
   return (
@@ -47,6 +56,14 @@ export function PdfCard({ reading }: { reading: ItemOfType<'reading'> }) {
           ) : null}
         </div>
       ) : null}
+      <div class="button-row">
+        <button type="button" class="button button--quiet" disabled={busy} onClick={onReplace}>
+          Replace PDF
+        </button>
+        <button type="button" class="button button--quiet" disabled={busy} onClick={onRemove}>
+          Remove PDF
+        </button>
+      </div>
     </section>
   );
 }

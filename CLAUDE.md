@@ -362,6 +362,8 @@ _Screens_:
     opens on that page. The square beside it marks the entry read.
     Attach a large PDF (50 MB or so): the app stays open, shows its page count, and opens
     it. Turn a few pages; then export and import, and it still opens.
+    **Replace PDF** with another: it opens on page 1, and only one PDF copy is left in the
+    app. **Remove PDF**: it asks first, then the entry offers **Attach PDF** again.
 13. Open a place: **Location saved** leads, the coordinates are a small line, and copy puts
     them on the clipboard. **Here** and **Open in maps** sit at the bottom.
 14. Start a workout: each exercise is a card of kg and reps. The × at the top discards the

@@ -12,6 +12,7 @@ import {
   attachPdf,
   clampPage,
   locatePdf,
+  removePdf,
   saveLastPage,
   saveReadingDetails,
 } from '../src/services/reading.ts';
@@ -109,10 +110,31 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
     await context.driver.close();
   });
 
-  it('refuses a second PDF rather than orphaning the first', async function second() {
-    const { context, readingId } = await freshContext();
+  it('replaces a PDF, starts it afresh, and deletes the old copy', async function replace() {
+    const { context, files, readingId } = await freshContext();
     await attachPdf(context, readingId, PDF_FILE, attachOptions);
+    await saveLastPage(context, readingId, 6);
+    const secondId = '22222222-2222-4222-8222-222222222222';
     const again = await attachPdf(context, readingId, PDF_FILE, {
+      ...attachOptions,
+      newId: () => secondId,
+    });
+
+    assert.ok(again.ok);
+    if (!again.ok) return;
+    assert.deepEqual(again.reading.payload, {
+      pdf_path: `pdfs/${secondId}.pdf`,
+      page_count: 14,
+      last_page: 1,
+    });
+    assert.deepEqual(files.paths('private'), [`pdfs/${secondId}.pdf`], 'only the new copy');
+    await context.driver.close();
+  });
+
+  it('keeps the old PDF when the replacement is refused', async function refusedReplace() {
+    const { context, files, readingId } = await freshContext();
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
+    const again = await attachPdf(context, readingId, new Blob(['not a pdf']), {
       ...attachOptions,
       newId: () => '22222222-2222-4222-8222-222222222222',
     });
@@ -120,6 +142,18 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
     assert.equal(again.ok, false);
     const reading = await context.items.get(readingId);
     assert.equal(reading?.type === 'reading' ? reading.payload.pdf_path : null, PDF_PATH);
+    assert.deepEqual(files.paths('private'), [PDF_PATH]);
+    await context.driver.close();
+  });
+
+  it('removes a PDF and its copy, leaving the entry', async function remove() {
+    const { context, files, readingId } = await freshContext();
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
+    const removed = await removePdf(context, readingId);
+
+    assert.deepEqual(removed?.payload, {});
+    assert.equal(removed?.title, 'GNSS/INS review');
+    assert.deepEqual(files.paths('private'), []);
     await context.driver.close();
   });
 });

@@ -4,6 +4,7 @@ import type { AppContext } from '../services/database.ts';
 import {
   attachPdf,
   openReadingPdf,
+  removePdf,
   saveLastPage,
   saveReadingDetails,
   saveReadingView,
@@ -98,6 +99,10 @@ export function ReadingScreens({
         const result = await attachPdf(context, readingId, file);
         if (result.ok) await reload();
         return result;
+      }}
+      onRemovePdf={async () => {
+        await removePdf(context, readingId);
+        await reload();
       }}
       onToggleRead={async () => {
         await toggleDone(context, reading);

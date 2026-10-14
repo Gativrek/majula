@@ -278,3 +278,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Attaching now copies the picked file into private storage 512 KB at a time (`appendBytes`), counting its pages from an object URL. Opening hands PDF.js a URL to the stored copy (`fileUrl`, Capacitor's local file server), so the bytes come off disk without passing through the bridge. `readBytes` and `base64ToBytes` are gone with the path that used them.
 - PDF.js is told not to use range requests. Capacitor 8's local server answers a range request with the whole file from byte 0 under a header claiming the range, so ranged reads would assemble the wrong bytes. One plain request is read correctly. Checked in a browser against a generated 56 MB PDF; the phone is the real test.
 - Export and import already copied PDFs natively (`copyFile`), so a large PDF never went through the bridge there.
+
+---
+
+## 2026-10-14 — A reading entry's PDF can be replaced or removed
+
+- Owner's request: there was no way to change a reading entry's PDF. `reading-queue.md` criterion 9 had ruled it out, because replacing would leave the old copy referenced by nothing, and purge only removes files of deleted rows. Amended: **Replace PDF** and **Remove PDF** sit on the PDF card, and the old copy is deleted as soon as the entry stops referring to it, which answers the original objection directly.
+- The entry is updated first and the old copy deleted after, so a failure leaves the old PDF still in use rather than an entry pointing at a missing file. A copy that cannot be deleted is logged as `reading.old_pdf_kept`. A replacement starts on page 1 at the default size, since the page and the view belonged to the old document. A refused file leaves the old PDF untouched.
