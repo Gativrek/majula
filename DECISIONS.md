@@ -238,3 +238,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - Holding a row still uncovers its Delete button, the same one a left swipe uncovers, and a line under the list says both. Owner's report: there was no visible way to delete a note. A swipe alone is invisible, and notes, unlike recipes or places, open into nothing, so a list row was the only place delete could live. SPECS §2.2 amended.
 - The hold is cancelled the moment the finger moves enough to be a scroll or a swipe, and the lift that ends it never also taps the row. The row's text cannot be selected, so a hold does not raise the WebView's selection menu instead.
+
+---
+
+## 2026-10-14 — Workout session: folding and changed sets
+
+- An exercise's name folds its card to one line, `3 × 10 · 30 kg` when every set matches, for exercises already done. From the design. Folding is the screen's state only: a folded exercise is saved like any other.
+- A set the owner changed from what the routine pre-filled, or added during the workout, is outlined in gold, so the session shows at a glance where it departed from the plan. Compared as typed, so `60,0` against `60` counts as changed: it is what the owner typed.

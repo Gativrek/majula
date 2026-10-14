@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { SessionDraft, SetDraft } from '../services/workout-draft.ts';
 import type { Outcome, ResolvedName } from '../services/workouts.ts';
+import type { SetRow } from './ExerciseCard.tsx';
+import { ExerciseCard } from './ExerciseCard.tsx';
 import { Icon } from './Icon.tsx';
 
 /**
@@ -9,20 +11,15 @@ import { Icon } from './Icon.tsx';
  * writes one log; the header’s × or back writes nothing (SPECS §2.2, Back).
  */
 
-interface SetRow {
-  key: number;
-  set: SetDraft;
-}
-
 interface EntryRow {
   exerciseId: string;
   sets: SetRow[];
 }
 
 let nextKey = 0;
-function setRow(set: SetDraft): SetRow {
+function setRow(set: SetDraft, planned: SetDraft | null): SetRow {
   nextKey += 1;
-  return { key: nextKey, set };
+  return { key: nextKey, set, planned };
 }
 
 interface WorkoutSessionProps {
@@ -32,15 +29,11 @@ interface WorkoutSessionProps {
   onCancel: () => void;
 }
 
-function value(event: Event): string {
-  return (event.currentTarget as HTMLInputElement).value;
-}
-
 export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSessionProps) {
   const [entries, setEntries] = useState<EntryRow[]>(() =>
     initial.entries.map((entry) => ({
       exerciseId: entry.exerciseId,
-      sets: entry.sets.map(setRow),
+      sets: entry.sets.map((set) => setRow(set, set)),
     })),
   );
   const [problem, setProblem] = useState<string | null>(null);
@@ -56,7 +49,7 @@ export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSes
   function addSet(index: number): void {
     changeSets(index, (sets) => {
       const last = sets[sets.length - 1]?.set ?? { reps: '', load: '0' };
-      return [...sets, setRow({ ...last })];
+      return [...sets, setRow({ ...last }, null)];
     });
   }
 
@@ -106,56 +99,14 @@ export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSes
           return (
             // Entries follow the routine's order and are never reordered or removed here,
             // so position is a stable identity for them.
-            <section key={index} class="card">
-              <h3 class="card__title">
-                <Icon name="exercise" />
-                {name}
-              </h3>
-              {entry.sets.length === 0 ? (
-                <p class="panel__note">Skipped.</p>
-              ) : (
-                <div class="set-grid set-grid--head" aria-hidden="true">
-                  <span>Set</span>
-                  <span>kg</span>
-                  <span>Reps</span>
-                </div>
-              )}
-              {entry.sets.map((row, setIndex) => (
-                <div key={row.key} class="set-grid">
-                  <span class="set-grid__number">{setIndex + 1}</span>
-                  <input
-                    class="set-grid__input"
-                    type="text"
-                    inputMode="decimal"
-                    aria-label={`${name} set ${setIndex + 1} load in kilograms`}
-                    value={row.set.load}
-                    onInput={(e) => setField(index, row.key, 'load', value(e))}
-                  />
-                  <input
-                    class="set-grid__input"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={`${name} set ${setIndex + 1} reps`}
-                    value={row.set.reps}
-                    onInput={(e) => setField(index, row.key, 'reps', value(e))}
-                  />
-                  <button
-                    type="button"
-                    class="icon-button"
-                    aria-label={`Remove ${name} set ${setIndex + 1}`}
-                    onClick={() =>
-                      changeSets(index, (sets) => sets.filter((r) => r.key !== row.key))
-                    }
-                  >
-                    <Icon name="minus" size={18} />
-                  </button>
-                </div>
-              ))}
-              <button type="button" class="dashed-button" onClick={() => addSet(index)}>
-                <Icon name="plus" size={18} />
-                Add set
-              </button>
-            </section>
+            <ExerciseCard
+              key={index}
+              name={name}
+              sets={entry.sets}
+              onField={(key, field, text) => setField(index, key, field, text)}
+              onRemove={(key) => changeSets(index, (sets) => sets.filter((r) => r.key !== key))}
+              onAdd={() => addSet(index)}
+            />
           );
         })}
 

@@ -1611,20 +1611,6 @@ a.button {
   gap: var(--space-3);
 }
 
-.card__title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--colour-text);
-  font-size: var(--size-title);
-  font-weight: 700;
-}
-
-.card__title .icon {
-  color: var(--colour-text-2);
-}
-
 .card__foot {
   display: flex;
   align-items: center;
@@ -1891,4 +1877,56 @@ mark {
   color: var(--colour-text-dim);
   font-size: var(--size-caption);
   text-align: center;
+}
+
+/* A workout's exercise: the name folds the card to one line. */
+.card__fold {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap-target);
+  margin: calc(var(--space-2) * -1) 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.card__fold > .icon:first-child {
+  color: var(--colour-text-2);
+}
+
+.card__fold > .icon:last-child {
+  color: var(--colour-text-dim);
+  transform: rotate(180deg);
+}
+
+.card__fold[aria-expanded='false'] > .icon:last-child {
+  transform: none;
+}
+
+.card__fold-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--size-title);
+  font-weight: 700;
+}
+
+.card__fold-summary {
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.card--folded {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+/* A set changed from what the routine pre-filled, or added during the workout. */
+.set-grid--changed .set-grid__input {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
 }
