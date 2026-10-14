@@ -127,10 +127,23 @@ input {
   padding-right: var(--space-4);
 }
 
+/* The launcher icon in small: the bonfire on its glow, in the icon's rounded square. */
 .top-bar__brand {
   display: flex;
-  margin-right: var(--space-1);
+  flex: none;
+  margin-right: var(--space-2);
+  overflow: hidden;
+  border-radius: 9px;
+  background: radial-gradient(circle at 50% 68%, rgba(227, 176, 75, 0.3), #0b0a07 62%);
   color: var(--colour-gold);
+}
+
+.bonfire__flame {
+  fill: rgba(227, 176, 75, 0.3);
+}
+
+.bonfire__ground {
+  fill: var(--colour-background);
 }
 
 .top-bar__title {

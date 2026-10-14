@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The launch screen: the launcher icon's bonfire and glow, centred on black, until the
+  web view draws the list. Android 12+ shows its own splash first, themed to match in
+  values/styles.xml.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <color android:color="#FF0B0A07" />
+    </item>
+    <item
+        android:width="160dp"
+        android:height="160dp"
+        android:drawable="@drawable/ic_launcher_background"
+        android:gravity="center" />
+    <item
+        android:width="160dp"
+        android:height="160dp"
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:gravity="center" />
+</layer-list>

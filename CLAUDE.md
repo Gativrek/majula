@@ -366,6 +366,8 @@ _Icon_:
 
 15. The launcher shows the bonfire: gold on black, a glow under the flames. With themed
     icons turned on, it follows the wallpaper's colour and stays legible.
+    Opening the app shows the bonfire on black, never a white screen, and the list's header
+    has the bonfire in small beside the name.
 
 _Tags and search marks_:
 

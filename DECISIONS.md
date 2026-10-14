@@ -224,3 +224,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - Tags in quick capture become pills as they are typed (a space or comma finishes one), each removable, and the owner's four most-used tags not yet chosen are offered to tap. From the design. Still stored exactly as typed, case kept (`notes.md` criterion 6); the rules are pure functions under test (`tag-entry.ts`). Tags clear after each capture, as before: a tag silently carried into the next capture would misfile it.
 - The capture type sheet names what each choice creates — Note, Routine — rather than the list it shows, so the Workouts icon's entry reads Routine.
+
+---
+
+## 2026-10-14 — The bonfire inside the app
+
+- The list's header shows the launcher icon in small, the bonfire on its glow, in place of the plain flame. Owner's note that the icon was missing in the app. It is drawn from the same paths as the launcher foreground (`BonfireMark.tsx`), so the two cannot drift.
+- The launch screen is the bonfire centred on black instead of Capacitor's default splash image, and Android 12+'s own splash is themed to match. Capacitor's splash PNGs are removed.
