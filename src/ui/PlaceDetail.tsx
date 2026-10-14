@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import type { ItemOfType } from '../data/types.ts';
-import { formatCoordinates, geoLink, parseCoordinates } from '../services/coordinates.ts';
+import { geoLink, parseCoordinates } from '../services/coordinates.ts';
 import type { Fix } from '../services/location.ts';
 import type { Coordinates } from '../services/maps-link.ts';
 import { coordinatesFromMapsLink, findMapsLink, isMapsLink } from '../services/maps-link.ts';
 import type { PlaceResult } from '../services/places.ts';
+import { Icon } from './Icon.tsx';
+import { ModuleHeader } from './ModuleHeader.tsx';
+import { LocationCard } from './LocationCard.tsx';
+import { useBackStep } from './use-back-step.ts';
 
 /**
  * A place (`docs/modules/places.md`): its name and note, its coordinates — taken from
@@ -33,11 +37,15 @@ export function PlaceDetail({
   onClearCoordinates,
   onClose,
 }: PlaceDetailProps) {
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(place.title);
   const [note, setNote] = useState(place.body ?? '');
   const [pasted, setPasted] = useState('');
   const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
+
+  // SPECS §2.2, Back: an edit in progress is cancelled, never saved.
+  useBackStep(editing, cancelEdit);
 
   const { lat, lon } = place.payload;
   const hasCoordinates = lat !== undefined && lon !== undefined;
@@ -61,10 +69,18 @@ export function PlaceDetail({
     }
   }
 
+  function cancelEdit(): void {
+    setName(place.title);
+    setNote(place.body ?? '');
+    setEditing(false);
+  }
+
   function saveDetails(): Promise<void> {
     return run(async function save() {
       const result = await onSaveDetails({ name, note });
-      return result.ok ? { kind: 'info', text: 'Saved.' } : { kind: 'error', text: result.message };
+      if (!result.ok) return { kind: 'error', text: result.message };
+      setEditing(false);
+      return null;
     });
   }
 
@@ -109,84 +125,91 @@ export function PlaceDetail({
     });
   }
 
+  async function copy(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage({ kind: 'info', text: 'Coordinates copied.' });
+    } catch {
+      setMessage({ kind: 'error', text: 'Could not copy. Select the coordinates instead.' });
+    }
+  }
+
   return (
     <div class="kitchen kitchen--editing">
+      <ModuleHeader
+        icon="place"
+        label="Place"
+        editing={editing}
+        editLabel="Edit name and note"
+        onBack={onClose}
+        onToggleEdit={() => (editing ? cancelEdit() : setEditing(true))}
+      />
+
       <main class="kitchen__body editor">
-        <label class="editor__field">
-          <span class="editor__label">Name</span>
-          <input
-            class="capture__input"
-            type="text"
-            value={name}
-            onInput={(event) => setName((event.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
+        {editing ? (
+          <>
+            <label class="editor__field">
+              <span class="editor__label">Name</span>
+              <input
+                class="capture__input"
+                type="text"
+                value={name}
+                onInput={(event) => setName((event.currentTarget as HTMLInputElement).value)}
+              />
+            </label>
+            <label class="editor__field">
+              <span class="editor__label">Note</span>
+              <textarea
+                class="capture__input editor__step-text"
+                rows={3}
+                value={note}
+                placeholder="Optional"
+                onInput={(event) => setNote((event.currentTarget as HTMLTextAreaElement).value)}
+              />
+            </label>
+            <button
+              type="button"
+              class="button"
+              disabled={busy || !isDirty}
+              onClick={() => void saveDetails()}
+            >
+              Save name and note
+            </button>
+          </>
+        ) : (
+          <div class="kitchen__heading-block">
+            <h2 class="module-title">{place.title}</h2>
+            {place.body === null ? null : <p class="module-body">{place.body}</p>}
+          </div>
+        )}
 
-        <label class="editor__field">
-          <span class="editor__label">Note</span>
-          <textarea
-            class="capture__input editor__step-text"
-            rows={3}
-            value={note}
-            placeholder="Optional"
-            onInput={(event) => setNote((event.currentTarget as HTMLTextAreaElement).value)}
-          />
-        </label>
+        <LocationCard
+          lat={lat}
+          lon={lon}
+          hasListing={mapsUrl !== null}
+          busy={busy}
+          onClear={() => void clear()}
+          onCopy={(text) => void copy(text)}
+        />
 
-        <button
-          type="button"
-          class="button button--quiet"
-          disabled={busy || !isDirty}
-          onClick={() => void saveDetails()}
-        >
-          Save name and note
-        </button>
-
-        <section class="kitchen__section place__location">
-          <h3 class="kitchen__heading">Location</h3>
-          {hasCoordinates ? <p class="place__coordinates">{formatCoordinates(lat, lon)}</p> : null}
-          {mapsUrl === null ? null : <p class="panel__note">Google Maps listing kept.</p>}
-          {openHref === null ? (
-            <p class="panel__note">No location yet.</p>
-          ) : (
-            <div class="panel__row">
-              <a class="button" href={openHref}>
-                Open in maps
-              </a>
-              <button
-                type="button"
-                class="button button--quiet"
-                disabled={busy}
-                onClick={() => void clear()}
-              >
-                Clear
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            class="button place__here"
-            disabled={busy}
-            onClick={() => void locate()}
-          >
-            {hasCoordinates ? 'Replace with here' : 'Here'}
-          </button>
-
+        <section class="kitchen__section">
+          <label class="kitchen__heading" for="place-paste">
+            Paste coordinates or a Maps link
+          </label>
           <div class="capture">
             <input
+              id="place-paste"
               class="capture__input"
               type="text"
               inputMode="text"
               autoComplete="off"
               value={pasted}
-              placeholder="Coordinates or a Maps link"
-              aria-label="Coordinates or a Google Maps link to paste"
+              placeholder="−12.3400, −56.0000"
               onInput={(event) => setPasted((event.currentTarget as HTMLInputElement).value)}
             />
             <button
               type="button"
-              class="button button--quiet"
+              class="button button--outline"
               disabled={busy || pasted.trim().length === 0}
               onClick={() => void setFromPaste()}
             >
@@ -203,9 +226,28 @@ export function PlaceDetail({
       </main>
 
       <footer class="kitchen__actions">
-        <button type="button" class="button button--quiet" onClick={onClose}>
-          Close
+        <button
+          type="button"
+          class="button button--quiet"
+          disabled={busy}
+          onClick={() => void locate()}
+        >
+          <span class="accent-icon">
+            <Icon name="here" size={20} />
+          </span>
+          Here
         </button>
+        {openHref === null ? (
+          <button type="button" class="button" disabled>
+            <Icon name="external" size={20} />
+            Open in maps
+          </button>
+        ) : (
+          <a class="button" href={openHref}>
+            <Icon name="external" size={20} />
+            Open in maps
+          </a>
+        )}
       </footer>
     </div>
   );

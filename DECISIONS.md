@@ -197,3 +197,8 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 ## 2026-10-14 — Redesign: module screens and the recipe rating
 
 - Recipes get an optional rating, an integer from 0 to 10 counting half stars, shown as five stars. Owner's request. It lives in the recipe payload beside servings, so there is no migration, the same reasoning as the reading view's `zoom` and `trim_margins`; SPECS §4.3 and `cookbook.md` amended. Absent means not rated and shows no stars, never five empty ones. In the editor each star is a whole button and tapping the last full star again halves it, so a half star never needs a target half a thumb wide.
+- Reading entries and places open to be read, not edited: title first, then the PDF or the location. A pencil turns the title into fields, and back cancels that edit without saving (SPECS §2.2, Back). Their main actions — **Continue on page N** or **Attach PDF**; **Here** and **Open in maps** — moved to the bottom bar, under the thumb (§6).
+- A reading entry's detail now shows and toggles its read status, which `reading-queue.md` criterion 2 already asked for and the old detail lacked.
+- A place leads with whether its location is saved and where it came from. The coordinates are a small line with a copy button: owner's comment on the design, that large coordinates were jarring.
+- A workout session is a card per exercise with a kg and reps grid. Its Cancel button became the × in the header.
+- Every remaining text glyph used as a button (×, ↺, ‹, ›, −, +) is now a line icon from the same set.

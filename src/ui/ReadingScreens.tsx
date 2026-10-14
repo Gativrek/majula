@@ -9,6 +9,7 @@ import {
   saveReadingView,
   viewOf,
 } from '../services/reading.ts';
+import { toggleDone } from '../services/items.ts';
 import { PdfViewer } from './PdfViewer.tsx';
 import { ReadingDetail } from './ReadingDetail.tsx';
 import { useBackStep } from './use-back-step.ts';
@@ -97,6 +98,10 @@ export function ReadingScreens({
         const result = await attachPdf(context, readingId, bytes);
         if (result.ok) await reload();
         return result;
+      }}
+      onToggleRead={async () => {
+        await toggleDone(context, reading);
+        await reload();
       }}
       onOpenPdf={() => setViewing(true)}
       onClose={onClose}

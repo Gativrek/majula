@@ -4,6 +4,7 @@ import type { RoutineDraft, RoutineEntryDraft } from '../services/workout-draft.
 import { NEW_ENTRY_DEFAULTS } from '../services/workout-draft.ts';
 import type { Outcome, ResolvedName } from '../services/workouts.ts';
 import { ExercisePicker } from './ExercisePicker.tsx';
+import { Icon } from './Icon.tsx';
 
 /**
  * Editing a routine (`docs/modules/workout.md` criteria 4–7): its name, and each
@@ -141,7 +142,7 @@ export function RoutineEditor({
                     aria-label={`Remove ${name}`}
                     onClick={() => setRows((current) => current.filter((x) => x.key !== r.key))}
                   >
-                    {'×'}
+                    <Icon name="close" size={18} />
                   </button>
                 </div>
               </div>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { SessionDraft, SetDraft } from '../services/workout-draft.ts';
 import type { Outcome, ResolvedName } from '../services/workouts.ts';
+import { Icon } from './Icon.tsx';
 
 /**
  * A workout in progress (`docs/modules/workout.md` criteria 9–10): every exercise of the
  * routine with its sets pre-filled, each changeable, addable and removable. **Save**
- * writes one log; Cancel or back writes nothing (SPECS §2.2, Back).
+ * writes one log; the header’s × or back writes nothing (SPECS §2.2, Back).
  */
 
 interface SetRow {
@@ -76,52 +77,68 @@ export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSes
     }
   }
 
+  function setField(index: number, key: number, field: keyof SetDraft, text: string): void {
+    changeSets(index, (sets) =>
+      sets.map((row) => (row.key === key ? { ...row, set: { ...row.set, [field]: text } } : row)),
+    );
+  }
+
+  const setCount = entries.reduce((total, entry) => total + entry.sets.length, 0);
+
   return (
     <div class="kitchen kitchen--editing">
-      <main class="kitchen__body editor">
-        <h2 class="kitchen__title">{initial.routineTitle}</h2>
+      <header class="top-bar top-bar--module">
+        <button type="button" class="icon-button" aria-label="Discard workout" onClick={onCancel}>
+          <Icon name="close" />
+        </button>
+        <span class="top-bar__stack">
+          <span class="top-bar__kicker">Workout</span>
+          <span class="top-bar__name">{initial.routineTitle}</span>
+        </span>
+        <span class="top-bar__aside">
+          {`${entries.length} exercise${entries.length === 1 ? '' : 's'} · ${setCount} set${setCount === 1 ? '' : 's'}`}
+        </span>
+      </header>
 
+      <main class="kitchen__body editor">
         {entries.map((entry, index) => {
           const { name } = nameOf(entry.exerciseId);
           return (
             // Entries follow the routine's order and are never reordered or removed here,
             // so position is a stable identity for them.
-            <section key={index} class="kitchen__section">
-              <h3 class="kitchen__heading">{name}</h3>
-              {entry.sets.length === 0 ? <p class="panel__note">Skipped.</p> : null}
+            <section key={index} class="card">
+              <h3 class="card__title">
+                <Icon name="exercise" />
+                {name}
+              </h3>
+              {entry.sets.length === 0 ? (
+                <p class="panel__note">Skipped.</p>
+              ) : (
+                <div class="set-grid set-grid--head" aria-hidden="true">
+                  <span>Set</span>
+                  <span>kg</span>
+                  <span>Reps</span>
+                </div>
+              )}
               {entry.sets.map((row, setIndex) => (
-                <div key={row.key} class="session__set">
-                  <span class="editor__step-number">{setIndex + 1}</span>
+                <div key={row.key} class="set-grid">
+                  <span class="set-grid__number">{setIndex + 1}</span>
                   <input
-                    class="capture__input routine__number"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={`${name} set ${setIndex + 1} reps`}
-                    value={row.set.reps}
-                    onInput={(e) =>
-                      changeSets(index, (sets) =>
-                        sets.map((r) =>
-                          r.key === row.key ? { ...r, set: { ...r.set, reps: value(e) } } : r,
-                        ),
-                      )
-                    }
-                  />
-                  <span class="session__times">{'×'}</span>
-                  <input
-                    class="capture__input routine__number"
+                    class="set-grid__input"
                     type="text"
                     inputMode="decimal"
                     aria-label={`${name} set ${setIndex + 1} load in kilograms`}
                     value={row.set.load}
-                    onInput={(e) =>
-                      changeSets(index, (sets) =>
-                        sets.map((r) =>
-                          r.key === row.key ? { ...r, set: { ...r.set, load: value(e) } } : r,
-                        ),
-                      )
-                    }
+                    onInput={(e) => setField(index, row.key, 'load', value(e))}
                   />
-                  <span class="session__unit">kg</span>
+                  <input
+                    class="set-grid__input"
+                    type="text"
+                    inputMode="numeric"
+                    aria-label={`${name} set ${setIndex + 1} reps`}
+                    value={row.set.reps}
+                    onInput={(e) => setField(index, row.key, 'reps', value(e))}
+                  />
                   <button
                     type="button"
                     class="icon-button"
@@ -130,11 +147,12 @@ export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSes
                       changeSets(index, (sets) => sets.filter((r) => r.key !== row.key))
                     }
                   >
-                    {'×'}
+                    <Icon name="minus" size={18} />
                   </button>
                 </div>
               ))}
-              <button type="button" class="button button--quiet" onClick={() => addSet(index)}>
+              <button type="button" class="dashed-button" onClick={() => addSet(index)}>
+                <Icon name="plus" size={18} />
                 Add set
               </button>
             </section>
@@ -145,10 +163,8 @@ export function WorkoutSession({ initial, nameOf, onSave, onCancel }: WorkoutSes
       </main>
 
       <footer class="kitchen__actions">
-        <button type="button" class="button button--quiet" disabled={saving} onClick={onCancel}>
-          Cancel
-        </button>
         <button type="button" class="button" disabled={saving} onClick={() => void save()}>
+          <Icon name="check" size={20} />
           Save workout
         </button>
       </footer>

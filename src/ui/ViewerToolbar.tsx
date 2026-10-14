@@ -1,5 +1,6 @@
 import type { ReadingView } from '../services/reading.ts';
 import { ZOOM_STEPS } from '../services/reading.ts';
+import { Icon } from './Icon.tsx';
 
 /**
  * The PDF viewer's size controls (`docs/modules/reading-queue.md` 15a–15d): trim margins,
@@ -41,7 +42,7 @@ export function ViewerToolbar({ view, disabled, onChange }: ViewerToolbarProps) 
           disabled={disabled || view.zoom <= SMALLEST}
           onClick={() => stepZoom(-1)}
         >
-          {'−'}
+          <Icon name="minus" size={20} />
         </button>
         <span class="viewer__zoom-level" aria-live="polite">
           {`${Math.round(view.zoom * 100)}%`}
@@ -53,7 +54,7 @@ export function ViewerToolbar({ view, disabled, onChange }: ViewerToolbarProps) 
           disabled={disabled || view.zoom >= LARGEST}
           onClick={() => stepZoom(1)}
         >
-          +
+          <Icon name="plus" size={20} />
         </button>
       </div>
     </div>

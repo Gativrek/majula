@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { log } from '../lib/logger.ts';
 import type { PdfHandle } from '../services/pdf-document.ts';
 import type { OpenedPdf, ReadingView } from '../services/reading.ts';
+import { Icon } from './Icon.tsx';
 import { useSwipePages } from './use-swipe-pages.ts';
 import { ViewerToolbar } from './ViewerToolbar.tsx';
 
@@ -228,7 +229,7 @@ export function PdfViewer({
           aria-label="Previous page"
           onClick={() => step(-1)}
         >
-          {'‹'}
+          <Icon name="back" />
         </button>
         <span class="viewer__position" aria-live="polite">
           {pageCount > 0 ? `${page} / ${pageCount}` : ''}
@@ -240,7 +241,9 @@ export function PdfViewer({
           aria-label="Next page"
           onClick={() => step(1)}
         >
-          {'›'}
+          <span class="icon-flip">
+            <Icon name="back" />
+          </span>
         </button>
       </footer>
     </div>

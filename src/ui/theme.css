@@ -50,6 +50,11 @@ body {
   background: var(--colour-background);
   color: var(--colour-text);
   font-family: var(--font-body);
+}
+
+/* Body text is 15px; the root stays at the browser's 16px so every rem — the 44px tap
+   target above all — means what it says. */
+body {
   font-size: var(--size-text);
   line-height: 1.4;
   -webkit-tap-highlight-color: transparent;
@@ -1514,4 +1519,278 @@ a.button {
 
 .viewer__page--zoomed {
   max-width: none;
+}
+
+/* An opened entry's header: back, what it is, and its pencil. */
+.top-bar--module {
+  padding-left: var(--space-1);
+  padding-right: var(--space-2);
+}
+
+.top-bar__kicker {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--colour-text-dim);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.top-bar__stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar__stack .top-bar__kicker {
+  flex: none;
+  font-size: 0.75rem;
+}
+
+.top-bar__name {
+  overflow: hidden;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-bar__aside {
+  flex: none;
+  padding-right: var(--space-2);
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+}
+
+.module-title {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.module-body {
+  margin: 0;
+  color: var(--colour-text-2);
+  white-space: pre-line;
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-target);
+  color: var(--colour-gold);
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+/* A card: the same flat surface as a list, holding one subject. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius-card);
+  background: var(--colour-surface);
+}
+
+.card__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.card__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--colour-text);
+  font-size: var(--size-title);
+  font-weight: 700;
+}
+
+.card__title .icon {
+  color: var(--colour-text-2);
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--colour-border);
+}
+
+.card__coordinates {
+  flex: 1;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.card__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+}
+
+.row__meta--wrap {
+  white-space: normal;
+}
+
+.tile--accent {
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress__figure {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress__of {
+  color: var(--colour-text-dim);
+  font-size: var(--size-text);
+  font-weight: 400;
+}
+
+.progress__track {
+  display: flex;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--colour-border);
+}
+
+.progress__fill {
+  background: var(--colour-gold);
+}
+
+.chip-static {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  border-radius: 999px;
+  background: var(--colour-surface-raised);
+  color: var(--colour-text-2);
+  font-size: var(--size-caption);
+  font-weight: 600;
+}
+
+.text-button {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-weight: 600;
+}
+
+.icon-button--small {
+  margin: -6px -6px -6px 0;
+  color: var(--colour-text-dim);
+}
+
+.button--outline {
+  border: 1.5px solid var(--colour-gold);
+  background: transparent;
+  color: var(--colour-gold-bright);
+}
+
+.button--square[aria-pressed='true'] {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+}
+
+.accent-icon {
+  display: flex;
+  color: var(--colour-gold);
+}
+
+/* A workout's sets: number, load, reps, remove. */
+.set-grid {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 1fr) var(--tap-target);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.set-grid--head {
+  color: var(--colour-text-dim);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.set-grid__number {
+  color: var(--colour-text-dim);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.set-grid__input {
+  width: 100%;
+  min-height: var(--tap-target);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-tile);
+  background: var(--colour-surface-raised);
+  color: var(--colour-text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.set-grid__input:focus {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+  outline: none;
+}
+
+.dashed-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--tap-target);
+  border: 1.5px dashed #3a3426;
+  border-radius: var(--radius-tile);
+  background: none;
+  color: var(--colour-text-2);
+  font-size: var(--size-small);
+  font-weight: 600;
+}
+
+/* The back chevron, turned, is the forward one. */
+.icon-flip {
+  display: flex;
+  transform: scaleX(-1);
 }

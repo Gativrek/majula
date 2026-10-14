@@ -59,7 +59,8 @@ it are purged in the same run. What survives the purge decides what is still ref
    pre-filled from the template. Reps and load can be changed per set; sets can be added
    and removed.
 10. **Save** writes one `workout_log`, titled with the routine's name and the local date.
-    **Back or Cancel writes nothing**: a session is an edit in progress (`SPECS.md` §2.2).
+    **Back, or the × that discards it, writes nothing**: a session is an edit in
+    progress (`SPECS.md` §2.2).
 11. **Workouts** is a type view of logs, newest first. A log shows each exercise's
     current name and the sets performed.
 12. A log whose exercise was later deleted still shows that exercise's name. A log whose

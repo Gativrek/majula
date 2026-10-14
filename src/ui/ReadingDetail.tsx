@@ -1,19 +1,30 @@
 import { useRef, useState } from 'react';
 import type { ItemOfType } from '../data/types.ts';
 import type { AttachResult, DetailsResult } from '../services/reading.ts';
+import { Icon } from './Icon.tsx';
+import { ModuleHeader } from './ModuleHeader.tsx';
+import { PdfCard } from './PdfCard.tsx';
+import { useBackStep } from './use-back-step.ts';
 
 /**
- * A reading-queue entry (`docs/modules/reading-queue.md` criteria 2–9): title and URL,
- * and the PDF — attached from the system picker, or opened if already there.
+ * A reading-queue entry (`docs/modules/reading-queue.md` criteria 2–9). It opens to be
+ * read, not edited: the title and link, then the PDF with where reading stopped. The
+ * pencil turns the title and link into fields; back cancels that edit.
+ *
+ * The main action sits at the bottom under the thumb: continue reading, or attach a PDF
+ * when there is none. The read status is the square beside it.
  */
 
 interface ReadingDetailProps {
   reading: ItemOfType<'reading'>;
   onSaveDetails: (details: { title: string; url: string }) => Promise<DetailsResult>;
   onAttach: (bytes: Uint8Array) => Promise<AttachResult>;
+  onToggleRead: () => Promise<void>;
   onOpenPdf: () => void;
   onClose: () => void;
 }
+
+type Message = { kind: 'info' | 'error'; text: string } | null;
 
 /** Only an http(s) address is offered as a link; anything else is shown as typed. */
 function openableUrl(url: string | null): string | null {
@@ -26,37 +37,47 @@ function openableUrl(url: string | null): string | null {
   }
 }
 
-function pdfSummary(reading: ItemOfType<'reading'>): string {
-  const { page_count: pages, last_page: lastPage } = reading.payload;
-  if (pages === undefined) return 'PDF attached';
-  if (lastPage === undefined || lastPage <= 1) return `${pages} page${pages === 1 ? '' : 's'}`;
-  return `Page ${lastPage} of ${pages}`;
+/** The address without its scheme, which is noise on a phone screen. */
+function shownUrl(url: string): string {
+  return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
-export function ReadingDetail({
-  reading,
-  onSaveDetails,
-  onAttach,
-  onOpenPdf,
-  onClose,
-}: ReadingDetailProps) {
+function continueLabel(lastPage: number | undefined): string {
+  return lastPage === undefined || lastPage <= 1 ? 'Open PDF' : `Continue on page ${lastPage}`;
+}
+
+export function ReadingDetail(props: ReadingDetailProps) {
+  const { reading } = props;
+  const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(reading.title);
   const [url, setUrl] = useState(reading.url ?? '');
-  const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
   const picker = useRef<HTMLInputElement | null>(null);
+
+  // SPECS §2.2, Back: an edit in progress is cancelled, never saved.
+  useBackStep(editing, cancelEdit);
 
   const hasPdf = reading.payload.pdf_path !== undefined;
   const link = openableUrl(reading.url);
   const isDirty = title !== reading.title || url !== (reading.url ?? '');
 
+  function cancelEdit(): void {
+    setTitle(reading.title);
+    setUrl(reading.url ?? '');
+    setEditing(false);
+  }
+
   async function saveDetails(): Promise<void> {
     setBusy(true);
     try {
-      const result = await onSaveDetails({ title, url });
-      setMessage(
-        result.ok ? { kind: 'info', text: 'Saved.' } : { kind: 'error', text: result.message },
-      );
+      const result = await props.onSaveDetails({ title, url });
+      if (result.ok) {
+        setEditing(false);
+        setMessage(null);
+      } else {
+        setMessage({ kind: 'error', text: result.message });
+      }
     } finally {
       setBusy(false);
     }
@@ -71,7 +92,7 @@ export function ReadingDetail({
     setBusy(true);
     setMessage({ kind: 'info', text: 'Copying the PDF into Majula…' });
     try {
-      const result = await onAttach(new Uint8Array(await file.arrayBuffer()));
+      const result = await props.onAttach(new Uint8Array(await file.arrayBuffer()));
       setMessage(
         result.ok
           ? { kind: 'info', text: 'Attached. The original can now be moved or deleted.' }
@@ -89,79 +110,72 @@ export function ReadingDetail({
 
   return (
     <div class="kitchen kitchen--editing">
-      <main class="kitchen__body editor">
-        <label class="editor__field">
-          <span class="editor__label">Title</span>
-          <input
-            class="capture__input"
-            type="text"
-            value={title}
-            onInput={(event) => setTitle((event.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
+      <ModuleHeader
+        icon="reading"
+        label="Reading"
+        editing={editing}
+        editLabel="Edit title and link"
+        onBack={props.onClose}
+        onToggleEdit={() => (editing ? cancelEdit() : setEditing(true))}
+      />
 
-        <label class="editor__field">
-          <span class="editor__label">URL</span>
-          <input
-            class="capture__input"
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            value={url}
-            placeholder="Optional"
-            onInput={(event) => setUrl((event.currentTarget as HTMLInputElement).value)}
-          />
-        </label>
-        {link === null ? null : (
-          <p class="panel__note">
-            <a class="reading__link" href={link} target="_blank" rel="noreferrer">
-              Open in browser
-            </a>
-          </p>
+      <main class="kitchen__body editor">
+        {editing ? (
+          <>
+            <label class="editor__field">
+              <span class="editor__label">Title</span>
+              <input
+                class="capture__input"
+                type="text"
+                value={title}
+                onInput={(event) => setTitle((event.currentTarget as HTMLInputElement).value)}
+              />
+            </label>
+            <label class="editor__field">
+              <span class="editor__label">URL</span>
+              <input
+                class="capture__input"
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                value={url}
+                placeholder="Optional"
+                onInput={(event) => setUrl((event.currentTarget as HTMLInputElement).value)}
+              />
+            </label>
+            <button
+              type="button"
+              class="button"
+              disabled={busy || !isDirty}
+              onClick={() => void saveDetails()}
+            >
+              Save title and link
+            </button>
+          </>
+        ) : (
+          <div class="kitchen__heading-block">
+            <h2 class="module-title">{reading.title}</h2>
+            {link === null ? (
+              reading.url === null ? null : (
+                <p class="panel__note">{reading.url}</p>
+              )
+            ) : (
+              <a class="link-row" href={link} target="_blank" rel="noreferrer">
+                <Icon name="link" size={18} />
+                <span>{shownUrl(link)}</span>
+              </a>
+            )}
+          </div>
         )}
 
-        <button
-          type="button"
-          class="button button--quiet"
-          disabled={busy || !isDirty}
-          onClick={() => void saveDetails()}
-        >
-          Save title and URL
-        </button>
-
-        <section class="kitchen__section reading__pdf">
-          <h3 class="kitchen__heading">PDF</h3>
-          {hasPdf ? (
-            <>
-              <p class="panel__note">{pdfSummary(reading)}</p>
-              <button type="button" class="button" disabled={busy} onClick={onOpenPdf}>
-                Open PDF
-              </button>
-            </>
-          ) : (
-            <>
-              <p class="panel__note">
-                Attaching copies the file into Majula, so the original can be moved or deleted
-                afterwards.
-              </p>
-              <button
-                type="button"
-                class="button"
-                disabled={busy}
-                onClick={() => picker.current?.click()}
-              >
-                Attach PDF
-              </button>
-              <input
-                ref={picker}
-                type="file"
-                accept="application/pdf,.pdf"
-                hidden
-                onChange={(event) => void onPicked(event)}
-              />
-            </>
-          )}
-        </section>
+        {hasPdf ? (
+          <PdfCard reading={reading} />
+        ) : (
+          <p class="panel__note">
+            No PDF yet. Attaching copies the file into Majula, so the original can be moved or
+            deleted afterwards.
+          </p>
+        )}
 
         {message === null ? null : (
           <p class={message.kind === 'error' ? 'banner banner--error' : 'banner banner--info'}>
@@ -171,9 +185,38 @@ export function ReadingDetail({
       </main>
 
       <footer class="kitchen__actions">
-        <button type="button" class="button button--quiet" onClick={onClose}>
-          Close
+        <button
+          type="button"
+          class="button button--quiet button--square"
+          aria-pressed={reading.done}
+          aria-label={reading.done ? 'Mark as unread' : 'Mark as read'}
+          onClick={() => void props.onToggleRead()}
+        >
+          <Icon name="check" />
         </button>
+        {hasPdf ? (
+          <button type="button" class="button" disabled={busy} onClick={props.onOpenPdf}>
+            <Icon name="reading" size={20} />
+            {continueLabel(reading.payload.last_page)}
+          </button>
+        ) : (
+          <button
+            type="button"
+            class="button"
+            disabled={busy}
+            onClick={() => picker.current?.click()}
+          >
+            <Icon name="file" size={20} />
+            Attach PDF
+          </button>
+        )}
+        <input
+          ref={picker}
+          type="file"
+          accept="application/pdf,.pdf"
+          hidden
+          onChange={(event) => void onPicked(event)}
+        />
       </footer>
     </div>
   );
