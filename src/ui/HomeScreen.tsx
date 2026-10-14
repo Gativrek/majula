@@ -162,6 +162,9 @@ export function HomeScreen(props: HomeScreenProps) {
             onDelete={(item) => void after(deleteItem(context, item.id))}
             onOpen={onOpen}
           />
+          {items.length === 0 ? null : (
+            <p class="list-hint">Swipe a row left, or hold it, to delete.</p>
+          )}
         </section>
       </div>
       <CaptureBar

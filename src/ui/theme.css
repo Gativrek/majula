@@ -346,6 +346,8 @@ input {
   padding: var(--space-1) var(--space-3);
   background: var(--colour-surface);
   touch-action: pan-y;
+  -webkit-touch-callout: none;
+  user-select: none;
   transition: transform 160ms ease-out;
 }
 
@@ -1881,4 +1883,12 @@ mark {
 .tag-chip--small {
   min-height: var(--tap-target);
   padding: 0 var(--space-3);
+}
+
+/* How to delete, said once under the list rather than as a button on every row. */
+.list-hint {
+  margin: 0;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+  text-align: center;
 }

@@ -30,3 +30,9 @@ export function dragOffset(dx: number, wasOpen: boolean): number {
 export function settlesOpen(dx: number, wasOpen: boolean): boolean {
   return dragOffset(dx, wasOpen) < -REVEAL_WIDTH / 2;
 }
+
+/**
+ * Holding a row still this long uncovers Delete too: the same button, found without
+ * knowing to swipe. Long enough that a slow tap never does it.
+ */
+export const HOLD_MS = 450;

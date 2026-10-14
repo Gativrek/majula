@@ -231,3 +231,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - The list's header shows the launcher icon in small, the bonfire on its glow, in place of the plain flame. Owner's note that the icon was missing in the app. It is drawn from the same paths as the launcher foreground (`BonfireMark.tsx`), so the two cannot drift.
 - The launch screen is the bonfire centred on black instead of Capacitor's default splash image, and Android 12+'s own splash is themed to match. Capacitor's splash PNGs are removed.
+
+---
+
+## 2026-10-14 — Finding Delete
+
+- Holding a row still uncovers its Delete button, the same one a left swipe uncovers, and a line under the list says both. Owner's report: there was no visible way to delete a note. A swipe alone is invisible, and notes, unlike recipes or places, open into nothing, so a list row was the only place delete could live. SPECS §2.2 amended.
+- The hold is cancelled the moment the finger moves enough to be a scroll or a swipe, and the lift that ends it never also taps the row. The row's text cannot be selected, so a hold does not raise the WebView's selection menu instead.

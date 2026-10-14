@@ -343,6 +343,8 @@ _The list_ (`SPECS.md` §2.2, The list):
    opens every type; picking **Note** there switches the list to Notes too.
 5. Swipe a row left: **Delete** shows. Tap the row: it closes. Scrolling the list up and
    down never opens a row. Swipe again and tap **Delete**: it moves to **Deleted**.
+   Hold a row still instead: **Delete** shows the same way, and no text-selection menu
+   appears. A line under the list says both.
 6. Check a to-do off: it folds under **Done**, which opens and closes.
 7. On **Notes**, search a word from a to-do: it is found. Back returns to Notes.
 8. In search, tap a tag: the list shows that tag across categories. Back clears it.
