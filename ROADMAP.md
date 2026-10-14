@@ -181,7 +181,7 @@ comes back with an ADR.
 
 ---
 
-## Phase 5 — Reading queue with PDF viewer (§7 step 5) — ONE LAYOUT ISSUE OPEN
+## Phase 5 — Reading queue with PDF viewer (§7 step 5) — AWAITING RE-CHECK
 
 - `docs/modules/reading-queue.md` first.
 - Entry: title, optional URL, optional attached PDF, read status.

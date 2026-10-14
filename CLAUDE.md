@@ -288,6 +288,31 @@ dates or `habit_checks`:
 8. Export, reinstall, import: routines, logs and history all come back.
 9. Back from a log returns to the routine it came from; back again closes it.
 
+**Owner’s requests of 2026-10-13** — to check on the phone:
+
+*PDF size* (`reading-queue.md` 10, 15a–15d):
+
+1. Open an A4 PDF upright. The page runs edge to edge and sits centred, not at the top.
+2. **Trim margins**: the white side margins go and the text gets larger. A blank page,
+   or one with thin margins, is shown whole.
+3. **+** steps to 150%, 200%, 250%; the page scrolls sideways as well as down. **−**
+   steps back.
+4. Turn a page while zoomed: the new page starts at its top-left.
+5. Close and reopen the PDF, and restart the app: trim and zoom are as you left them, and
+   so is the page.
+6. Rotate while zoomed: it refits without stretching.
+
+*Places from Google Maps* (`places.md` 15–21):
+
+1. In Google Maps, open a restaurant, **Share → Majula**. Majula opens on a new place
+   named after it, with "Google Maps listing kept". Works from cold and with Majula open.
+2. **Open in maps** opens that exact listing in Google Maps.
+3. Share the same restaurant again: Majula opens the place it already has, no duplicate.
+4. Share a web page from Chrome to Majula: a notice says it had no Google Maps link, and
+   nothing is saved.
+5. On a place, paste a link from **Share → Copy link** in Maps, **Set**: the link is kept.
+6. **Clear** removes the coordinates and the link together.
+
 **Back button** (`SPECS.md` §2.2, Back) — PASSED 2026-10-13. Undoes one step, never commits:
 
 1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
