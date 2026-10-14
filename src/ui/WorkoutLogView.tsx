@@ -1,6 +1,8 @@
 import type { ItemOfType } from '../data/types.ts';
-import { formatLoad } from '../services/workout-draft.ts';
+import { formatKilograms } from '../services/workout-draft.ts';
 import type { ResolvedName } from '../services/workouts.ts';
+import { Icon } from './Icon.tsx';
+import { ModuleHeader } from './ModuleHeader.tsx';
 
 /**
  * One performed session (`docs/modules/workout.md` criteria 11–13). Exercise names are
@@ -25,37 +27,43 @@ export function WorkoutLogView({ log, nameOf, onClose }: WorkoutLogViewProps) {
 
   return (
     <div class="kitchen kitchen--editing">
+      <ModuleHeader icon="workout" label="Workout" onBack={onClose} />
+
       <main class="kitchen__body">
-        <h2 class="kitchen__title">{log.title}</h2>
-        <p class="kitchen__servings">{routineLine(routine)}</p>
+        <div class="kitchen__heading-block">
+          <h2 class="module-title">{log.title}</h2>
+          <p class="kitchen__servings">
+            <Icon name="routine" size={18} />
+            {routineLine(routine)}
+          </p>
+        </div>
 
         {log.payload.performed.map((entry, index) => {
           const { name, isDeleted, isUnknown } = nameOf(entry.exercise_id);
           return (
             // Performed entries have no id; position is their identity in a log that is
             // never edited after it is written.
-            <section key={index} class="kitchen__section">
-              <h3
-                class={isUnknown ? 'kitchen__heading workout__name--unknown' : 'kitchen__heading'}
-              >
-                {name}
-                {isDeleted ? ' (deleted)' : ''}
+            <section key={index} class="card">
+              <h3 class={isUnknown ? 'card__heading workout__name--unknown' : 'card__heading'}>
+                <Icon name="exercise" />
+                {isDeleted ? `${name} (deleted)` : name}
               </h3>
-              <ol class="workout__sets">
-                {entry.sets.map((set, setIndex) => (
-                  <li key={setIndex}>{`${set.reps} × ${formatLoad(set.load_kg)}`}</li>
-                ))}
-              </ol>
+              <div class="set-grid set-grid--head set-grid--read" aria-hidden="true">
+                <span>Set</span>
+                <span>kg</span>
+                <span>Reps</span>
+              </div>
+              {entry.sets.map((set, setIndex) => (
+                <div key={setIndex} class="set-grid set-grid--read">
+                  <span class="set-grid__number">{setIndex + 1}</span>
+                  <span class="set-grid__value">{formatKilograms(set.load_kg)}</span>
+                  <span class="set-grid__value">{set.reps}</span>
+                </div>
+              ))}
             </section>
           );
         })}
       </main>
-
-      <footer class="kitchen__actions">
-        <button type="button" class="button button--quiet" onClick={onClose}>
-          Close
-        </button>
-      </footer>
     </div>
   );
 }

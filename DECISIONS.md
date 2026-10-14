@@ -245,3 +245,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - An exercise's name folds its card to one line, `3 × 10 · 30 kg` when every set matches, for exercises already done. From the design. Folding is the screen's state only: a folded exercise is saved like any other.
 - A set the owner changed from what the routine pre-filled, or added during the workout, is outlined in gold, so the session shows at a glance where it departed from the plan. Compared as typed, so `60,0` against `60` counts as changed: it is what the owner typed.
+
+---
+
+## 2026-10-14 — Routine, workout log and exercise screens
+
+- The routine view, routine editor, workout log and exercise detail take the same shape as the reading and place screens: a header naming the kind of entry with back on the left, the title, cards, and the main action alone at the bottom. Design consistency only; no behaviour in `workout.md` changes.
+- A routine's **Edit** stays at the thumb beside **Start workout** (`workout.md` criterion 8); Close moved to the header's back. The routine editor's Cancel is the header's ×, and the exercise detail edits behind a pencil like a place, with back cancelling the edit.
+- A logged session reads as the same kg and reps grid a workout is typed into, so a log looks like the session it came from.
+- Unused rules for the old layouts of these screens were removed from the stylesheet.

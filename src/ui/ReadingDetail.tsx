@@ -113,10 +113,12 @@ export function ReadingDetail(props: ReadingDetailProps) {
       <ModuleHeader
         icon="reading"
         label="Reading"
-        editing={editing}
-        editLabel="Edit title and link"
         onBack={props.onClose}
-        onToggleEdit={() => (editing ? cancelEdit() : setEditing(true))}
+        edit={{
+          editing,
+          label: 'Edit title and link',
+          onToggle: () => (editing ? cancelEdit() : setEditing(true)),
+        }}
       />
 
       <main class="kitchen__body editor">

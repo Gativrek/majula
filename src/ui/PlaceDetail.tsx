@@ -139,10 +139,12 @@ export function PlaceDetail({
       <ModuleHeader
         icon="place"
         label="Place"
-        editing={editing}
-        editLabel="Edit name and note"
         onBack={onClose}
-        onToggleEdit={() => (editing ? cancelEdit() : setEditing(true))}
+        edit={{
+          editing,
+          label: 'Edit name and note',
+          onToggle: () => (editing ? cancelEdit() : setEditing(true)),
+        }}
       />
 
       <main class="kitchen__body editor">

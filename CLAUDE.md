@@ -363,6 +363,9 @@ _Screens_:
     them on the clipboard. **Here** and **Open in maps** sit at the bottom.
 14. Start a workout: each exercise is a card of kg and reps. The × at the top discards the
     session and logs nothing.
+    Open a routine: its exercises are a list with sets × reps · load, and **Edit** and
+    **Start workout** are at the bottom. A past workout shows each exercise as a kg and reps
+    grid. An exercise opens read-only; its pencil edits the name and cues.
     Change a set's load: that set is outlined in gold. Tap an exercise's name: it folds to
     one line such as `3 × 10 · 30 kg`. Save with it folded: its sets are still logged.
 

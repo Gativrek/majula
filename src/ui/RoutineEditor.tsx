@@ -5,6 +5,7 @@ import { NEW_ENTRY_DEFAULTS } from '../services/workout-draft.ts';
 import type { Outcome, ResolvedName } from '../services/workouts.ts';
 import { ExercisePicker } from './ExercisePicker.tsx';
 import { Icon } from './Icon.tsx';
+import { ModuleHeader } from './ModuleHeader.tsx';
 
 /**
  * Editing a routine (`docs/modules/workout.md` criteria 4–7): its name, and each
@@ -83,9 +84,17 @@ export function RoutineEditor({
 
   return (
     <div class="kitchen kitchen--editing">
+      <ModuleHeader
+        icon="routine"
+        label="Routine"
+        onBack={onCancel}
+        backLabel="Cancel"
+        backIcon="close"
+      />
+
       <main class="kitchen__body editor">
         <label class="editor__field">
-          <span class="editor__label">Routine</span>
+          <span class="editor__label">Name</span>
           <input
             class="capture__input"
             type="text"
@@ -96,46 +105,15 @@ export function RoutineEditor({
 
         <section class="kitchen__section">
           <h3 class="kitchen__heading">Exercises</h3>
-          {rows.length > 0 ? (
-            <div class="routine__labels" aria-hidden="true">
-              <span>Sets</span>
-              <span>Reps</span>
-              <span>kg</span>
-            </div>
-          ) : null}
           {rows.map((r) => {
             const { name, isDeleted } = nameFor(r.entry.exerciseId);
             return (
-              <div key={r.key} class="routine__entry">
-                <div class="routine__name">
-                  {name}
-                  {isDeleted ? <span class="routine__deleted"> (deleted)</span> : null}
-                </div>
-                <div class="routine__numbers">
-                  <input
-                    class="capture__input routine__number"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={`${name} sets`}
-                    value={r.entry.sets}
-                    onInput={(e) => update(r.key, 'sets', value(e))}
-                  />
-                  <input
-                    class="capture__input routine__number"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={`${name} reps`}
-                    value={r.entry.reps}
-                    onInput={(e) => update(r.key, 'reps', value(e))}
-                  />
-                  <input
-                    class="capture__input routine__number"
-                    type="text"
-                    inputMode="decimal"
-                    aria-label={`${name} load in kilograms`}
-                    value={r.entry.load}
-                    onInput={(e) => update(r.key, 'load', value(e))}
-                  />
+              <div key={r.key} class="card routine__entry">
+                <div class="card__row">
+                  <span class="row__text">
+                    <span class="row__title">{name}</span>
+                    {isDeleted ? <span class="row__meta">Deleted from the catalog</span> : null}
+                  </span>
                   <button
                     type="button"
                     class="icon-button"
@@ -145,10 +123,43 @@ export function RoutineEditor({
                     <Icon name="close" size={18} />
                   </button>
                 </div>
+                <div class="routine__numbers">
+                  <label class="routine__number">
+                    <span>Sets</span>
+                    <input
+                      class="set-grid__input"
+                      type="text"
+                      inputMode="numeric"
+                      value={r.entry.sets}
+                      onInput={(e) => update(r.key, 'sets', value(e))}
+                    />
+                  </label>
+                  <label class="routine__number">
+                    <span>Reps</span>
+                    <input
+                      class="set-grid__input"
+                      type="text"
+                      inputMode="numeric"
+                      value={r.entry.reps}
+                      onInput={(e) => update(r.key, 'reps', value(e))}
+                    />
+                  </label>
+                  <label class="routine__number">
+                    <span>kg</span>
+                    <input
+                      class="set-grid__input"
+                      type="text"
+                      inputMode="decimal"
+                      value={r.entry.load}
+                      onInput={(e) => update(r.key, 'load', value(e))}
+                    />
+                  </label>
+                </div>
               </div>
             );
           })}
-          <button type="button" class="button button--quiet" onClick={() => setPicking(true)}>
+          <button type="button" class="dashed-button" onClick={() => setPicking(true)}>
+            <Icon name="plus" size={18} />
             Add exercise
           </button>
         </section>
@@ -157,11 +168,9 @@ export function RoutineEditor({
       </main>
 
       <footer class="kitchen__actions">
-        <button type="button" class="button button--quiet" disabled={saving} onClick={onCancel}>
-          Cancel
-        </button>
         <button type="button" class="button" disabled={saving} onClick={() => void save()}>
-          Save
+          <Icon name="check" size={20} />
+          Save routine
         </button>
       </footer>
 

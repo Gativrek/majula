@@ -173,5 +173,10 @@ export function buildSession(
 
 /** A load as the owner reads it. The device's locale formats it, so 22.5 reads as 22,5. */
 export function formatLoad(kilograms: number): string {
-  return `${kilograms.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`;
+  return `${formatKilograms(kilograms)} kg`;
+}
+
+/** The load alone, for a column already headed kg. */
+export function formatKilograms(kilograms: number): string {
+  return kilograms.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }

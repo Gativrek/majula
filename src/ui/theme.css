@@ -1305,14 +1305,6 @@ input::placeholder {
   min-width: var(--tap-target);
 }
 
-.reading__link {
-  color: var(--colour-gold);
-}
-
-.reading__pdf {
-  margin-top: var(--space-5);
-}
-
 /* Places. A link styled as a button needs the button's box, which an anchor lacks. */
 a.button {
   display: inline-flex;
@@ -1321,27 +1313,12 @@ a.button {
   text-decoration: none;
 }
 
-.place__location {
-  margin-top: var(--space-5);
-}
-
-.place__coordinates {
-  margin: 0 0 var(--space-3);
-  color: var(--colour-gold);
-  font-size: var(--size-title);
-  font-variant-numeric: tabular-nums;
-}
-
-.place__here {
-  width: 100%;
-  margin: var(--space-3) 0;
-}
-
 /* The exercise picker sits over the routine editor, anchored to the bottom where the thumb
    is (SPECS §6), with the list scrolling above its search field. */
 .picker {
   position: fixed;
   inset: 0;
+  z-index: 10;
   display: flex;
   align-items: flex-end;
   background: rgb(0 0 0 / 60%);
@@ -1355,8 +1332,8 @@ a.button {
   max-height: 80%;
   padding: var(--space-4);
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--colour-gold);
-  border-radius: var(--radius) var(--radius) 0 0;
+  border-top: 1px solid var(--colour-border);
+  border-radius: 24px 24px 0 0;
   background: var(--colour-surface);
 }
 
@@ -1387,92 +1364,32 @@ a.button {
 }
 
 /* Routine editor rows: the name on its own line, the numbers beneath in fixed columns. */
-.routine__labels,
 .routine__numbers {
   display: grid;
-  grid-template-columns: 3.5rem 3.5rem 4.5rem auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
-  align-items: center;
-}
-
-.routine__labels {
-  margin-bottom: var(--space-1);
-  color: var(--colour-text-dim);
-  font-size: var(--size-small);
 }
 
 .routine__entry {
-  margin-bottom: var(--space-3);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--colour-border);
-}
-
-.routine__name {
-  margin-bottom: var(--space-2);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
 }
 
 .routine__number {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   min-width: 0;
-  text-align: center;
+  color: var(--colour-text-dim);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.routine__deleted,
 .workout__name--unknown {
   color: var(--colour-text-dim);
   font-style: italic;
-}
-
-.workout__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.workout__row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--colour-border);
-}
-
-.workout__numbers {
-  color: var(--colour-gold);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.workout__sets {
-  margin: 0;
-  padding-left: 1.5em;
-  font-variant-numeric: tabular-nums;
-}
-
-.session__set {
-  display: grid;
-  grid-template-columns: 1.5rem 3.5rem auto 4.5rem auto auto;
-  gap: var(--space-2);
-  align-items: center;
-  margin-bottom: var(--space-2);
-}
-
-.session__times,
-.session__unit {
-  color: var(--colour-text-dim);
-}
-
-.history__session {
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--colour-border);
-}
-
-.history__day {
-  color: var(--colour-text-dim);
-  font-size: var(--size-small);
-}
-
-.history__sets {
-  font-variant-numeric: tabular-nums;
 }
 
 /* A notice above the list, such as a refused share. Dismissable, never blocking. */
@@ -1929,4 +1846,38 @@ mark {
   border-color: var(--colour-gold);
   background: var(--colour-gold-soft);
   color: var(--colour-gold-bright);
+}
+
+/* A figure at a list row's end, such as a routine's sets × reps · load. */
+.row__figure {
+  flex: none;
+  color: var(--colour-gold-bright);
+  font-size: var(--size-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.card__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: var(--size-title);
+  font-weight: 700;
+}
+
+.card__heading > .icon {
+  color: var(--colour-text-2);
+}
+
+/* A logged session's sets: read, not typed, so values sit as text in the grid. */
+.set-grid--read {
+  grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 2rem;
+}
+
+.set-grid__value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
