@@ -584,20 +584,6 @@ input::placeholder {
   color: var(--colour-text-dim);
 }
 
-.field {
-  min-height: var(--tap-target);
-  padding: 0 0.875rem;
-  border: 1px solid var(--colour-border);
-  border-radius: var(--radius);
-  background: var(--colour-surface-raised);
-  font-size: 1rem;
-}
-
-.field:focus {
-  border-color: var(--colour-gold);
-  outline: none;
-}
-
 /* A bottom sheet over a dimmed screen. */
 .sheet-layer {
   position: fixed;
@@ -1817,4 +1803,69 @@ mark {
   border-radius: 3px;
   background: rgba(227, 176, 75, 0.22);
   color: var(--colour-gold-bright);
+}
+
+/* Quick capture's tags: finished ones as pills, the one being typed, and the owner's own. */
+.tag-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tag-field__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding-left: var(--space-3);
+  border-radius: 999px;
+  background: var(--colour-surface-raised);
+  color: var(--colour-text-2);
+  font-size: var(--size-small);
+  font-weight: 600;
+}
+
+/* The × is small to look at but keeps a full target, reaching past the pill's edge. */
+.tag-pill__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin: -6px -8px -6px -10px;
+  border: 0;
+  background: none;
+  color: var(--colour-text-dim);
+}
+
+.tag-field__input {
+  flex: 1;
+  min-width: 8rem;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface-raised);
+  font-size: 1rem;
+}
+
+.tag-field__input:focus {
+  border-color: var(--colour-gold);
+  outline: none;
+}
+
+.tag-field__hint {
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+}
+
+.tag-chip--small {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
 }

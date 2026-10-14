@@ -3,7 +3,14 @@ import type { Item, ItemOfType, ItemType } from '../data/types.ts';
 import type { AppContext } from '../services/database.ts';
 import type { HabitState } from '../services/habits.ts';
 import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
-import { captureItem, deleteItem, listItems, loadTagsFor, toggleDone } from '../services/items.ts';
+import {
+  captureItem,
+  deleteItem,
+  listItems,
+  loadTagCounts,
+  loadTagsFor,
+  toggleDone,
+} from '../services/items.ts';
 import { newRecipeDraft } from '../services/recipe-draft.ts';
 import { newRoutineDraft } from '../services/workout-draft.ts';
 import { CaptureBar } from './CaptureBar.tsx';
@@ -46,6 +53,7 @@ export function HomeScreen(props: HomeScreenProps) {
   const [habits, setHabits] = useState<ItemOfType<'habit'>[]>([]);
   const [states, setStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
   const [rowTags, setRowTags] = useState<ReadonlyMap<string, readonly string[]>>(new Map());
+  const [knownTags, setKnownTags] = useState<{ tag: string; count: number }[]>([]);
   // Switching categories quickly starts loads that can finish out of order; only the
   // latest may fill the list.
   const latest = useRef(0);
@@ -58,11 +66,13 @@ export function HomeScreen(props: HomeScreenProps) {
       const allHabits = await listItems(context, { types: ['habit'] });
       const habitStates = await loadHabitStates(context, [...allHabits, ...listed]);
       const tagsOnRows = await loadTagsFor(context, listed);
+      const tagCounts = await loadTagCounts(context);
       if (ticket !== latest.current) return;
       setItems(listed);
       setHabits(allHabits.filter((item): item is ItemOfType<'habit'> => item.type === 'habit'));
       setStates(habitStates);
       setRowTags(tagsOnRows);
+      setKnownTags(tagCounts);
     },
     [context, shown, tag, version],
   );
@@ -156,6 +166,7 @@ export function HomeScreen(props: HomeScreenProps) {
       </div>
       <CaptureBar
         category={shown}
+        knownTags={knownTags}
         disabled={false}
         onCapture={onCapture}
         onPickCategory={props.onCategoryChange}

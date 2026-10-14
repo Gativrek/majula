@@ -375,6 +375,13 @@ _Tags and search marks_:
 18. Type a search quickly, then stop: the results are for what is in the field, not for
     something typed on the way.
 
+_Capture_:
+
+19. Tap **#** in quick capture and type `errands home `: each word becomes a pill with an ×.
+    Your most-used tags show under it; tapping one adds it. Save: the item has them all,
+    and the tag field is empty again.
+20. The capture type button lists Note, Routine and so on, by what each creates.
+
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:

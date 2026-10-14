@@ -32,7 +32,7 @@ export function TypeSheet({ selected, onPick, onDismiss }: TypeSheetProps) {
                 onClick={() => onPick(id)}
               >
                 <Icon name={shown.icon} />
-                {shown.label}
+                {shown.captureLabel}
               </button>
             );
           })}

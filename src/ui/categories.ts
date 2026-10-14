@@ -19,6 +19,8 @@ export interface Category {
   types: readonly ItemType[];
   /** What quick capture creates while this category is showing (SPECS §2.2). */
   captureType: ItemType;
+  /** That type's name in the capture type sheet: what is made, not what is listed. */
+  captureLabel: string;
   placeholder: string;
 }
 
@@ -29,6 +31,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'todo',
     types: ['todo'],
     captureType: 'todo',
+    captureLabel: 'To-do',
     placeholder: 'Add a to-do',
   },
   note: {
@@ -37,6 +40,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'note',
     types: ['note'],
     captureType: 'note',
+    captureLabel: 'Note',
     placeholder: 'Capture a note',
   },
   grocery: {
@@ -45,6 +49,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'grocery',
     types: ['grocery'],
     captureType: 'grocery',
+    captureLabel: 'Running low',
     placeholder: 'Add to running low',
   },
   reading: {
@@ -53,6 +58,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'reading',
     types: ['reading'],
     captureType: 'reading',
+    captureLabel: 'Reading',
     placeholder: 'Title to read',
   },
   recipe: {
@@ -61,6 +67,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'recipe',
     types: ['recipe'],
     captureType: 'recipe',
+    captureLabel: 'Recipe',
     placeholder: 'New recipe',
   },
   place: {
@@ -69,6 +76,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'place',
     types: ['place'],
     captureType: 'place',
+    captureLabel: 'Place',
     placeholder: 'Place to try',
   },
   contact: {
@@ -77,6 +85,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'contact',
     types: ['contact'],
     captureType: 'contact',
+    captureLabel: 'Contact',
     placeholder: 'Who you met',
   },
   workouts: {
@@ -85,6 +94,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'routine',
     types: ['routine', 'workout_log', 'exercise'],
     captureType: 'routine',
+    captureLabel: 'Routine',
     placeholder: 'New routine',
   },
   habit: {
@@ -93,6 +103,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
     icon: 'habit',
     types: ['habit'],
     captureType: 'habit',
+    captureLabel: 'Habit',
     placeholder: 'New habit',
   },
 };

@@ -217,3 +217,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Rows show their tags beside the title, two at most and then a count. Tags come for the whole list in a few queries (`tagsForItems`), never one query per row.
 - Search results mark the words that matched, in the title and in a stretch of body around the match, from FTS5's own `highlight` and `snippet`. The marks are two control characters, bound as query values, so nothing the owner typed is mistaken for one. SPECS §2.2 amended.
 - Found while wiring these: a search fires per keystroke and a category switch reloads the list, and either can finish out of order. Only the latest load now fills the screen.
+
+---
+
+## 2026-10-14 — Quick capture: tag pills and type names
+
+- Tags in quick capture become pills as they are typed (a space or comma finishes one), each removable, and the owner's four most-used tags not yet chosen are offered to tap. From the design. Still stored exactly as typed, case kept (`notes.md` criterion 6); the rules are pure functions under test (`tag-entry.ts`). Tags clear after each capture, as before: a tag silently carried into the next capture would misfile it.
+- The capture type sheet names what each choice creates — Note, Routine — rather than the list it shows, so the Workouts icon's entry reads Routine.

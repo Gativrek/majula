@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { ItemType } from '../data/types.ts';
 import type { Category, CategoryId } from './categories.ts';
 import { Icon } from './Icon.tsx';
+import { finalTags } from './tag-entry.ts';
+import { TagField } from './TagField.tsx';
 import { TypeSheet } from './TypeSheet.tsx';
 import { useBackStep } from './use-back-step.ts';
 
@@ -29,13 +31,19 @@ export function parseTags(raw: string): string[] {
 interface CaptureBarProps {
   category: Category;
   disabled: boolean;
+  /** The owner's tags with how often each is used, to offer while tagging. */
+  knownTags: readonly { tag: string; count: number }[];
   onCapture: (type: ItemType, title: string, tags: string[]) => Promise<void>;
   onPickCategory: (id: CategoryId) => void;
 }
 
-export function CaptureBar({ category, disabled, onCapture, onPickCategory }: CaptureBarProps) {
+export function CaptureBar(props: CaptureBarProps) {
+  const { category, disabled, onCapture, onPickCategory } = props;
   const [title, setTitle] = useState('');
-  const [tagText, setTagText] = useState('');
+  const [tagEntry, setTagEntry] = useState<{ tags: string[]; draft: string }>({
+    tags: [],
+    draft: '',
+  });
   const [tagsShown, setTagsShown] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -51,9 +59,9 @@ export function CaptureBar({ category, disabled, onCapture, onPickCategory }: Ca
     if (!canSave) return;
     setSaving(true);
     try {
-      await onCapture(category.captureType, trimmed, parseTags(tagText));
+      await onCapture(category.captureType, trimmed, finalTags(tagEntry.tags, tagEntry.draft));
       setTitle('');
-      setTagText('');
+      setTagEntry({ tags: [], draft: '' });
     } finally {
       setSaving(false);
     }
@@ -76,22 +84,19 @@ export function CaptureBar({ category, disabled, onCapture, onPickCategory }: Ca
       ) : null}
       <form class="capture-bar" onSubmit={onSubmit}>
         {tagsShown ? (
-          <input
-            class="field capture-bar__tags"
-            type="text"
-            value={tagText}
-            placeholder="Tags, separated by spaces"
-            aria-label="Tags, separated by spaces"
-            autoComplete="off"
+          <TagField
+            tags={tagEntry.tags}
+            draft={tagEntry.draft}
+            known={props.knownTags}
             disabled={disabled}
-            onInput={(event) => setTagText((event.currentTarget as HTMLInputElement).value)}
+            onChange={setTagEntry}
           />
         ) : null}
         <div class="capture-bar__row">
           <button
             type="button"
             class="capture-bar__type"
-            aria-label={`Capture as ${category.label}. Change type`}
+            aria-label={`Capture as ${category.captureLabel}. Change type`}
             onClick={() => setSheetOpen(true)}
           >
             <Icon name={category.icon} />
