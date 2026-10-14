@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import type { ItemOfType } from '../data/types.ts';
-import { geoLink, parseCoordinates } from '../services/coordinates.ts';
+import { geoLink } from '../services/coordinates.ts';
 import type { Fix } from '../services/location.ts';
 import type { Coordinates } from '../services/maps-link.ts';
-import { coordinatesFromMapsLink, findMapsLink, isMapsLink } from '../services/maps-link.ts';
+import { isMapsLink } from '../services/maps-link.ts';
 import type { PlaceResult } from '../services/places.ts';
 import { Icon } from './Icon.tsx';
 import { ModuleHeader } from './ModuleHeader.tsx';
 import { LocationCard } from './LocationCard.tsx';
+import type { Message } from './PasteLocation.tsx';
+import { PasteLocation } from './PasteLocation.tsx';
 import { useBackStep } from './use-back-step.ts';
 
 /**
@@ -26,8 +28,6 @@ interface PlaceDetailProps {
   onClose: () => void;
 }
 
-type Message = { kind: 'info' | 'error'; text: string } | null;
-
 export function PlaceDetail({
   place,
   onSaveDetails,
@@ -40,7 +40,6 @@ export function PlaceDetail({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(place.title);
   const [note, setNote] = useState(place.body ?? '');
-  const [pasted, setPasted] = useState('');
   const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
 
@@ -92,29 +91,6 @@ export function PlaceDetail({
       await onSetCoordinates({ lat: fix.lat, lon: fix.lon });
       // places.md criterion 6: the accuracy shows an approximate-only grant for what it is.
       return { kind: 'info', text: `Location set, accurate to about ${fix.accuracyMetres} m.` };
-    });
-  }
-
-  function setFromPaste(): Promise<void> {
-    return run(async function usePasted() {
-      const link = findMapsLink(pasted);
-      if (link !== null) {
-        const coordinates = coordinatesFromMapsLink(link);
-        await onSetLink({ url: link, coordinates });
-        setPasted('');
-        return {
-          kind: 'info',
-          text:
-            coordinates === null
-              ? 'Maps link kept. Open in maps opens the listing.'
-              : 'Maps link kept, with the coordinates it contains.',
-        };
-      }
-      const parsed = parseCoordinates(pasted);
-      if (!parsed.ok) return { kind: 'error', text: parsed.message };
-      await onSetCoordinates({ lat: parsed.lat, lon: parsed.lon });
-      setPasted('');
-      return { kind: 'info', text: 'Location set.' };
     });
   }
 
@@ -194,31 +170,12 @@ export function PlaceDetail({
           onCopy={(text) => void copy(text)}
         />
 
-        <section class="kitchen__section">
-          <label class="kitchen__heading" for="place-paste">
-            Paste coordinates or a Maps link
-          </label>
-          <div class="capture">
-            <input
-              id="place-paste"
-              class="capture__input"
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              value={pasted}
-              placeholder="−12.3400, −56.0000"
-              onInput={(event) => setPasted((event.currentTarget as HTMLInputElement).value)}
-            />
-            <button
-              type="button"
-              class="button button--outline"
-              disabled={busy || pasted.trim().length === 0}
-              onClick={() => void setFromPaste()}
-            >
-              Set
-            </button>
-          </div>
-        </section>
+        <PasteLocation
+          busy={busy}
+          run={run}
+          onSetCoordinates={onSetCoordinates}
+          onSetLink={onSetLink}
+        />
 
         {message === null ? null : (
           <p class={message.kind === 'error' ? 'banner banner--error' : 'banner banner--info'}>

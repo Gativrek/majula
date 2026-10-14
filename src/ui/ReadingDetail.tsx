@@ -4,6 +4,7 @@ import type { AttachResult, DetailsResult } from '../services/reading.ts';
 import { Icon } from './Icon.tsx';
 import { ModuleHeader } from './ModuleHeader.tsx';
 import { PdfCard } from './PdfCard.tsx';
+import { continueLabel, openableUrl, shownUrl } from './reading-display.ts';
 import { useBackStep } from './use-back-step.ts';
 
 /**
@@ -25,26 +26,6 @@ interface ReadingDetailProps {
 }
 
 type Message = { kind: 'info' | 'error'; text: string } | null;
-
-/** Only an http(s) address is offered as a link; anything else is shown as typed. */
-function openableUrl(url: string | null): string | null {
-  if (url === null) return null;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
-  } catch {
-    return null;
-  }
-}
-
-/** The address without its scheme, which is noise on a phone screen. */
-function shownUrl(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-}
-
-function continueLabel(lastPage: number | undefined): string {
-  return lastPage === undefined || lastPage <= 1 ? 'Open PDF' : `Continue on page ${lastPage}`;
-}
 
 export function ReadingDetail(props: ReadingDetailProps) {
   const { reading } = props;
