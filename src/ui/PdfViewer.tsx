@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { log } from '../lib/logger.ts';
 import type { PdfHandle } from '../services/pdf-document.ts';
-import type { OpenedPdf } from '../services/reading.ts';
+import type { OpenedPdf, ReadingView } from '../services/reading.ts';
+import { ZOOM_STEPS } from '../services/reading.ts';
 
 /**
- * The PDF viewer (`docs/modules/reading-queue.md` criteria 10–15): one page at a time,
+ * The PDF viewer (`docs/modules/reading-queue.md` criteria 10–15d): one page at a time,
  * fitted to the screen width, Previous and Next at the thumb, and the page remembered.
+ * Above the page, margin trimming and a stepped zoom, both remembered per document.
  *
  * No annotation, highlighting or notes of any kind (SPECS §1.1 item 8).
  */
@@ -13,7 +15,9 @@ import type { OpenedPdf } from '../services/reading.ts';
 interface PdfViewerProps {
   title: string;
   open: () => Promise<OpenedPdf>;
+  initialView: ReadingView;
   onPageChange: (page: number) => void;
+  onViewChange: (view: ReadingView) => void;
   onClose: () => void;
 }
 
@@ -23,9 +27,18 @@ type Status =
   | { kind: 'missing' }
   | { kind: 'failed'; message: string };
 
-export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps) {
+export function PdfViewer({
+  title,
+  open,
+  initialView,
+  onPageChange,
+  onViewChange,
+  onClose,
+}: PdfViewerProps) {
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
   const [page, setPage] = useState(1);
+  const [view, setView] = useState<ReadingView>(initialView);
+  const wantedView = useRef(initialView);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const frame = useRef<HTMLDivElement | null>(null);
 
@@ -93,10 +106,17 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
         const surface = canvas.current;
         const width = frame.current?.clientWidth ?? 0;
         if (surface === null || width === 0) return;
-        await handle.renderPage(target, surface, width);
+        const drawnView = wantedView.current;
+        await handle.renderPage(target, surface, width, drawnView);
         renderedWidth.current = width;
-        // Draw again if the page or the width moved on while this render ran.
-        if (wantedPage.current === target && frame.current?.clientWidth === width) return;
+        // Draw again if the page, the width or the view moved on while this render ran.
+        if (
+          wantedPage.current === target &&
+          wantedView.current === drawnView &&
+          frame.current?.clientWidth === width
+        ) {
+          return;
+        }
       }
     } catch (error) {
       // Closing the viewer mid-render destroys the document, and PDF.js rejects the render
@@ -115,12 +135,21 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
   }
 
   useEffect(
-    function renderOnPageChange() {
+    function renderOnPageOrViewChange() {
       if (status.kind !== 'ready') return;
       wantedPage.current = page;
+      wantedView.current = view;
       void drawWantedPage(status.handle);
     },
-    [status, page],
+    [status, page, view],
+  );
+
+  // A new page starts at its top-left, not wherever the last one was scrolled to.
+  useEffect(
+    function scrollNewPageToStart() {
+      frame.current?.scrollTo(0, 0);
+    },
+    [page],
   );
 
   // The page must refit whenever the viewer's own width changes: rotating the phone, split
@@ -153,10 +182,59 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
     onPageChange(target);
   }
 
+  function changeView(next: ReadingView): void {
+    setView(next);
+    onViewChange(next);
+  }
+
+  function stepZoom(by: number): void {
+    const index = ZOOM_STEPS.indexOf(view.zoom);
+    const next = ZOOM_STEPS[Math.min(Math.max(index + by, 0), ZOOM_STEPS.length - 1)];
+    if (next !== undefined && next !== view.zoom) changeView({ ...view, zoom: next });
+  }
+
   const pageCount = status.kind === 'ready' ? status.handle.pageCount : 0;
+  const ready = status.kind === 'ready';
 
   return (
     <div class="kitchen kitchen--editing viewer">
+      {/* reading-queue.md 15d: the size controls sit above the page; turning pages stays
+          at the thumb. */}
+      <div class="viewer__toolbar" role="toolbar" aria-label="Reading size">
+        <button
+          type="button"
+          class="chip"
+          aria-pressed={view.trimMargins}
+          disabled={!ready}
+          onClick={() => changeView({ ...view, trimMargins: !view.trimMargins })}
+        >
+          Trim margins
+        </button>
+        <div class="viewer__zoom">
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Zoom out"
+            disabled={!ready || view.zoom <= (ZOOM_STEPS[0] ?? 1)}
+            onClick={() => stepZoom(-1)}
+          >
+            {'\u2212'}
+          </button>
+          <span class="viewer__zoom-level" aria-live="polite">
+            {`${Math.round(view.zoom * 100)}%`}
+          </span>
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Zoom in"
+            disabled={!ready || view.zoom >= (ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? 1)}
+            onClick={() => stepZoom(1)}
+          >
+            +
+          </button>
+        </div>
+      </div>
+
       <main class="viewer__body" ref={frame}>
         {status.kind === 'loading' ? <p class="empty">Opening {title}…</p> : null}
         {status.kind === 'missing' ? (
@@ -170,7 +248,7 @@ export function PdfViewer({ title, open, onPageChange, onClose }: PdfViewerProps
         ) : null}
         <canvas
           ref={canvas}
-          class="viewer__page"
+          class={view.zoom > 1 ? 'viewer__page viewer__page--zoomed' : 'viewer__page'}
           hidden={status.kind !== 'ready'}
           aria-label={`${title}, page ${page}`}
         />

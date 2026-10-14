@@ -35,6 +35,9 @@ export interface ReadingPayload {
   pdf_path?: string;
   page_count?: number;
   last_page?: number;
+  /** How the viewer draws this document, remembered with the page (reading-queue.md 15c). */
+  zoom?: number;
+  trim_margins?: boolean;
 }
 
 /**

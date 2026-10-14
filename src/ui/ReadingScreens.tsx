@@ -6,15 +6,33 @@ import {
   openReadingPdf,
   saveLastPage,
   saveReadingDetails,
+  saveReadingView,
+  viewOf,
 } from '../services/reading.ts';
 import { PdfViewer } from './PdfViewer.tsx';
 import { ReadingDetail } from './ReadingDetail.tsx';
 import { useBackStep } from './use-back-step.ts';
+import { log } from '../lib/logger.ts';
 
 /**
  * The reading queue's screens (`docs/modules/reading-queue.md`): an entry's detail, and
  * its PDF in the viewer.
  */
+
+/**
+ * Page turns and view changes are saved without waiting, so this owns their failure: a
+ * save that fails is logged, never an unhandled rejection (CODESTYLE §8). The reading
+ * carries on either way; the worst case is reopening on an earlier page.
+ */
+async function remember(saving: Promise<void>): Promise<void> {
+  try {
+    await saving;
+  } catch (cause) {
+    log.error('reading.save_failed', {
+      reason: cause instanceof Error ? cause.message : 'unknown',
+    });
+  }
+}
 
 interface ReadingScreensProps {
   context: AppContext;
@@ -55,10 +73,12 @@ export function ReadingScreens({
       <PdfViewer
         title={reading.title}
         open={openPdf}
-        onPageChange={(page) => void saveLastPage(context, readingId, page)}
+        initialView={viewOf(reading)}
+        onPageChange={(page) => void remember(saveLastPage(context, readingId, page))}
+        onViewChange={(view) => void remember(saveReadingView(context, readingId, view))}
         onClose={() => {
           setViewing(false);
-          void reload();
+          void remember(reload());
         }}
       />
     );

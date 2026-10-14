@@ -92,6 +92,18 @@ function readingPayload(value: unknown, id: string | undefined): ReadingPayload 
   if (raw.last_page !== undefined) {
     payload.last_page = asFiniteNumber(raw.last_page, 'last_page', 'reading', id);
   }
+  if (raw.zoom !== undefined) {
+    const zoom = asFiniteNumber(raw.zoom, 'zoom', 'reading', id);
+    // reading-queue.md 15b: 100% to 250%. Anything outside is not a view this app draws.
+    if (zoom < 1 || zoom > 2.5) fail('payload.zoom', 'must be between 1 and 2.5', 'reading', id);
+    payload.zoom = zoom;
+  }
+  if (raw.trim_margins !== undefined) {
+    if (typeof raw.trim_margins !== 'boolean') {
+      fail('payload.trim_margins', 'expected true or false', 'reading', id);
+    }
+    payload.trim_margins = raw.trim_margins;
+  }
   return payload;
 }
 

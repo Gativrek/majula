@@ -725,3 +725,41 @@ a.button {
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
+
+/* The viewer's size controls, above the page (reading-queue.md 15d). */
+.viewer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--colour-border);
+  background: var(--colour-surface);
+}
+
+.viewer__toolbar .chip {
+  margin: 0;
+}
+
+.viewer__zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.viewer__zoom-level {
+  min-width: 3.5em;
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Zoomed past the width, the page keeps its size and the frame scrolls both ways. */
+.viewer__body {
+  overflow-x: auto;
+}
+
+.viewer__page--zoomed {
+  max-width: none;
+}

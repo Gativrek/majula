@@ -217,3 +217,46 @@ export async function saveReadingDetails(
   });
   return { ok: true };
 }
+
+/** reading-queue.md 15b: the zoom steps. Four buttons' worth, not a free scale. */
+export const ZOOM_STEPS: readonly number[] = [1, 1.5, 2, 2.5];
+
+/** How the viewer draws a document, remembered with its last page (criterion 15c). */
+export interface ReadingView {
+  zoom: number;
+  trimMargins: boolean;
+}
+
+/** The nearest zoom step to a stored value; 100% when there is none. */
+export function snapZoom(zoom: number | undefined): number {
+  if (zoom === undefined) return 1;
+  return ZOOM_STEPS.reduce((best, step) =>
+    Math.abs(step - zoom) < Math.abs(best - zoom) ? step : best,
+  );
+}
+
+export function viewOf(reading: ItemOfType<'reading'>): ReadingView {
+  return {
+    zoom: snapZoom(reading.payload.zoom),
+    trimMargins: reading.payload.trim_margins ?? false,
+  };
+}
+
+/**
+ * Remember how a document is being read. Re-reads the stored payload first, as
+ * `saveLastPage` does, so changing the zoom can never write back a stale page.
+ */
+export async function saveReadingView(
+  context: AppContext,
+  readingId: string,
+  view: ReadingView,
+): Promise<void> {
+  const reading = await currentReading(context, readingId);
+  if (reading === null) return;
+  const payload: ReadingPayload = {
+    ...reading.payload,
+    zoom: snapZoom(view.zoom),
+    trim_margins: view.trimMargins,
+  };
+  await context.items.update<'reading'>(readingId, { payload });
+}
