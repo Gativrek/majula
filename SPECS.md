@@ -65,7 +65,7 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 ### 2.2 Cross-cutting features
 
 - **Quick capture.** One input reachable from the home screen in one tap. Defaults to `note`. Type selected via chips, not parsed from text. No prefix syntax (`t: buy milk`) in v1: ACCEPTED 2026-09-21. Parsing magic is a source of silent misfiling, and a note that legitimately opens with a prefix-shaped string would be filed as the wrong type without any signal.
-- **Global search** across title and body of all entities. Excludes soft-deleted rows (§4.2).
+- **Global search** across title and body of all entities. Excludes soft-deleted rows (§4.2). Search ignores the category or tag selected on the list: a search always covers every type, so a word is found wherever it was filed. ACCEPTED 2026-10-14 (owner’s decision). Clearing the search returns to the category that was selected.
 - **Tag views.** Saved filters over the generic entity table. Most modules are views, not separate screens with separate storage.
 - **Purge.** A global action that hard-deletes soft-deleted rows and removes their attached files. Not per-module. Lands in the vertical slice, since soft delete does (§7 step 1).
 - **Export/backup.** Required, not optional. See §5.

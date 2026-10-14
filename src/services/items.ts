@@ -49,15 +49,11 @@ export async function listItems(context: AppContext, filter: ItemFilter = {}): P
 /**
  * Global search over title and body (SPECS §2.2). Soft-deleted rows never appear.
  *
- * The type filter narrows the same search rather than switching to a different one, so a
- * word found in the unfiltered list is still found inside a module view.
+ * It takes no filter: a search covers every type whatever category the list is showing,
+ * so a word is found wherever it was filed.
  */
-export async function searchAll(
-  context: AppContext,
-  query: string,
-  filter: ItemFilter = {},
-): Promise<Item[]> {
-  return searchItems(context.driver, query, filter.type === undefined ? {} : { type: filter.type });
+export async function searchAll(context: AppContext, query: string): Promise<Item[]> {
+  return searchItems(context.driver, query);
 }
 
 /** Every tag currently on a live item, for the tag views. */

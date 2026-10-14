@@ -93,9 +93,7 @@ export function App() {
       }
       const trimmed = query.trim();
       const visible =
-        trimmed.length > 0
-          ? await searchAll(context, trimmed, filter)
-          : await listItems(context, filter);
+        trimmed.length > 0 ? await searchAll(context, trimmed) : await listItems(context, filter);
       setItems(visible);
       setHabitStates(await loadHabitStates(context, visible));
       setTags(await loadTagCounts(context));

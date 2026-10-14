@@ -10,7 +10,7 @@ import { log } from '../lib/logger.ts';
 import type { SqlDriver, SqlValue } from './driver.ts';
 import type { ItemRow } from './items.ts';
 import { toItem } from './items.ts';
-import type { Item, ItemType } from './types.ts';
+import type { Item } from './types.ts';
 
 const COLUMNS = [
   'items.id',
@@ -48,7 +48,6 @@ export function toMatchQuery(raw: string): string | null {
 }
 
 export interface SearchOptions {
-  type?: ItemType;
   limit?: number;
 }
 
@@ -74,10 +73,6 @@ export async function searchItems(
     `SELECT ${COLUMNS} FROM items_fts ` +
     'JOIN items ON items.rowid = items_fts.rowid ' +
     'WHERE items_fts MATCH ? AND items.deleted_at IS NULL';
-  if (options.type !== undefined) {
-    sql += ' AND items.type = ?';
-    params.push(options.type);
-  }
   sql += ' ORDER BY rank, items.created_at DESC';
   sql += ' LIMIT ?';
   params.push(options.limit ?? DEFAULT_LIMIT);

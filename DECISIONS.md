@@ -174,3 +174,9 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 ## 2026-10-14 — Device checks: all open checks passed
 
 - PASSED on the owner's phone: the Phase 5 re-check (reading queue), PDF size and swiping including the zoomed-edge rule, places from Google Maps, and the permissions audit (no `INTERNET`, only location). Phase 5 is closed; every phase in `ROADMAP.md` is now closed.
+
+---
+
+## 2026-10-14 — Search covers every category
+
+- Search ignores the category or tag selected on the list and always covers every type. Owner's decision. `searchAll` no longer takes a filter, and the data layer's unused `type` search option went with it. SPECS §2.2 amended.
