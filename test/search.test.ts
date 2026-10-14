@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ItemStore } from '../src/data/items.ts';
 import { runMigrations } from '../src/data/migrations.ts';
-import { searchItems, toMatchQuery } from '../src/data/search.ts';
-import { setTags } from '../src/data/tags.ts';
+import { MARK_END, MARK_START, searchHits, searchItems, toMatchQuery } from '../src/data/search.ts';
+import { setTags, tagsForItems } from '../src/data/tags.ts';
 import { setLogLevel } from '../src/lib/logger.ts';
 import { openTestDatabase } from './support/driver-node.ts';
 
@@ -145,6 +145,57 @@ describe('global search', function searchSuite() {
     const { driver, store } = await freshStore();
     await store.create({ type: 'note', title: 'Something' });
     assert.deepEqual(await searchItems(driver, '   '), []);
+    await driver.close();
+  });
+});
+
+describe('where a search matched', function hitsSuite() {
+  const mark = (word: string) => `${MARK_START}${word}${MARK_END}`;
+
+  it('marks the matched words in the title', async function title() {
+    const { driver, store } = await freshStore();
+    await store.create({ type: 'grocery', title: 'Coffee beans' });
+    const [hit] = await searchHits(driver, 'bean');
+    assert.equal(hit?.markedTitle, `Coffee ${mark('beans')}`);
+    assert.equal(hit?.markedSnippet, null, 'no body, so no snippet');
+    await driver.close();
+  });
+
+  it('gives a marked stretch of body when the match is there', async function body() {
+    const { driver, store } = await freshStore();
+    await store.create({
+      type: 'note',
+      title: 'Roaster near the market',
+      body: 'Sells single-origin beans by the kilo on Saturdays.',
+    });
+    const [hit] = await searchHits(driver, 'beans');
+    assert.equal(hit?.markedTitle, 'Roaster near the market');
+    assert.ok(hit?.markedSnippet?.includes(mark('beans')));
+    await driver.close();
+  });
+
+  it('gives no snippet when the body has no match', async function titleOnly() {
+    const { driver, store } = await freshStore();
+    await store.create({ type: 'note', title: 'Beans to buy', body: 'from the market' });
+    const [hit] = await searchHits(driver, 'beans');
+    assert.equal(hit?.markedSnippet, null);
+    await driver.close();
+  });
+});
+
+describe('tags for a list', function tagsForItemsSuite() {
+  it('returns each item its own tags, sorted, and leaves untagged items out', async function many() {
+    const { driver, store } = await freshStore();
+    const a = await store.create({ type: 'todo', title: 'A' });
+    const b = await store.create({ type: 'todo', title: 'B' });
+    const c = await store.create({ type: 'todo', title: 'C' });
+    await setTags(driver, a.id, ['work', 'errands']);
+    await setTags(driver, b.id, ['home']);
+    const tags = await tagsForItems(driver, [a.id, b.id, c.id]);
+    assert.deepEqual(tags.get(a.id), ['errands', 'work']);
+    assert.deepEqual(tags.get(b.id), ['home']);
+    assert.equal(tags.has(c.id), false);
+    assert.equal((await tagsForItems(driver, [])).size, 0);
     await driver.close();
   });
 });

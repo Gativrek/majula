@@ -210,3 +210,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - App icon: option D, "Ember glow", from four drawn on the design canvas. Owner's choice. A sword planted in an ash mound with flames and rising embers, in gold on black with a warm glow behind: an original drawing in the spirit of a Dark Souls 2 bonfire (SPECS §1), not the game's artwork.
 - The icon is vectors only. Android 8+ gets an adaptive icon (gradient background, bonfire foreground, and a monochrome layer for themed icons); Android 7.0–7.1, still inside `minSdkVersion` 24, gets the same drawing as a vector in `mipmap-anydpi`, cut to a rounded square or a circle. Capacitor's default PNGs are gone. Rejected: rendering PNGs per density, which needs a rasteriser — a new dependency for an ADR — or a manual export step that would let the PNGs drift from the drawing.
 
+---
+
+## 2026-10-14 — Tags on rows and search marks
+
+- Rows show their tags beside the title, two at most and then a count. Tags come for the whole list in a few queries (`tagsForItems`), never one query per row.
+- Search results mark the words that matched, in the title and in a stretch of body around the match, from FTS5's own `highlight` and `snippet`. The marks are two control characters, bound as query values, so nothing the owner typed is mistaken for one. SPECS §2.2 amended.
+- Found while wiring these: a search fires per keystroke and a category switch reloads the list, and either can finish out of order. Only the latest load now fills the screen.

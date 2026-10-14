@@ -4,8 +4,11 @@
  */
 
 import { countDeleted, purgeDeleted } from '../data/purge.ts';
-import { searchItems } from '../data/search.ts';
-import { listTags, setTags, tagsForItem } from '../data/tags.ts';
+import type { SearchHit } from '../data/search.ts';
+export type { SearchHit } from '../data/search.ts';
+export { MARK_END, MARK_START } from '../data/search.ts';
+import { searchHits } from '../data/search.ts';
+import { listTags, setTags, tagsForItem, tagsForItems } from '../data/tags.ts';
 import type { Item, ItemType, NewItem } from '../data/types.ts';
 import { log } from '../lib/logger.ts';
 import type { AppContext } from './database.ts';
@@ -53,10 +56,21 @@ export async function listItems(context: AppContext, filter: ItemFilter = {}): P
  * Global search over title and body (SPECS §2.2). Soft-deleted rows never appear.
  *
  * It takes no filter: a search covers every type whatever category the list is showing,
- * so a word is found wherever it was filed.
+ * so a word is found wherever it was filed. Each hit says where it matched, for marking.
  */
-export async function searchAll(context: AppContext, query: string): Promise<Item[]> {
-  return searchItems(context.driver, query);
+export async function searchAll(context: AppContext, query: string): Promise<SearchHit[]> {
+  return searchHits(context.driver, query);
+}
+
+/** The tags of every item in a list, for showing on its rows (SPECS §2.2, The list). */
+export async function loadTagsFor(
+  context: AppContext,
+  items: readonly Item[],
+): Promise<Map<string, string[]>> {
+  return tagsForItems(
+    context.driver,
+    items.map((item) => item.id),
+  );
 }
 
 /** Every tag currently on a live item, for the tag views. */

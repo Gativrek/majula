@@ -1794,3 +1794,27 @@ a.button {
   display: flex;
   transform: scaleX(-1);
 }
+
+/* A row's tags sit after its text, small, and give way before the title does. */
+.row__tags {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row__face > .row__tags:last-child {
+  padding-right: var(--space-1);
+}
+
+/* The words a search matched. */
+mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: rgba(227, 176, 75, 0.22);
+  color: var(--colour-gold-bright);
+}

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Item, ItemOfType, ItemType } from '../data/types.ts';
 import type { AppContext } from '../services/database.ts';
 import type { HabitState } from '../services/habits.ts';
 import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
-import { captureItem, deleteItem, listItems, toggleDone } from '../services/items.ts';
+import { captureItem, deleteItem, listItems, loadTagsFor, toggleDone } from '../services/items.ts';
 import { newRecipeDraft } from '../services/recipe-draft.ts';
 import { newRoutineDraft } from '../services/workout-draft.ts';
 import { CaptureBar } from './CaptureBar.tsx';
@@ -45,14 +45,24 @@ export function HomeScreen(props: HomeScreenProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [habits, setHabits] = useState<ItemOfType<'habit'>[]>([]);
   const [states, setStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
+  const [rowTags, setRowTags] = useState<ReadonlyMap<string, readonly string[]>>(new Map());
+  // Switching categories quickly starts loads that can finish out of order; only the
+  // latest may fill the list.
+  const latest = useRef(0);
 
   const refresh = useCallback(
     async function refreshList(): Promise<void> {
+      latest.current += 1;
+      const ticket = latest.current;
       const listed = await listItems(context, tag === null ? { types: shown.types } : { tag });
       const allHabits = await listItems(context, { types: ['habit'] });
+      const habitStates = await loadHabitStates(context, [...allHabits, ...listed]);
+      const tagsOnRows = await loadTagsFor(context, listed);
+      if (ticket !== latest.current) return;
       setItems(listed);
       setHabits(allHabits.filter((item): item is ItemOfType<'habit'> => item.type === 'habit'));
-      setStates(await loadHabitStates(context, [...allHabits, ...listed]));
+      setStates(habitStates);
+      setRowTags(tagsOnRows);
     },
     [context, shown, tag, version],
   );
@@ -134,6 +144,7 @@ export function HomeScreen(props: HomeScreenProps) {
             items={items}
             emptyMessage={tag === null ? 'Nothing here yet.' : `Nothing tagged #${tag}.`}
             habitStates={states}
+            tagsByItem={rowTags}
             showType={mixed}
             foldDone={foldDone}
             onToggleDone={(item) => void after(toggleDone(context, item))}

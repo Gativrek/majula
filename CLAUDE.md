@@ -366,6 +366,15 @@ _Icon_:
 
 15. The launcher shows the bonfire: gold on black, a glow under the flames. With themed
     icons turned on, it follows the wallpaper's colour and stays legible.
+
+_Tags and search marks_:
+
+16. A tagged row shows its tags after its title: two at most, then `+N`.
+17. Search a word that is only in a note's body: the result shows the words around it with
+    the match marked in gold. Search a title word: the title has it marked.
+18. Type a search quickly, then stop: the results are for what is in the field, not for
+    something typed on the way.
+
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:

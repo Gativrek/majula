@@ -1,6 +1,7 @@
 import type { Item } from '../data/types.ts';
 import { isCheckable, typeIcon, typeLabel } from './categories.ts';
 import { Icon } from './Icon.tsx';
+import { Marked } from './Marked.tsx';
 import { useSwipeReveal } from './use-swipe-reveal.ts';
 
 /**
@@ -11,11 +12,22 @@ import { useSwipeReveal } from './use-swipe-reveal.ts';
  * checkbox leads. Where types mix — search, a tag, Deleted, Workouts — each row carries
  * its type's icon instead of a word. Delete is a swipe to the left; a deleted row shows
  * Restore instead and does not swipe.
+ *
+ * A row shows its tags beside the title. A search result marks the words that matched, and
+ * shows the stretch of body around a match in place of its usual second line.
  */
+
+/** Where a search matched this row (SPECS §2.2, Global search). */
+export interface RowHighlight {
+  title: string;
+  snippet: string | null;
+}
 
 interface ItemRowProps {
   item: Item;
   showType: boolean;
+  tags?: readonly string[];
+  highlight?: RowHighlight;
   onToggleDone: (item: Item) => void;
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
@@ -45,6 +57,13 @@ export function metaFor(item: Item): string | null {
   }
 }
 
+/** At most two tags on a row, then a count: the title keeps the space. */
+export function tagLine(tags: readonly string[]): string {
+  const shown = tags.slice(0, 2).map((tag) => `#${tag}`);
+  const more = tags.length - shown.length;
+  return more > 0 ? `${shown.join(' ')} +${more}` : shown.join(' ');
+}
+
 function firstLine(body: string | null): string | null {
   if (body === null) return null;
   const line = body.trim().split('\n', 1)[0] ?? '';
@@ -69,6 +88,8 @@ function CheckBox({ item, onToggle }: { item: Item; onToggle: (item: Item) => vo
 export function ItemRow({
   item,
   showType,
+  tags,
+  highlight,
   onToggleDone,
   onDelete,
   onRestore,
@@ -79,12 +100,22 @@ export function ItemRow({
   const checkbox =
     isCheckable(item.type) && !isDeleted ? <CheckBox item={item} onToggle={onToggleDone} /> : null;
   const meta = metaFor(item);
+  const snippet = highlight?.snippet ?? null;
   const text = (
     <>
-      <span class="row__title">{item.title}</span>
-      {meta === null ? null : <span class="row__meta">{meta}</span>}
+      <span class="row__title">
+        {highlight === undefined ? item.title : <Marked text={highlight.title} />}
+      </span>
+      {snippet !== null ? (
+        <span class="row__meta">
+          <Marked text={snippet} />
+        </span>
+      ) : meta === null ? null : (
+        <span class="row__meta">{meta}</span>
+      )}
     </>
   );
+  const tagText = tags === undefined || tags.length === 0 ? null : tagLine(tags);
 
   return (
     <li class={item.done ? 'row row--done' : 'row'}>
@@ -119,6 +150,7 @@ export function ItemRow({
             {text}
           </button>
         )}
+        {tagText === null ? null : <span class="row__tags">{tagText}</span>}
         {showType ? checkbox : null}
         {isDeleted && onRestore !== undefined ? (
           <button

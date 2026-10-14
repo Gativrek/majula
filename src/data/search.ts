@@ -52,36 +52,79 @@ export interface SearchOptions {
 }
 
 /**
- * Search live items by title and body.
+ * Around each matched word in a hit's title and snippet (SPECS §2.2, Global search).
+ * Control characters, so nothing the owner typed is mistaken for a mark.
+ */
+export const MARK_START = '\u0002';
+export const MARK_END = '\u0003';
+
+/** Words of body either side of a match: about one line on a phone. */
+const SNIPPET_WORDS = 12;
+
+export interface SearchHit {
+  item: Item;
+  /** The title with its matched words between the marks. */
+  markedTitle: string;
+  /** The stretch of body around a match, marked the same way; null when only the title matched. */
+  markedSnippet: string | null;
+}
+
+type HitRow = ItemRow & { marked_title: string | null; marked_body: string | null };
+
+function toHit(row: HitRow): SearchHit {
+  const item = toItem(row);
+  const body = row.marked_body ?? '';
+  return {
+    item,
+    markedTitle: row.marked_title ?? item.title,
+    markedSnippet: body.includes(MARK_START) ? body : null,
+  };
+}
+
+/**
+ * Search live items by title and body, with where each matched.
  *
  * Soft-deleted rows are excluded here rather than in the index: a soft delete is an
  * `UPDATE`, so the sync trigger re-indexes the row and it stays searchable unless the
- * query says otherwise (SPECS §4.2).
+ * query says otherwise (SPECS §4.2). FTS5's `highlight` and `snippet` read the text back
+ * through the external-content table, so they mark exactly what is stored.
  *
  * @returns matches ordered by FTS5 relevance, newest first among equals.
  */
-export async function searchItems(
+export async function searchHits(
   driver: SqlDriver,
   query: string,
   options: SearchOptions = {},
-): Promise<Item[]> {
+): Promise<SearchHit[]> {
   const match = toMatchQuery(query);
   if (match === null) return [];
 
-  const params: SqlValue[] = [match];
+  // The marks are bound like any other value; the column numbers are the table's own.
+  const params: SqlValue[] = [MARK_START, MARK_END, MARK_START, MARK_END, match];
   let sql =
-    `SELECT ${COLUMNS} FROM items_fts ` +
-    'JOIN items ON items.rowid = items_fts.rowid ' +
+    `SELECT ${COLUMNS}, ` +
+    'highlight(items_fts, 0, ?, ?) AS marked_title, ' +
+    `snippet(items_fts, 1, ?, ?, '…', ${SNIPPET_WORDS}) AS marked_body ` +
+    'FROM items_fts JOIN items ON items.rowid = items_fts.rowid ' +
     'WHERE items_fts MATCH ? AND items.deleted_at IS NULL';
   sql += ' ORDER BY rank, items.created_at DESC';
   sql += ' LIMIT ?';
   params.push(options.limit ?? DEFAULT_LIMIT);
 
   try {
-    const rows = await driver.query<ItemRow>(sql, params);
+    const rows = await driver.query<HitRow>(sql, params);
     log.debug('search.done', { results: rows.length });
-    return rows.map(toItem);
+    return rows.map(toHit);
   } catch (cause) {
     throw new StorageError('search failed', { operation: 'searchItems' }, { cause });
   }
+}
+
+/** Search live items by title and body, without the marks. */
+export async function searchItems(
+  driver: SqlDriver,
+  query: string,
+  options: SearchOptions = {},
+): Promise<Item[]> {
+  return (await searchHits(driver, query, options)).map((hit) => hit.item);
 }

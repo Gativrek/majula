@@ -3,6 +3,7 @@ import type { Item, ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
 import { HabitRow } from './HabitRow.tsx';
 import { Icon } from './Icon.tsx';
+import type { RowHighlight } from './ItemRow.tsx';
 import { ItemRow } from './ItemRow.tsx';
 
 /**
@@ -30,11 +31,28 @@ export interface ItemListProps {
   habitStates: ReadonlyMap<string, HabitState>;
   showType: boolean;
   foldDone?: boolean;
+  /** Each row's tags; a row missing from the map has none. */
+  tagsByItem?: ReadonlyMap<string, readonly string[]>;
+  /** Where a search matched each row. */
+  highlights?: ReadonlyMap<string, RowHighlight>;
   onToggleDone: (item: Item) => void;
   onToggleToday: (habit: ItemOfType<'habit'>) => void;
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
   onOpen?: (item: Item) => void;
+}
+
+/** A row's tags and search marks, passed only when it has them. */
+function rowExtras(
+  props: ItemListProps,
+  id: string,
+): { tags?: readonly string[]; highlight?: RowHighlight } {
+  const tags = props.tagsByItem?.get(id);
+  const highlight = props.highlights?.get(id);
+  return {
+    ...(tags === undefined ? {} : { tags }),
+    ...(highlight === undefined ? {} : { highlight }),
+  };
 }
 
 function Rows(props: ItemListProps & { rows: readonly Item[] }) {
@@ -58,6 +76,7 @@ function Rows(props: ItemListProps & { rows: readonly Item[] }) {
             key={item.id}
             item={item}
             showType={props.showType}
+            {...rowExtras(props, item.id)}
             onToggleDone={props.onToggleDone}
             onDelete={onDelete}
             {...(onRestore === undefined ? {} : { onRestore })}

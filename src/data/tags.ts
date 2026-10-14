@@ -43,3 +43,32 @@ export async function listTags(driver: SqlDriver): Promise<{ tag: string; count:
       'GROUP BY tags.tag ORDER BY tags.tag',
   );
 }
+
+/** Ids per query: well under SQLite's bound-parameter limit on any build. */
+const IDS_PER_QUERY = 500;
+
+/**
+ * The tags of many items in a few queries rather than one per row, for showing tags on a
+ * list (SPECS §2.2, The list). Items with no tags are absent from the map.
+ */
+export async function tagsForItems(
+  driver: SqlDriver,
+  itemIds: readonly string[],
+): Promise<Map<string, string[]>> {
+  const byItem = new Map<string, string[]>();
+  for (let start = 0; start < itemIds.length; start += IDS_PER_QUERY) {
+    const ids = itemIds.slice(start, start + IDS_PER_QUERY);
+    // One placeholder per id: the values are bound, never interpolated (CODESTYLE §10).
+    const rows = await driver.query<{ item_id: string; tag: string }>(
+      `SELECT item_id, tag FROM tags WHERE item_id IN (${ids.map(() => '?').join(', ')}) ` +
+        'ORDER BY tag',
+      ids,
+    );
+    for (const row of rows) {
+      const tags = byItem.get(row.item_id) ?? [];
+      tags.push(row.tag);
+      byItem.set(row.item_id, tags);
+    }
+  }
+  return byItem;
+}
