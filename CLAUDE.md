@@ -302,6 +302,7 @@ dates or `habit_checks`:
    so is the page.
 6. Rotate while zoomed: it refits without stretching.
 7. Swipe left: next page. Swipe right: previous. Scrolling down a page never turns it.
+   — PASSED 2026-10-14.
 8. Zoomed in, swipe left mid-page: it pans, no turn. Once at the right edge, swipe left
    again: next page. Likewise right from the left edge goes back (`reading-queue.md` 11a).
 

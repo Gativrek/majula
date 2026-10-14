@@ -166,3 +166,7 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Receiving shares: an intent filter for `ACTION_SEND` text on the existing activity, and a small Capacitor plugin written inside the app (`ShareInboxPlugin`) that hands the shared text to the web layer, using `notifyListeners` with `retainUntilConsumed` so a share that cold-starts the app waits for the page to start listening. No package, so no ADR, by the same reasoning as the back button. Only text with a Google Maps link becomes a place; any other share is refused and writes nothing, so Majula never files shared text under a type it guessed.
 
 - PDF viewer swipe: left turns to the next page, right to the previous. Owner’s request. When zoomed, a sideways swipe already pans the page, so a swipe turns the page only if it began with the page at that edge; otherwise it is left to scroll. Rejected: always turning on a swipe, which would make a zoomed page impossible to read across. Touch listeners are passive and never cancel the browser’s own scrolling; the gesture is judged after the finger lifts, by a pure function under test.
+
+## 2026-10-14 — Device check: swiping between PDF pages
+
+- Swiping turns pages on the owner's phone (CLAUDE.md, *PDF size and swiping*, check 7). The zoomed-edge behaviour (check 8) and the other PDF size, Places from Google Maps, Phase 5 re-check and permission checks were not reported on, so they stay open.
