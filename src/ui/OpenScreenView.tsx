@@ -1,5 +1,6 @@
 import type { Item, ItemOfType } from '../data/types.ts';
 import type { AppContext } from '../services/database.ts';
+import { NoteScreen } from './NoteScreen.tsx';
 import { PlaceScreen } from './PlaceScreen.tsx';
 import { ReadingScreens } from './ReadingScreens.tsx';
 import type { RecipeScreen } from './RecipeScreens.tsx';
@@ -12,6 +13,7 @@ import { WorkoutScreens } from './WorkoutScreens.tsx';
  * navigation and back steps (SPECS §2.2, Back); the list only knows which module is open.
  */
 export type OpenScreen =
+  | { module: 'note'; note: ItemOfType<'note'> }
   | { module: 'recipe'; initial: RecipeScreen }
   | { module: 'reading'; reading: ItemOfType<'reading'> }
   | { module: 'place'; place: ItemOfType<'place'> }
@@ -20,6 +22,8 @@ export type OpenScreen =
 /** The screen a tapped row opens, or null for types that do not open (SPECS §2.2). */
 export function screenFor(item: Item): OpenScreen | null {
   switch (item.type) {
+    case 'note':
+      return { module: 'note', note: item };
     case 'recipe':
       return { module: 'recipe', initial: { mode: 'view', recipe: item } };
     case 'reading':
@@ -40,6 +44,8 @@ export function screenFor(item: Item): OpenScreen | null {
 /** Distinct per thing opened, so opening something else starts its screens afresh. */
 function keyOf(screen: OpenScreen): string {
   switch (screen.module) {
+    case 'note':
+      return `note:${screen.note.id}`;
     case 'recipe':
       return screen.initial.mode === 'new' ? 'recipe:new' : `recipe:${screen.initial.recipe.id}`;
     case 'reading':
@@ -76,6 +82,8 @@ interface OpenScreenViewProps {
 export function OpenScreenView({ screen, context, onClose, onChanged }: OpenScreenViewProps) {
   const shared = { key: keyOf(screen), context, onClose, onChanged };
   switch (screen.module) {
+    case 'note':
+      return <NoteScreen {...shared} note={screen.note} />;
     case 'recipe':
       return <RecipeScreens {...shared} initial={screen.initial} />;
     case 'reading':

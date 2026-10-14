@@ -293,3 +293,11 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Owner's report: no swiping between categories. A left swipe on a row already uncovered Delete, so the two could not share the gesture. Owner's choice, of three offered: a sideways swipe anywhere on the list moves to the next or previous category, stopping at either end, and Delete is only uncovered by holding a row still. Rejected: swiping only on the icon row, and edge swipes, which clash with Android's back gesture. SPECS §2.2 amended.
 - The swipe reuses the PDF viewer's detector (`use-swipe-pages.ts`, judged after the finger lifts by `swipeTurn`), so the thresholds that keep a scroll from turning a page also keep it from changing category. Touches that start on the habit cards are ignored, since those scroll sideways themselves. A tag view does not swipe.
 - The row gesture is hold-only now (`row-hold.ts`, `use-hold-reveal.ts`); the drag rules it replaced are gone.
+
+---
+
+## 2026-10-14 — Notes run to several lines, and open
+
+- Owner's report: Enter did not make a new line in a note, and notes are the one type long enough to need one. While Notes is the capture type, quick capture is a text box that grows to six lines: Enter starts a new line and only the save button saves. Every other type stays one line, where Enter saves; text typed as a note and switched to another type is joined onto one line.
+- A note's first line is its title and the rest its body, in the existing `title` and `body` columns, which search already covers: no schema change. Tapping a note now opens it, read whole with its line breaks, and its pencil edits the whole text as one field; an edit that leaves no text is refused. SPECS §2.1 and `notes.md` criteria 1, 5 and 10–12 amended.
+- Seen while checking this, not fixed: a back step registered within a fraction of a second of another being dismissed by an on-screen button (say, tapping the pencil right after Save) can be undone by the late `popstate` of that dismissal (`back-stack.ts`). It needs a tap faster than a person makes, and it touches every module's back steps, so it is left for its own change.

@@ -28,13 +28,16 @@ export function parseTags(raw: string): string[] {
     .filter((tag) => tag.length > 0);
 }
 
+/** A note's field grows with its text up to this many lines, then scrolls. */
+const MAX_LINES = 6;
+
 interface CaptureBarProps {
   category: Category;
   disabled: boolean;
   /** The owner's tags with how often each is used, to offer while tagging. */
   knownTags: readonly { tag: string; count: number }[];
   /** Resolves false when the capture failed: the typed text then stays to try again. */
-  onCapture: (type: ItemType, title: string, tags: string[]) => Promise<boolean>;
+  onCapture: (type: ItemType, text: string, tags: string[]) => Promise<boolean>;
   onPickCategory: (id: CategoryId) => void;
 }
 
@@ -53,15 +56,21 @@ export function CaptureBar(props: CaptureBarProps) {
     setSheetOpen(false);
   });
 
+  // notes.md criterion 1: a note may run to several lines, so Enter starts a new one and
+  // only the save button saves. Every other type is one line, where Enter saves.
+  const multiline = category.captureType === 'note';
   const trimmed = title.trim();
   const canSave = trimmed.length > 0 && !saving && !disabled;
+  const lines = Math.min(Math.max(title.split('\n').length, 1), MAX_LINES);
 
   async function save(): Promise<void> {
     if (!canSave) return;
     setSaving(true);
     try {
       const tags = finalTags(tagEntry.tags, tagEntry.draft);
-      if (!(await onCapture(category.captureType, trimmed, tags))) return;
+      // Lines typed as a note and then switched to a one-line type become one line.
+      const text = multiline ? trimmed : trimmed.replace(/\s*\n\s*/g, ' ');
+      if (!(await onCapture(category.captureType, text, tags))) return;
       setTitle('');
       setTagEntry({ tags: [], draft: '' });
     } finally {
@@ -104,16 +113,28 @@ export function CaptureBar(props: CaptureBarProps) {
             <Icon name={category.icon} />
           </button>
           <label class="capture-bar__field">
-            <input
-              type="text"
-              value={title}
-              placeholder={category.placeholder}
-              aria-label="What to capture"
-              autoComplete="off"
-              enterKeyHint="done"
-              disabled={disabled}
-              onInput={(event) => setTitle((event.currentTarget as HTMLInputElement).value)}
-            />
+            {multiline ? (
+              <textarea
+                value={title}
+                rows={lines}
+                placeholder={category.placeholder}
+                aria-label="What to capture"
+                autoComplete="off"
+                disabled={disabled}
+                onInput={(event) => setTitle((event.currentTarget as HTMLTextAreaElement).value)}
+              />
+            ) : (
+              <input
+                type="text"
+                value={title}
+                placeholder={category.placeholder}
+                aria-label="What to capture"
+                autoComplete="off"
+                enterKeyHint="done"
+                disabled={disabled}
+                onInput={(event) => setTitle((event.currentTarget as HTMLInputElement).value)}
+              />
+            )}
             <button
               type="button"
               class="capture-bar__tag-toggle"

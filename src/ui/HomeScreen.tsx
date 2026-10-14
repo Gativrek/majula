@@ -11,6 +11,7 @@ import {
   loadTagsFor,
   toggleDone,
 } from '../services/items.ts';
+import { splitNote } from '../services/notes.ts';
 import { newRecipeDraft } from '../services/recipe-draft.ts';
 import { newRoutineDraft } from '../services/workout-draft.ts';
 import { CaptureBar } from './CaptureBar.tsx';
@@ -102,7 +103,9 @@ export function HomeScreen(props: HomeScreenProps) {
   );
 
   /** True when captured or opened; false when the write failed, so the bar keeps the text. */
-  async function onCapture(type: ItemType, title: string, tags: string[]): Promise<boolean> {
+  async function onCapture(type: ItemType, text: string, tags: string[]): Promise<boolean> {
+    // notes.md criterion 1: a note's first line is its title and the rest its body.
+    const { title, body } = type === 'note' ? splitNote(text) : { title: text, body: null };
     if (type === 'routine') {
       // workout.md criterion 4: like a recipe, nothing is written until Save.
       const draft = newRoutineDraft(title);
@@ -118,7 +121,12 @@ export function HomeScreen(props: HomeScreenProps) {
     }
     let captured: Item;
     try {
-      captured = await captureItem(context, { type, title, tags });
+      captured = await captureItem(context, {
+        type,
+        title,
+        tags,
+        ...(body === null ? {} : { body }),
+      });
     } catch (error) {
       action.report(error);
       return false;

@@ -52,7 +52,7 @@ These are binding. The agent must not build anything on this list, even if it se
 
 Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), written just before each module is built. Summaries only:
 
-- **Notes.** Free text, optional tags. Created from quick capture.
+- **Notes.** Free text, optional tags. Created from quick capture. A note can run to several lines: its first line is its title and the rest its body, and a note opens to be read and edited whole. ACCEPTED 2026-10-14 (owner’s request; until then a note was one line).
 - **To-do.** Text, done flag. No due date: ACCEPTED 2026-09-21. A due date field leads to a sort-by-date view, then a due-today view, then reminders, which is the calendar §1.1 item 6 forbids.
 - **Reading queue.** Title, optional URL, optional attached PDF. Read status. PDF viewer opens attached file and restores last page. No annotation. The viewer can trim a page’s white margins and zoom in, both remembered per document: ACCEPTED 2026-10-13 (owner’s decision, after an A4 page read too small on the phone).
 - **Network log.** Capture only: name, where met, short context. No follow-up reminders.
