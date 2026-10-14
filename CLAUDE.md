@@ -175,7 +175,8 @@ npm run apk; if ($?) { npm run install:apk }
 the export/import round trip is what stands between the owner and total data loss:
 
 1. Cold start to typing in quick capture, under ~2 s. Force-stop the app first, time it.
-2. Capture a note, a to-do and a running-low item. All three appear in the list.
+2. Capture a note, a to-do and a running-low item. Each appears
+   under its own category icon.
 3. Check the to-do off; it stays checked after a restart.
 4. Delete one item. It leaves the list and appears under **Deleted**. Restore it.
 5. Delete it again, then **Purge deleted**. It is gone from both views.
@@ -196,16 +197,16 @@ that touches `items` or `items_fts`:
 5. An item captured in Phase 1, before the index existed, is findable by a word in its
    body. This is the migration's rebuild, and it is the one that fails silently if wrong.
 6. Each of **Notes**, **To-do**, **Contacts** and **Running low** shows only its own type.
-7. Capture something with a tag via the **#** control. Its tag appears as a chip, and
-   tapping the chip shows that item.
+7. Capture something with a tag via the **#** control. Its tag appears under **Search**, and
+   tapping it shows that item.
 8. **Backup → Export**, then reinstall and **Import**. Everything returns, and search still
    finds a word from a restored item — the index is rebuilt on import, not exported.
 
 **Phase 3 acceptance** — PASSED 2026-10-13. Re-run checks 4–8 after anything that touches
 dates or `habit_checks`:
 
-1. Capture a habit with the **Habit** chip. It reads `Streak 0 days` and has no done flag.
-2. Tap it. It reads `Streak 1 day` — singular — and the row is outlined in gold.
+1. Capture a habit with the **Habit** type. Its card reads `0 days` and has no done flag.
+2. Tap its card. It reads `1 day` — singular — and the card is outlined in gold.
 3. Tap it again the same day. It returns to `0`. This is a toggle, not an increment.
 4. Check it three days running. It reads `3`.
 5. The morning of the fourth day, before checking: it still reads `3`, not `0`.
@@ -230,7 +231,7 @@ dates or `habit_checks`:
 2. Close the recipe and wait past the timeout again. The screen sleeps normally.
 3. With a recipe open, switch to another app and back. It still stays lit — the platform
    drops the hold on hide, and the app has to take it back.
-4. Capture with the **Recipe** chip: it opens straight into the editor.
+4. Capture with the **Recipe** type: it opens straight into the editor.
 5. Add an ingredient with only a name ("sal a gosto"). It saves, and shows with no number.
 6. Type `1,5` as a quantity. It saves as one and a half.
 7. Type `1.000` as a quantity. Save is refused with a message naming the ingredient.
@@ -244,7 +245,7 @@ dates or `habit_checks`:
 
 **Phase 5 acceptance** — PASSED 2026-10-14, in airplane mode (`ROADMAP.md` Phase 5, _done when_):
 
-1. Capture with the **Reading** chip. Tap the entry: title, URL, and **Attach PDF**.
+1. Capture with the **Reading** type. Tap the entry: title, URL, and **Attach PDF**.
 2. Attach a PDF from the phone's storage. The page count appears.
 3. **The one that matters.** In a file manager, **delete the original PDF**. Open the
    entry again: **Open PDF** still works. That is ADR-004's copy doing its job.
@@ -261,7 +262,7 @@ dates or `habit_checks`:
 
 **Phase 6 acceptance** — PASSED 2026-10-13:
 
-1. Capture with the **Place** chip. Its screen opens with **Here** one tap away.
+1. Capture with the **Place** type. Its screen opens with **Here** one tap away.
 2. Tap **Here**. Android asks for location permission — this once, not at install.
 3. **In airplane mode**, outdoors, tap **Here** on another place. A fix arrives, though the
    first one without signal may take a while, and the accuracy is shown.
@@ -273,15 +274,15 @@ dates or `habit_checks`:
 
 **Phase 7 acceptance** — PASSED 2026-10-13:
 
-1. Capture with the **Routine** chip. The editor opens; back out of it: no routine exists.
+1. Capture with the **Routine** type. The editor opens; back out of it: no routine exists.
 2. Capture again, **Add exercise**, type a new name, tap **Create**. It joins the routine
    with 3 × 10 at 0 kg. Add a second exercise by picking an existing one. Save.
 3. Open the routine, **Start workout**. Every set is pre-filled. Change one set’s reps
    and load, **Add set** (it copies the last), remove all of one exercise’s sets.
 4. Press back mid-session: nothing is logged. Start again and **Save workout**: the log
    opens, and the removed exercise is not in it.
-5. **The done-when.** Open **Exercises**, rename the one you created. Open the past log
-   under **Workouts**: it shows the new name. The exercise’s own page lists its sets.
+5. **The done-when.** Under **Workouts**, open the exercise you created and rename it. Open
+   the past log: it shows the new name. The exercise’s own page lists its sets.
 6. Delete that exercise. The past log still shows its name. **Purge**: it is kept, and
    the message says so. Delete the routine: the log says "from a deleted routine".
 7. Delete the log too, then **Purge**: routine, exercise and log all go together.
@@ -318,7 +319,7 @@ _Places from Google Maps_ (`places.md` 15–21):
 
 **Back button** (`SPECS.md` §2.2, Back) — PASSED 2026-10-13. Undoes one step, never commits:
 
-1. Capture with the **Recipe** chip, type an ingredient, press back. You are on the list,
+1. Capture with the **Recipe** type, type an ingredient, press back. You are on the list,
    and **no recipe exists** — not in the list, not under **Deleted**.
 2. Open a recipe, tap Edit, change something, press back. You are back on the recipe and
    the change is gone. Back again closes it.
@@ -329,6 +330,37 @@ _Places from Google Maps_ (`places.md` 15–21):
 5. On the list with nothing open, press back. The app leaves, as any Android app does.
 6. On Import or Purge's confirmation dialog, press back. The dialog closes and nothing
    happens.
+
+**Redesign of 2026-10-14** — OPEN (`DECISIONS.md`, 2026-10-14). Run after installing:
+
+_The list_ (`SPECS.md` §2.2, The list):
+
+1. The app opens on **To-do**. Habits sit above the row of eight icons as cards.
+2. Tap a habit card: it reads one more day and is outlined in gold. Tap it again: undone.
+3. Each icon shows only its own category. **Workouts** shows routines, logs and exercises,
+   each with its type's icon.
+4. Quick capture's placeholder follows the icon selected. The type button at its left
+   opens every type; picking **Note** there switches the list to Notes too.
+5. Swipe a row left: **Delete** shows. Tap the row: it closes. Scrolling the list up and
+   down never opens a row. Swipe again and tap **Delete**: it moves to **Deleted**.
+6. Check a to-do off: it folds under **Done**, which opens and closes.
+7. On **Notes**, search a word from a to-do: it is found. Back returns to Notes.
+8. In search, tap a tag: the list shows that tag across categories. Back clears it.
+9. **⋮** opens Deleted and Backup. Restore works from Deleted, **Purge deleted** sits under
+   it, and Export and Import are under Backup.
+
+_Screens_:
+
+10. In a recipe's editor, tap the fourth star, then tap it again: three and a half stars.
+    Save: kitchen mode shows them under the title. **Clear** and save: no stars at all.
+11. Export, reinstall, import: the recipe's rating comes back.
+12. Open a reading entry with a PDF: title and link first, then the page reached. The
+    pencil edits the title; back cancels the edit without saving. **Continue on page N**
+    opens on that page. The square beside it marks the entry read.
+13. Open a place: **Location saved** leads, the coordinates are a small line, and copy puts
+    them on the clipboard. **Here** and **Open in maps** sit at the bottom.
+14. Start a workout: each exercise is a card of kg and reps. The × at the top discards the
+    session and logs nothing.
 
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
