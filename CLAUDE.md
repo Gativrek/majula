@@ -290,7 +290,7 @@ dates or `habit_checks`:
 
 **Owner’s requests of 2026-10-13** — to check on the phone:
 
-*PDF size* (`reading-queue.md` 10, 15a–15d):
+*PDF size and swiping* (`reading-queue.md` 10, 11a, 15a–15d):
 
 1. Open an A4 PDF upright. The page runs edge to edge and sits centred, not at the top.
 2. **Trim margins**: the white side margins go and the text gets larger. A blank page,
@@ -301,6 +301,9 @@ dates or `habit_checks`:
 5. Close and reopen the PDF, and restart the app: trim and zoom are as you left them, and
    so is the page.
 6. Rotate while zoomed: it refits without stretching.
+7. Swipe left: next page. Swipe right: previous. Scrolling down a page never turns it.
+8. Zoomed in, swipe left mid-page: it pans, no turn. Once at the right edge, swipe left
+   again: next page. Likewise right from the left edge goes back (`reading-queue.md` 11a).
 
 *Places from Google Maps* (`places.md` 15–21):
 
