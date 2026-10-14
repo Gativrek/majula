@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { log } from '../lib/logger.ts';
 import type { PdfHandle } from '../services/pdf-document.ts';
 import type { OpenedPdf, ReadingView } from '../services/reading.ts';
-import { ZOOM_STEPS } from '../services/reading.ts';
+import { useSwipePages } from './use-swipe-pages.ts';
+import { ViewerToolbar } from './ViewerToolbar.tsx';
 
 /**
  * The PDF viewer (`docs/modules/reading-queue.md` criteria 10–15d): one page at a time,
@@ -182,15 +183,12 @@ export function PdfViewer({
     onPageChange(target);
   }
 
+  // reading-queue.md 11a: swiping left or right turns the page.
+  useSwipePages(frame, status.kind === 'ready', step);
+
   function changeView(next: ReadingView): void {
     setView(next);
     onViewChange(next);
-  }
-
-  function stepZoom(by: number): void {
-    const index = ZOOM_STEPS.indexOf(view.zoom);
-    const next = ZOOM_STEPS[Math.min(Math.max(index + by, 0), ZOOM_STEPS.length - 1)];
-    if (next !== undefined && next !== view.zoom) changeView({ ...view, zoom: next });
   }
 
   const pageCount = status.kind === 'ready' ? status.handle.pageCount : 0;
@@ -198,42 +196,7 @@ export function PdfViewer({
 
   return (
     <div class="kitchen kitchen--editing viewer">
-      {/* reading-queue.md 15d: the size controls sit above the page; turning pages stays
-          at the thumb. */}
-      <div class="viewer__toolbar" role="toolbar" aria-label="Reading size">
-        <button
-          type="button"
-          class="chip"
-          aria-pressed={view.trimMargins}
-          disabled={!ready}
-          onClick={() => changeView({ ...view, trimMargins: !view.trimMargins })}
-        >
-          Trim margins
-        </button>
-        <div class="viewer__zoom">
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Zoom out"
-            disabled={!ready || view.zoom <= (ZOOM_STEPS[0] ?? 1)}
-            onClick={() => stepZoom(-1)}
-          >
-            {'\u2212'}
-          </button>
-          <span class="viewer__zoom-level" aria-live="polite">
-            {`${Math.round(view.zoom * 100)}%`}
-          </span>
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Zoom in"
-            disabled={!ready || view.zoom >= (ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? 1)}
-            onClick={() => stepZoom(1)}
-          >
-            +
-          </button>
-        </div>
-      </div>
+      <ViewerToolbar view={view} disabled={!ready} onChange={changeView} />
 
       <main class="viewer__body" ref={frame}>
         {status.kind === 'loading' ? <p class="empty">Opening {title}…</p> : null}

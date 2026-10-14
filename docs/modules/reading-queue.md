@@ -46,6 +46,10 @@ to the app's private data directory, never a path the owner chose (ADR-004).
     phone held upright (owner’s device check, 2026-10-13).
 11. **Previous** and **Next** are in the lower half of the screen (`SPECS.md` §6), with the
     page number and the total between them.
+11a. **Swiping** turns pages too: left for the next, right for the previous (owner’s
+     request, 2026-10-13). A swipe is quick and mostly sideways, so scrolling down a page
+     never turns it. Zoomed past the width, a swipe scrolls the page sideways first and
+     turns only when it starts with the page already at that edge.
 12. The viewer **opens on the page it was last left on**, across closing the viewer,
     closing the app and restarting the phone.
 13. The back button closes the viewer (`SPECS.md` §2.2, Back); back again closes the
