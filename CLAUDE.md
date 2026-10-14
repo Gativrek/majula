@@ -362,6 +362,10 @@ _Screens_:
 14. Start a workout: each exercise is a card of kg and reps. The × at the top discards the
     session and logs nothing.
 
+_Icon_:
+
+15. The launcher shows the bonfire: gold on black, a glow under the flames. With themed
+    icons turned on, it follows the wallpaper's colour and stays legible.
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:

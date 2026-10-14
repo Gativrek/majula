@@ -10,7 +10,7 @@ agent must not resolve OPEN items on its own. Decision history is in `DECISIONS.
 
 **What it is.** A phone app for one person. The phone is a capture surface and a glance view: ideas on the bus, a recipe while cooking, a tap to log a habit. Review, organization and deep work happen elsewhere (the computer, a notebook, paper).
 
-The name of the app will be Majula, with gold/yellow + black accent theming. The app icon will be designed later to resemble a DS2 Bonfire with said colors (black background, gold bonfire).
+The name of the app will be Majula, with gold/yellow + black accent theming. The app icon resembles a DS2 Bonfire with said colors (black background, gold bonfire): option D, "Ember glow", chosen 2026-10-14 (`DECISIONS.md`).
 
 **Design test for every feature.** Can it be done in seconds, one-handed, with no signal? If not, it does not belong on the phone.
 
