@@ -33,7 +33,8 @@ interface CaptureBarProps {
   disabled: boolean;
   /** The owner's tags with how often each is used, to offer while tagging. */
   knownTags: readonly { tag: string; count: number }[];
-  onCapture: (type: ItemType, title: string, tags: string[]) => Promise<void>;
+  /** Resolves false when the capture failed: the typed text then stays to try again. */
+  onCapture: (type: ItemType, title: string, tags: string[]) => Promise<boolean>;
   onPickCategory: (id: CategoryId) => void;
 }
 
@@ -59,7 +60,8 @@ export function CaptureBar(props: CaptureBarProps) {
     if (!canSave) return;
     setSaving(true);
     try {
-      await onCapture(category.captureType, trimmed, finalTags(tagEntry.tags, tagEntry.draft));
+      const tags = finalTags(tagEntry.tags, tagEntry.draft);
+      if (!(await onCapture(category.captureType, trimmed, tags))) return;
       setTitle('');
       setTagEntry({ tags: [], draft: '' });
     } finally {

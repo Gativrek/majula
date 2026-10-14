@@ -22,6 +22,7 @@ import { HomeHeader } from './HomeHeader.tsx';
 import { Icon } from './Icon.tsx';
 import { ItemList } from './ItemList.tsx';
 import { NoticeBanner } from './NoticeBanner.tsx';
+import { useListAction } from './use-list-action.ts';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { screenFor } from './OpenScreenView.tsx';
 
@@ -77,37 +78,42 @@ export function HomeScreen(props: HomeScreenProps) {
     [context, shown, tag, version],
   );
 
+  const action = useListAction(refresh);
+
   useEffect(
     function loadWheneverTheViewChanges() {
-      void refresh();
+      void action.load();
     },
-    [refresh],
+    [action.load],
   );
 
-  async function onCapture(type: ItemType, title: string, tags: string[]): Promise<void> {
+  /** True when captured or opened; false when the write failed, so the bar keeps the text. */
+  async function onCapture(type: ItemType, title: string, tags: string[]): Promise<boolean> {
     if (type === 'routine') {
       // workout.md criterion 4: like a recipe, nothing is written until Save.
       const draft = newRoutineDraft(title);
       props.onOpenScreen({ module: 'workout', initial: { kind: 'routine-new', draft, tags } });
-      return;
+      return true;
     }
     if (type === 'recipe') {
       // cookbook.md criterion 1: a captured recipe opens straight into the editor, and
       // nothing is written until Save, so backing out of the add leaves no row.
       const draft = newRecipeDraft(title);
       props.onOpenScreen({ module: 'recipe', initial: { mode: 'new', draft, tags } });
-      return;
+      return true;
     }
-    const captured = await captureItem(context, { type, title, tags });
+    let captured: Item;
+    try {
+      captured = await captureItem(context, { type, title, tags });
+    } catch (error) {
+      action.report(error);
+      return false;
+    }
     // places.md criterion 1: a new place opens with Here one tap away. It is already
     // saved, so this only opens it; back closes it and keeps the place.
     if (captured.type === 'place') props.onOpenScreen({ module: 'place', place: captured });
-    await refresh();
-  }
-
-  async function after(work: Promise<unknown>): Promise<void> {
-    await work;
-    await refresh();
+    await action.load();
+    return true;
   }
 
   function onOpen(item: Item): void {
@@ -124,10 +130,11 @@ export function HomeScreen(props: HomeScreenProps) {
       <div class="screen__scroll">
         <HomeHeader onSearch={props.onSearch} onLibrary={props.onLibrary} />
         <NoticeBanner notice={props.notice} onDismiss={props.onDismissNotice} />
+        <NoticeBanner notice={action.problem} onDismiss={action.dismiss} />
         <HabitStrip
           habits={habits}
           states={states}
-          onToggleToday={(habit) => void after(toggleHabitToday(context, habit.id))}
+          onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
           onShowAll={() => props.onCategoryChange('habit')}
         />
         <CategoryBubble
@@ -157,9 +164,9 @@ export function HomeScreen(props: HomeScreenProps) {
             tagsByItem={rowTags}
             showType={mixed}
             foldDone={foldDone}
-            onToggleDone={(item) => void after(toggleDone(context, item))}
-            onToggleToday={(habit) => void after(toggleHabitToday(context, habit.id))}
-            onDelete={(item) => void after(deleteItem(context, item.id))}
+            onToggleDone={(item) => void action.run(toggleDone(context, item))}
+            onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
+            onDelete={(item) => void action.run(deleteItem(context, item.id))}
             onOpen={onOpen}
           />
           {items.length === 0 ? null : (

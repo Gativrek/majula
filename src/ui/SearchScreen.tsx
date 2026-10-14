@@ -14,8 +14,10 @@ import {
 import { Icon } from './Icon.tsx';
 import { ItemList } from './ItemList.tsx';
 import type { RowHighlight } from './ItemRow.tsx';
+import { NoticeBanner } from './NoticeBanner.tsx';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { screenFor } from './OpenScreenView.tsx';
+import { useListAction } from './use-list-action.ts';
 
 /**
  * Global search (SPECS §2.2): every type, whatever category the list was showing, and the
@@ -70,17 +72,14 @@ export function SearchScreen({
     [context, query, version],
   );
 
+  const action = useListAction(refresh);
+
   useEffect(
     function searchAsTheQueryChanges() {
-      void refresh();
+      void action.load();
     },
-    [refresh],
+    [action.load],
   );
-
-  async function after(work: Promise<unknown>): Promise<void> {
-    await work;
-    await refresh();
-  }
 
   function onOpen(item: Item): void {
     const screen = screenFor(item);
@@ -123,6 +122,7 @@ export function SearchScreen({
             ) : null}
           </label>
         </header>
+        <NoticeBanner notice={action.problem} onDismiss={action.dismiss} />
 
         {tags.length === 0 ? null : (
           <section class="section">
@@ -156,9 +156,9 @@ export function SearchScreen({
               emptyMessage="No match."
               habitStates={states}
               showType
-              onToggleDone={(item) => void after(toggleDone(context, item))}
-              onToggleToday={(habit) => void after(toggleHabitToday(context, habit.id))}
-              onDelete={(item) => void after(deleteItem(context, item.id))}
+              onToggleDone={(item) => void action.run(toggleDone(context, item))}
+              onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
+              onDelete={(item) => void action.run(deleteItem(context, item.id))}
               onOpen={onOpen}
             />
           </section>

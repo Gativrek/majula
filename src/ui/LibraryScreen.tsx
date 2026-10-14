@@ -7,7 +7,9 @@ import { listDeletedItems, restoreItem } from '../services/items.ts';
 import { BackupPanel } from './BackupPanel.tsx';
 import { Icon } from './Icon.tsx';
 import { ItemList } from './ItemList.tsx';
+import { NoticeBanner } from './NoticeBanner.tsx';
 import { PurgeButton } from './PurgeButton.tsx';
+import { useListAction } from './use-list-action.ts';
 
 /**
  * Deleted and Backup, one screen reached from the list's header (SPECS §2.2, The list).
@@ -36,21 +38,23 @@ export function LibraryScreen({ context, onClose, onDataChanged }: LibraryScreen
     [context],
   );
 
+  const action = useListAction(refresh);
+
   useEffect(
     function loadDeletedOnOpen() {
-      void refresh();
+      void action.load();
     },
-    [refresh],
+    [action.load],
   );
 
   async function changed(): Promise<void> {
-    await refresh();
+    await action.load();
     onDataChanged();
   }
 
   async function onRestore(item: Item): Promise<void> {
-    await restoreItem(context, item.id);
-    await changed();
+    await action.run(restoreItem(context, item.id));
+    onDataChanged();
   }
 
   return (
@@ -83,6 +87,7 @@ export function LibraryScreen({ context, onClose, onDataChanged }: LibraryScreen
             </button>
           </div>
         </header>
+        <NoticeBanner notice={action.problem} onDismiss={action.dismiss} />
 
         {tab === 'deleted' ? (
           <section class="section">

@@ -262,3 +262,10 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - The PDF viewer keeps Close, Previous and Next at the bottom, as `reading-queue.md` 15d requires, now as square icon buttons around `p. 6 of 15`, leaving the page the width between them. The zoom steps sit in one pill.
 - Backup is two cards, Export and Import, each saying what it does and where the export goes, instead of a paragraph above a run of buttons. Purge stays under Deleted.
 - While the database opens, and if startup fails, the bonfire stands above the message, so the first thing the app shows is its own mark.
+
+---
+
+## 2026-10-14 — Failures in the list are said, not swallowed
+
+- Checking off, deleting, logging a habit and restoring from a list, and loading the list itself, now go through one hook (`use-list-action.ts`) that logs `list.action_failed` or `list.load_failed` and shows a dismissable line saying what failed. Before, a tap on a row started a write nobody awaited: a failure was an unhandled rejection and the row just did not change (CODESTYLE §8). The old list had the same gap.
+- A capture that fails keeps its typed text in the bar to try again, instead of clearing it as though it had saved.
