@@ -360,6 +360,8 @@ _Screens_:
 12. Open a reading entry with a PDF: title and link first, then the page reached. The
     pencil edits the title; back cancels the edit without saving. **Continue on page N**
     opens on that page. The square beside it marks the entry read.
+    Attach a large PDF (50 MB or so): the app stays open, shows its page count, and opens
+    it. Turn a few pages; then export and import, and it still opens.
 13. Open a place: **Location saved** leads, the coordinates are a small line, and copy puts
     them on the clipboard. **Here** and **Open in maps** sit at the bottom.
 14. Start a workout: each exercise is a card of kg and reps. The × at the top discards the

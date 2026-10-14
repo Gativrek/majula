@@ -10,6 +10,8 @@ export interface MemoryFileStore extends FileStore {
   /** Every stored path, for assertions about what an export actually wrote. */
   paths(root: StorageRoot): string[];
   put(root: StorageRoot, path: string, contents: string): void;
+  /** A stored file's bytes, for assertions about what was copied. */
+  readBytes(root: StorageRoot, path: string): Promise<Uint8Array>;
 }
 
 export function createMemoryFileStore(): MemoryFileStore {
@@ -53,6 +55,20 @@ export function createMemoryFileStore(): MemoryFileStore {
 
     async writeBytes(root, path, bytes) {
       files[root].set(path, new Uint8Array(bytes));
+    },
+
+    async appendBytes(root, path, bytes) {
+      const before = readOrThrow(root, path);
+      if (typeof before === 'string') throw new Error(`text file appended as bytes: ${path}`);
+      const joined = new Uint8Array(before.length + bytes.length);
+      joined.set(before);
+      joined.set(bytes, before.length);
+      files[root].set(path, joined);
+    },
+
+    async fileUrl(root, path) {
+      readOrThrow(root, path);
+      return `memory://${root}/${path}`;
     },
 
     async readBytes(root, path) {

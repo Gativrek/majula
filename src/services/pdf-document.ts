@@ -70,11 +70,18 @@ async function measureContent(page: PDFPageProxy): Promise<Box> {
   return findContentBox(pixels, probe.width, probe.height);
 }
 
-async function load(bytes: Uint8Array): Promise<PDFDocumentProxy> {
+/**
+ * Open a PDF from a URL: the app's own copy served from disk, or a picked file's object
+ * URL. Never from bytes in hand, which for a large PDF meant several copies in memory at once.
+ *
+ * `disableRange`: Capacitor's local server answers a range request with the whole file from
+ * its first byte under a header claiming the range, so PDF.js would piece together the
+ * wrong bytes. One plain request for the whole file is read correctly.
+ */
+async function load(url: string): Promise<PDFDocumentProxy> {
   return getDocument({
-    // PDF.js takes ownership of the buffer and detaches it; hand it a copy so the caller's
-    // bytes stay usable.
-    data: bytes.slice(),
+    url,
+    disableRange: true,
     cMapUrl: `${ASSETS}cmaps/`,
     cMapPacked: true,
     standardFontDataUrl: `${ASSETS}standard_fonts/`,
@@ -83,18 +90,23 @@ async function load(bytes: Uint8Array): Promise<PDFDocumentProxy> {
   }).promise;
 }
 
-/** Parse just far enough to count pages, and prove the bytes are a PDF at all. */
-export async function countPages(bytes: Uint8Array): Promise<number> {
-  const pdf = await load(bytes);
+/** Parse just far enough to count pages, and prove the file is a PDF at all. */
+export async function countPages(file: Blob): Promise<number> {
+  const url = URL.createObjectURL(file);
   try {
-    return pdf.numPages;
+    const pdf = await load(url);
+    try {
+      return pdf.numPages;
+    } finally {
+      await pdf.loadingTask.destroy();
+    }
   } finally {
-    await pdf.loadingTask.destroy();
+    URL.revokeObjectURL(url);
   }
 }
 
-export async function openPdf(bytes: Uint8Array): Promise<PdfHandle> {
-  const pdf = await load(bytes);
+export async function openPdf(url: string): Promise<PdfHandle> {
+  const pdf = await load(url);
   // A page's margins do not change, so each is measured once per opening.
   const contentBoxes = new Map<number, Box>();
 

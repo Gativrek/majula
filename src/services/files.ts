@@ -5,7 +5,7 @@
  * on the device, and an in-memory one under `node --test`.
  */
 
-import { base64ToBytes, bytesToBase64 } from '../lib/base64.ts';
+import { bytesToBase64 } from '../lib/base64.ts';
 import { StorageError } from '../lib/errors.ts';
 import { log } from '../lib/logger.ts';
 
@@ -20,9 +20,18 @@ export interface FileStore {
   ensureDirectory(root: StorageRoot, path: string): Promise<void>;
   writeText(root: StorageRoot, path: string, contents: string): Promise<void>;
   readText(root: StorageRoot, path: string): Promise<string>;
-  /** Binary files — attached PDFs (ADR-004). */
+  /**
+   * Binary files — attached PDFs (ADR-004) — written a piece at a time: `writeBytes` starts
+   * the file and `appendBytes` adds to it. A whole PDF never crosses the native bridge at
+   * once, because it goes as base64 and a large one runs the app out of memory.
+   */
   writeBytes(root: StorageRoot, path: string, bytes: Uint8Array): Promise<void>;
-  readBytes(root: StorageRoot, path: string): Promise<Uint8Array>;
+  appendBytes(root: StorageRoot, path: string, bytes: Uint8Array): Promise<void>;
+  /**
+   * A URL the web view can fetch the file from, served straight from disk, so PDF.js reads
+   * a large PDF without its bytes passing through the bridge.
+   */
+  fileUrl(root: StorageRoot, path: string): Promise<string>;
   exists(root: StorageRoot, path: string): Promise<boolean>;
   listDirectory(root: StorageRoot, path: string): Promise<string[]>;
   copyFile(
@@ -39,6 +48,7 @@ export const EXPORT_PDF_DIRECTORY = 'pdfs';
 
 export async function createDeviceFileStore(): Promise<FileStore> {
   const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+  const { Capacitor } = await import('@capacitor/core');
 
   const directoryFor: Record<StorageRoot, (typeof Directory)[keyof typeof Directory]> = {
     export: Directory.Documents,
@@ -93,14 +103,17 @@ export async function createDeviceFileStore(): Promise<FileStore> {
       });
     },
 
-    async readBytes(root, path) {
-      const result = await Filesystem.readFile({ path, directory: directoryFor[root] });
-      if (typeof result.data !== 'string') {
-        throw new StorageError('expected base64 from the native bridge', {
-          operation: 'readBytes',
-        });
-      }
-      return base64ToBytes(result.data);
+    async appendBytes(root, path, bytes) {
+      await Filesystem.appendFile({
+        path,
+        data: bytesToBase64(bytes),
+        directory: directoryFor[root],
+      });
+    },
+
+    async fileUrl(root, path) {
+      const { uri } = await Filesystem.getUri({ path, directory: directoryFor[root] });
+      return Capacitor.convertFileSrc(uri);
     },
 
     async exists(root, path) {

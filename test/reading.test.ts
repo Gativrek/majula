@@ -11,7 +11,7 @@ import type { PdfInspector } from '../src/services/reading.ts';
 import {
   attachPdf,
   clampPage,
-  readPdf,
+  locatePdf,
   saveLastPage,
   saveReadingDetails,
 } from '../src/services/reading.ts';
@@ -26,6 +26,7 @@ const PDF_PATH = `pdfs/${PDF_ID}.pdf`;
 
 /** Starts with the PDF signature. PDF.js is faked, so the rest need not be a real PDF. */
 const PDF_BYTES = new TextEncoder().encode('%PDF-1.7\n% a stand-in for a real document\n');
+const PDF_FILE = new Blob([PDF_BYTES]);
 
 const fourteenPages: PdfInspector = { countPages: async () => 14 };
 const unreadable: PdfInspector = {
@@ -47,7 +48,7 @@ const attachOptions = { inspector: fourteenPages, newId: () => PDF_ID };
 describe('attaching a PDF (ADR-004)', function attachSuite() {
   it('copies the file into private storage and records the copy', async function copies() {
     const { context, files, readingId } = await freshContext();
-    const result = await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    const result = await attachPdf(context, readingId, PDF_FILE, attachOptions);
 
     assert.ok(result.ok);
     if (!result.ok) return;
@@ -60,12 +61,25 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
     await context.driver.close();
   });
 
+  it('copies a large PDF whole, a piece at a time', async function large() {
+    const { context, files, readingId } = await freshContext();
+    // Over two pieces of copying, with a ragged last one.
+    const large = new Uint8Array(1_300_000);
+    large.set(PDF_BYTES);
+    for (let index = PDF_BYTES.length; index < large.length; index += 1) large[index] = index % 251;
+    const result = await attachPdf(context, readingId, new Blob([large]), attachOptions);
+
+    assert.ok(result.ok);
+    assert.deepEqual(await files.readBytes('private', PDF_PATH), large);
+    await context.driver.close();
+  });
+
   it('refuses a file that is not a PDF, and writes nothing', async function notPdf() {
     const { context, files, readingId } = await freshContext();
     const result = await attachPdf(
       context,
       readingId,
-      new TextEncoder().encode('just some notes'),
+      new Blob(['just some notes']),
       attachOptions,
     );
 
@@ -77,7 +91,7 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
 
   it('refuses a PDF that cannot be read, and writes nothing', async function damaged() {
     const { context, files, readingId } = await freshContext();
-    const result = await attachPdf(context, readingId, PDF_BYTES, {
+    const result = await attachPdf(context, readingId, PDF_FILE, {
       ...attachOptions,
       inspector: unreadable,
     });
@@ -90,15 +104,15 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
   it('finds the signature after leading bytes, as the format allows', async function leadingJunk() {
     const { context, readingId } = await freshContext();
     const padded = new Uint8Array([0x00, 0x0a, 0x0d, ...PDF_BYTES]);
-    const result = await attachPdf(context, readingId, padded, attachOptions);
+    const result = await attachPdf(context, readingId, new Blob([padded]), attachOptions);
     assert.ok(result.ok);
     await context.driver.close();
   });
 
   it('refuses a second PDF rather than orphaning the first', async function second() {
     const { context, readingId } = await freshContext();
-    await attachPdf(context, readingId, PDF_BYTES, attachOptions);
-    const again = await attachPdf(context, readingId, PDF_BYTES, {
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
+    const again = await attachPdf(context, readingId, PDF_FILE, {
       ...attachOptions,
       newId: () => '22222222-2222-4222-8222-222222222222',
     });
@@ -111,28 +125,26 @@ describe('attaching a PDF (ADR-004)', function attachSuite() {
 });
 
 describe('reading an attached PDF', function readSuite() {
-  it('reads the copy back', async function readsBack() {
+  it('finds the copy as a URL to read from, without reading it', async function locates() {
     const { context, readingId } = await freshContext();
-    const attached = await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    const attached = await attachPdf(context, readingId, PDF_FILE, attachOptions);
     assert.ok(attached.ok);
     if (!attached.ok) return;
 
-    const lookup = await readPdf(context, attached.reading);
-    assert.equal(lookup.status, 'ok');
-    if (lookup.status !== 'ok') return;
-    assert.deepEqual(lookup.bytes, PDF_BYTES);
+    const lookup = await locatePdf(context, attached.reading);
+    assert.deepEqual(lookup, { status: 'ok', url: `memory://private/${PDF_PATH}` });
     await context.driver.close();
   });
 
   it('reports a missing file plainly instead of failing', async function missing() {
     const { context, files, readingId } = await freshContext();
-    const attached = await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    const attached = await attachPdf(context, readingId, PDF_FILE, attachOptions);
     assert.ok(attached.ok);
     if (!attached.ok) return;
 
     // As after importing an export made without PDFs.
     await files.deleteFile('private', PDF_PATH);
-    assert.deepEqual(await readPdf(context, attached.reading), { status: 'missing' });
+    assert.deepEqual(await locatePdf(context, attached.reading), { status: 'missing' });
     await context.driver.close();
   });
 
@@ -141,7 +153,7 @@ describe('reading an attached PDF', function readSuite() {
     const reading = await context.items.get(readingId);
     assert.equal(reading?.type, 'reading');
     if (reading?.type !== 'reading') return;
-    assert.deepEqual(await readPdf(context, reading), { status: 'none' });
+    assert.deepEqual(await locatePdf(context, reading), { status: 'none' });
     await context.driver.close();
   });
 });
@@ -149,7 +161,7 @@ describe('reading an attached PDF', function readSuite() {
 describe('remembering the page', function pageSuite() {
   it('keeps the last page and leaves the rest of the payload alone', async function saves() {
     const { context, readingId } = await freshContext();
-    await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
     await saveLastPage(context, readingId, 6);
 
     const reading = await context.items.get(readingId);
@@ -169,7 +181,7 @@ describe('remembering the page', function pageSuite() {
 describe('the attached file across delete, purge and backup', function lifecycleSuite() {
   it('survives a soft delete and restore (SPECS §4.1)', async function softDelete() {
     const { context, files, readingId } = await freshContext();
-    await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
     await saveLastPage(context, readingId, 6);
 
     await context.items.softDelete(readingId);
@@ -183,7 +195,7 @@ describe('the attached file across delete, purge and backup', function lifecycle
 
   it('is removed with the entry by purge', async function purge() {
     const { context, files, readingId } = await freshContext();
-    await attachPdf(context, readingId, PDF_BYTES, attachOptions);
+    await attachPdf(context, readingId, PDF_FILE, attachOptions);
 
     await context.items.softDelete(readingId);
     const summary = await purgeNow(context);
@@ -197,7 +209,7 @@ describe('the attached file across delete, purge and backup', function lifecycle
   it('travels in an export and comes back on a fresh install', async function backup() {
     const shared = createMemoryFileStore();
     const source = await freshContext(shared);
-    await attachPdf(source.context, source.readingId, PDF_BYTES, attachOptions);
+    await attachPdf(source.context, source.readingId, PDF_FILE, attachOptions);
     await saveLastPage(source.context, source.readingId, 6);
 
     const exported = await exportDatabase(source.context.driver, shared);

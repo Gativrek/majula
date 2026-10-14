@@ -35,6 +35,9 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 7. A file that is not a readable PDF is refused with a message, and nothing is copied or
    written.
 8. After attaching, the entry shows its page count.
+8a. A large PDF — tens of megabytes — attaches and opens without the app closing. Its bytes
+    are never carried across the native bridge whole: the copy is written a piece at a
+    time, and the viewer reads the stored file from disk.
 9. An entry has at most one PDF. Attach is offered only while there is none. To change the
    PDF, delete the entry and create another — replacing would leave the old copy
    referenced by nothing, and purge only removes files belonging to deleted rows.

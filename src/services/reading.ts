@@ -9,12 +9,13 @@ import { randomId } from '../lib/ids.ts';
 import { StorageError } from '../lib/errors.ts';
 import { log } from '../lib/logger.ts';
 import type { AppContext } from './database.ts';
+import type { FileStore } from './files.ts';
 import { EXPORT_PDF_DIRECTORY } from './files.ts';
 import type { PdfHandle } from './pdf-document.ts';
 
 /** How the service learns a PDF's page count. Injected so tests need not load PDF.js. */
 export interface PdfInspector {
-  countPages(bytes: Uint8Array): Promise<number>;
+  countPages(file: Blob): Promise<number>;
 }
 
 /**
@@ -26,8 +27,8 @@ async function pdfModule(): Promise<typeof import('./pdf-document.ts')> {
 }
 
 const pdfJsInspector: PdfInspector = {
-  async countPages(bytes) {
-    return (await pdfModule()).countPages(bytes);
+  async countPages(file) {
+    return (await pdfModule()).countPages(file);
   },
 };
 
@@ -41,6 +42,27 @@ function looksLikePdf(bytes: Uint8Array): boolean {
     if (PDF_SIGNATURE.every((byte, offset) => bytes[start + offset] === byte)) return true;
   }
   return false;
+}
+
+/** Only the start of a file is needed to check its signature. */
+async function startsLikePdf(file: Blob): Promise<boolean> {
+  const head = file.slice(0, SIGNATURE_WINDOW + PDF_SIGNATURE.length);
+  return looksLikePdf(new Uint8Array(await head.arrayBuffer()));
+}
+
+/**
+ * How much of a PDF is read and written at a time. A whole large PDF read into memory and
+ * sent to the native side as base64 at once ran the app out of memory (a 56 MB file did).
+ */
+const COPY_CHUNK = 512 * 1024;
+
+/** Copy a picked file into storage a piece at a time, never holding all of it at once. */
+async function copyIntoStorage(files: FileStore, path: string, file: Blob): Promise<void> {
+  for (let offset = 0; offset === 0 || offset < file.size; offset += COPY_CHUNK) {
+    const piece = new Uint8Array(await file.slice(offset, offset + COPY_CHUNK).arrayBuffer());
+    if (offset === 0) await files.writeBytes('private', path, piece);
+    else await files.appendBytes('private', path, piece);
+  }
 }
 
 async function currentReading(
@@ -75,7 +97,7 @@ export interface AttachOptions {
 export async function attachPdf(
   context: AppContext,
   readingId: string,
-  bytes: Uint8Array,
+  file: Blob,
   options: AttachOptions = {},
 ): Promise<AttachResult> {
   const reading = await currentReading(context, readingId);
@@ -86,13 +108,13 @@ export async function attachPdf(
     // reading-queue.md criterion 9: replacing would orphan the old copy.
     return refuse(readingId, 'already_attached', 'This entry already has a PDF.');
   }
-  if (!looksLikePdf(bytes)) {
+  if (!(await startsLikePdf(file))) {
     return refuse(readingId, 'not_pdf', 'That file is not a PDF.');
   }
 
   let pageCount: number;
   try {
-    pageCount = await (options.inspector ?? pdfJsInspector).countPages(bytes);
+    pageCount = await (options.inspector ?? pdfJsInspector).countPages(file);
   } catch (cause) {
     log.info('reading.attach_refused', {
       id: readingId,
@@ -104,7 +126,18 @@ export async function attachPdf(
 
   const path = `${EXPORT_PDF_DIRECTORY}/${(options.newId ?? randomId)()}.pdf`;
   await context.files.ensureDirectory('private', EXPORT_PDF_DIRECTORY);
-  await context.files.writeBytes('private', path, bytes);
+  try {
+    await copyIntoStorage(context.files, path, file);
+  } catch (cause) {
+    // A half-written copy is never left behind for nothing to refer to.
+    if (await context.files.exists('private', path))
+      await context.files.deleteFile('private', path);
+    throw new StorageError(
+      'could not copy the PDF',
+      { operation: 'attachPdf', id: readingId },
+      { cause },
+    );
+  }
 
   try {
     const updated = await context.items.update<'reading'>(readingId, {
@@ -129,17 +162,17 @@ export async function attachPdf(
   }
 }
 
-export type PdfLookup =
-  { status: 'none' } | { status: 'missing' } | { status: 'ok'; bytes: Uint8Array };
+export type PdfLookup = { status: 'none' } | { status: 'missing' } | { status: 'ok'; url: string };
 
 /**
- * Read an entry's PDF back from private storage.
+ * Find an entry's PDF in private storage, as a URL the viewer reads it from. The bytes
+ * are not read here: a large PDF read through the bridge at once runs the app out of memory.
  *
  * `missing` is a real state, not an error: an import from an export made without PDFs
  * leaves entries naming files that are not on this phone (reading-queue.md criterion 15).
  * It is logged, never silent (CODESTYLE §6).
  */
-export async function readPdf(
+export async function locatePdf(
   context: AppContext,
   reading: ItemOfType<'reading'>,
 ): Promise<PdfLookup> {
@@ -149,7 +182,7 @@ export async function readPdf(
     log.warn('reading.pdf_missing', { id: reading.id });
     return { status: 'missing' };
   }
-  return { status: 'ok', bytes: await context.files.readBytes('private', path) };
+  return { status: 'ok', url: await context.files.fileUrl('private', path) };
 }
 
 export type OpenedPdf =
@@ -167,9 +200,9 @@ export type OpenedPdf =
 export async function openReadingPdf(context: AppContext, readingId: string): Promise<OpenedPdf> {
   const reading = await currentReading(context, readingId);
   if (reading === null) return { status: 'none' };
-  const lookup = await readPdf(context, reading);
+  const lookup = await locatePdf(context, reading);
   if (lookup.status !== 'ok') return lookup;
-  const handle = await (await pdfModule()).openPdf(lookup.bytes);
+  const handle = await (await pdfModule()).openPdf(lookup.url);
   return {
     status: 'ok',
     handle,

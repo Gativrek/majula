@@ -269,3 +269,12 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - Checking off, deleting, logging a habit and restoring from a list, and loading the list itself, now go through one hook (`use-list-action.ts`) that logs `list.action_failed` or `list.load_failed` and shows a dismissable line saying what failed. Before, a tap on a row started a write nobody awaited: a failure was an unhandled rejection and the row just did not change (CODESTYLE §8). The old list had the same gap.
 - A capture that fails keeps its typed text in the bar to try again, instead of clearing it as though it had saved.
+
+---
+
+## 2026-10-14 — Large PDFs no longer crash the app
+
+- Owner's report: a 56 MB PDF crashed the app. Attaching read the whole file into memory and sent it to the native side as one base64 string, and opening read it back the same way and decoded it: several copies of 75–150 MB at once, more than the WebView has.
+- Attaching now copies the picked file into private storage 512 KB at a time (`appendBytes`), counting its pages from an object URL. Opening hands PDF.js a URL to the stored copy (`fileUrl`, Capacitor's local file server), so the bytes come off disk without passing through the bridge. `readBytes` and `base64ToBytes` are gone with the path that used them.
+- PDF.js is told not to use range requests. Capacitor 8's local server answers a range request with the whole file from byte 0 under a header claiming the range, so ranged reads would assemble the wrong bytes. One plain request is read correctly. Checked in a browser against a generated 56 MB PDF; the phone is the real test.
+- Export and import already copied PDFs natively (`copyFile`), so a large PDF never went through the bridge there.

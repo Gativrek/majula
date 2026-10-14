@@ -19,7 +19,7 @@ import { useBackStep } from './use-back-step.ts';
 interface ReadingDetailProps {
   reading: ItemOfType<'reading'>;
   onSaveDetails: (details: { title: string; url: string }) => Promise<DetailsResult>;
-  onAttach: (bytes: Uint8Array) => Promise<AttachResult>;
+  onAttach: (file: Blob) => Promise<AttachResult>;
   onToggleRead: () => Promise<void>;
   onOpenPdf: () => void;
   onClose: () => void;
@@ -73,7 +73,7 @@ export function ReadingDetail(props: ReadingDetailProps) {
     setBusy(true);
     setMessage({ kind: 'info', text: 'Copying the PDF into Majula…' });
     try {
-      const result = await props.onAttach(new Uint8Array(await file.arrayBuffer()));
+      const result = await props.onAttach(file);
       setMessage(
         result.ok
           ? { kind: 'info', text: 'Attached. The original can now be moved or deleted.' }

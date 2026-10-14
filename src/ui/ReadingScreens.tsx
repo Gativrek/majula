@@ -94,8 +94,8 @@ export function ReadingScreens({
         if (result.ok) await reload();
         return result;
       }}
-      onAttach={async (bytes) => {
-        const result = await attachPdf(context, readingId, bytes);
+      onAttach={async (file) => {
+        const result = await attachPdf(context, readingId, file);
         if (result.ok) await reload();
         return result;
       }}
