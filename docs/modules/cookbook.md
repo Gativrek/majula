@@ -16,11 +16,14 @@ it happens once, and the recipe is read many times.
     { "qty": 500, "unit": "g", "name": "feijão" },
     { "name": "sal a gosto" }
   ],
-  "steps": ["Cozinhe o feijão.", "Refogue o bacon."]
+  "steps": ["Cozinhe o feijão.", "Refogue o bacon."],
+  "rating": 7
 }
 ```
 
 `qty` and `unit` are each optional; `name` is required (§4.3, ACCEPTED 2026-09-23).
+`rating` is optional, an integer from 0 to 10 counting half stars (§4.3, ACCEPTED
+2026-10-14).
 Everything is stored exactly as typed. Recipe text is never translated, normalised or
 case-folded (`CODESTYLE.md` §1).
 
@@ -65,6 +68,17 @@ case-folded (`CODESTYLE.md` §1).
 14. Steps are numbered. Ingredients show quantity, unit and name in one line.
 15. **Close** and **Edit** are in the lower half of the screen (`SPECS.md` §6). The back
     button closes the recipe, as Close does.
+
+**Rating**
+
+15a. A recipe with a rating shows it under its title as five stars, filled in half steps:
+     `7` shows three full stars, a half star and an empty one. A recipe never rated shows no
+     stars at all, not five empty ones.
+15b. The rating is set in the editor. Tapping a star fills up to it; tapping the same star
+     again makes it a half star. **Clear** removes the rating. Saving keeps it; Cancel and
+     back leave it as it was.
+15c. A rating survives export and import, and an export from before ratings existed
+     imports with every recipe unrated.
 
 **Everything else**
 

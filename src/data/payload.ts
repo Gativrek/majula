@@ -20,6 +20,7 @@ import type {
   RoutinePayload,
   WorkoutLogPayload,
 } from './types.ts';
+import { MAX_RATING } from './types.ts';
 
 type Raw = Record<string, unknown>;
 
@@ -130,7 +131,16 @@ function recipePayload(value: unknown, id: string | undefined): RecipePayload {
   });
   const servings = asFiniteNumber(raw.servings, 'servings', 'recipe', id);
   if (servings <= 0) fail('payload.servings', 'must be positive', 'recipe', id);
-  return { servings, ingredients, steps };
+  const payload: RecipePayload = { servings, ingredients, steps };
+  // SPECS §4.3, amended 2026-10-14: absent means not rated, which is not the same as 0.
+  if (raw.rating !== undefined) {
+    const rating = asFiniteNumber(raw.rating, 'rating', 'recipe', id);
+    if (!Number.isInteger(rating) || rating < 0 || rating > MAX_RATING) {
+      fail('payload.rating', `must be a whole number from 0 to ${MAX_RATING}`, 'recipe', id);
+    }
+    payload.rating = rating;
+  }
+  return payload;
 }
 
 function routinePayload(value: unknown, id: string | undefined): RoutinePayload {

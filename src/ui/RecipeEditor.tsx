@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { IngredientDraft, RecipeDraft } from '../services/recipe-draft.ts';
 import { EMPTY_INGREDIENT } from '../services/recipe-draft.ts';
+import { Icon } from './Icon.tsx';
+import { StarInput } from './StarInput.tsx';
 
 /**
  * The recipe editor (`docs/modules/cookbook.md` criteria 1–8).
@@ -43,6 +45,7 @@ function inputValue(event: Event): string {
 export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
   const [title, setTitle] = useState(initial.title);
   const [servings, setServings] = useState(initial.servings);
+  const [rating, setRating] = useState(initial.rating);
   const [ingredients, setIngredients] = useState<Row<IngredientDraft>[]>(() =>
     (initial.ingredients.length > 0 ? initial.ingredients : [EMPTY_INGREDIENT]).map(row),
   );
@@ -73,6 +76,7 @@ export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
         servings,
         ingredients: ingredients.map((entry) => entry.value),
         steps: steps.map((entry) => entry.value),
+        rating,
       });
       if (!result.ok) setProblem(result.message);
     } finally {
@@ -103,6 +107,11 @@ export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
             onInput={(event) => setServings(inputValue(event))}
           />
         </label>
+
+        <div class="editor__field">
+          <span class="editor__label">How much you like it</span>
+          <StarInput rating={rating} onChange={setRating} />
+        </div>
 
         <section class="kitchen__section">
           <h3 class="kitchen__heading">Ingredients</h3>
@@ -139,7 +148,7 @@ export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
                 aria-label={`Remove ingredient ${index + 1}`}
                 onClick={() => setIngredients((rows) => rows.filter((r) => r.key !== entry.key))}
               >
-                {'×'}
+                <Icon name="close" size={18} />
               </button>
             </div>
           ))}
@@ -170,7 +179,7 @@ export function RecipeEditor({ initial, onSave, onCancel }: RecipeEditorProps) {
                 aria-label={`Remove step ${index + 1}`}
                 onClick={() => setSteps((rows) => rows.filter((r) => r.key !== entry.key))}
               >
-                {'×'}
+                <Icon name="close" size={18} />
               </button>
             </div>
           ))}

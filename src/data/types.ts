@@ -54,7 +54,12 @@ export interface RecipePayload {
   servings: number;
   ingredients: RecipeIngredient[];
   steps: string[];
+  /** SPECS §4.3, amended 2026-10-14: 0–10 in half stars. Absent means not rated. */
+  rating?: number;
 }
+
+/** Ten half stars: five stars, in half steps. */
+export const MAX_RATING = 10;
 
 export interface RoutineExercise {
   exercise_id: string;

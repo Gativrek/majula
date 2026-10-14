@@ -3,7 +3,12 @@ import { describe, it } from 'node:test';
 import { validatePayload } from '../src/data/payload.ts';
 import { ValidationError } from '../src/lib/errors.ts';
 import type { RecipeDraft } from '../src/services/recipe-draft.ts';
-import { buildRecipe, draftFromRecipe, formatIngredient } from '../src/services/recipe-draft.ts';
+import {
+  buildRecipe,
+  draftFromRecipe,
+  formatAmount,
+  formatIngredient,
+} from '../src/services/recipe-draft.ts';
 import { parseQuantity } from '../src/services/quantity.ts';
 
 function draft(overrides: Partial<RecipeDraft> = {}): RecipeDraft {
@@ -12,6 +17,7 @@ function draft(overrides: Partial<RecipeDraft> = {}): RecipeDraft {
     servings: '4',
     ingredients: [{ qty: '500', unit: 'g', name: 'feijão' }],
     steps: ['Cozinhe o feijão.'],
+    rating: null,
     ...overrides,
   };
 }
@@ -150,6 +156,7 @@ describe('building a recipe from the editor', function buildSuite() {
       servings: 4,
       ingredients: [{ qty: 0.5, unit: 'xícara', name: 'leite' }, { name: 'sal a gosto' }],
       steps: ['Misture.', 'Asse.'],
+      rating: 7,
     };
     const result = buildRecipe(draftFromRecipe('Bolo', payload));
     assert.ok(result.ok);
@@ -178,6 +185,20 @@ describe('recipe payload validation', function payloadSuite() {
       ValidationError,
     );
   });
+
+  it('accepts a rating of 0 to 10 half stars and refuses anything else', function rating() {
+    const recipe = (rating: unknown) => ({ servings: 1, ingredients: [], steps: [], rating });
+    assert.equal(validatePayload('recipe', recipe(0)).rating, 0);
+    assert.equal(validatePayload('recipe', recipe(10)).rating, 10);
+    for (const bad of [-1, 11, 3.5, '7', null]) {
+      assert.throws(() => validatePayload('recipe', recipe(bad)), ValidationError, String(bad));
+    }
+  });
+
+  it('reads a recipe saved before ratings existed as not rated', function unrated() {
+    const payload = validatePayload('recipe', { servings: 1, ingredients: [], steps: [] });
+    assert.equal('rating' in payload, false);
+  });
 });
 
 describe('kitchen-mode ingredient line', function formatSuite() {
@@ -187,5 +208,11 @@ describe('kitchen-mode ingredient line', function formatSuite() {
 
   it('shows only the name when there is no quantity or unit', function nameOnly() {
     assert.equal(formatIngredient({ name: 'sal a gosto' }), 'sal a gosto');
+  });
+
+  it('gives the amount column quantity and unit, or nothing', function amount() {
+    assert.equal(formatAmount({ qty: 500, unit: 'g', name: 'feijão' }), '500 g');
+    assert.equal(formatAmount({ unit: 'dentes', name: 'alho' }), 'dentes');
+    assert.equal(formatAmount({ name: 'sal a gosto' }), '');
   });
 });

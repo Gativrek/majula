@@ -191,3 +191,9 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 - Rows lose the per-row × button: delete is a swipe to the left, judged by a pure function under test (`row-swipe.ts`). Inside one category a row carries no type label; where types mix it carries the type's icon. Checked rows fold under a "Done" line.
 - Deleted and Backup move off the list's footer into one screen behind the header's menu button. Purge moves from Backup to the Deleted tab, beside what it removes.
 - Typeface: the system font, not the design's Barlow. Owner's decision: Barlow is not required, and a font already on the phone costs no bundled files (the app has no network, §6) and no ADR.
+
+---
+
+## 2026-10-14 — Redesign: module screens and the recipe rating
+
+- Recipes get an optional rating, an integer from 0 to 10 counting half stars, shown as five stars. Owner's request. It lives in the recipe payload beside servings, so there is no migration, the same reasoning as the reading view's `zoom` and `trim_margins`; SPECS §4.3 and `cookbook.md` amended. Absent means not rated and shows no stars, never five empty ones. In the editor each star is a whole button and tapping the last full star again halves it, so a half star never needs a target half a thumb wide.

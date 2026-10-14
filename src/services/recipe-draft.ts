@@ -21,6 +21,8 @@ export interface RecipeDraft {
   servings: string;
   ingredients: IngredientDraft[];
   steps: string[];
+  /** Half stars, 0–10, or null when not rated. Set by tapping, so never typed text. */
+  rating: number | null;
 }
 
 export type DraftResult =
@@ -83,7 +85,9 @@ export function buildRecipe(draft: RecipeDraft): DraftResult {
 
   const steps = draft.steps.map((step) => step.trim()).filter((step) => step.length > 0);
 
-  return { ok: true, title, payload: { servings, ingredients, steps } };
+  const payload: RecipePayload = { servings, ingredients, steps };
+  if (draft.rating !== null) payload.rating = draft.rating;
+  return { ok: true, title, payload };
 }
 
 /**
@@ -91,7 +95,7 @@ export function buildRecipe(draft: RecipeDraft): DraftResult {
  * in the database yet, and nothing will until Save (cookbook.md criterion 1).
  */
 export function newRecipeDraft(title: string): RecipeDraft {
-  return { title, servings: '1', ingredients: [], steps: [] };
+  return { title, servings: '1', ingredients: [], steps: [], rating: null };
 }
 
 /** The editor's starting state for an existing recipe. */
@@ -105,6 +109,7 @@ export function draftFromRecipe(title: string, payload: RecipePayload): RecipeDr
       name: ingredient.name,
     })),
     steps: [...payload.steps],
+    rating: payload.rating ?? null,
   };
 }
 
@@ -113,11 +118,19 @@ export function draftFromRecipe(title: string, payload: RecipePayload): RecipeDr
  * number, so `0.5` reads as `0,5` on a phone set to Portuguese.
  */
 export function formatIngredient(ingredient: RecipeIngredient): string {
+  const amount = formatAmount(ingredient);
+  return amount.length === 0 ? ingredient.name : `${amount} ${ingredient.name}`;
+}
+
+/**
+ * The quantity and unit alone, for kitchen mode's amount column: `500 g`, `2`, `dentes`, or
+ * empty for "sal a gosto". Formatted in the device's locale, as `formatIngredient` is.
+ */
+export function formatAmount(ingredient: RecipeIngredient): string {
   const parts: string[] = [];
   if (ingredient.qty !== undefined) {
     parts.push(ingredient.qty.toLocaleString(undefined, { maximumFractionDigits: 3 }));
   }
   if (ingredient.unit !== undefined) parts.push(ingredient.unit);
-  parts.push(ingredient.name);
   return parts.join(' ');
 }

@@ -58,7 +58,7 @@ Full acceptance criteria live in per-module specs (`docs/modules/<name>.md`), wr
 - **Network log.** Capture only: name, where met, short context. No follow-up reminders.
 - **Habit streak.** Habit definitions; one tap logs today. Displays current streak. Tapping again on the same day undoes.
 - **Running-low list.** Tap to add an item when noticed; check off when bought. This is the grocery list. No quantities.
-- **Cookbook.** Recipes with ingredients (optional quantity, optional unit, name), ordered steps, servings. Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
+- **Cookbook.** Recipes with ingredients (optional quantity, optional unit, name), ordered steps, servings, and an optional rating of how much the owner likes it, shown as five stars in half steps: ACCEPTED 2026-10-14 (owner’s decision). Must be readable in the kitchen: large text, screen stays awake while a recipe is open.
 - **Workout routine.** Routine templates (exercises with sets, reps, load) and session logs. Exercises come from a catalog of `exercise` entities referenced by id, not free text: ACCEPTED 2026-09-21. Built last.
 - **Places to try.** Name, optional note, optional coordinates. Coordinates come from the device’s current location (one tap, GPS, works without signal) or are pasted from a maps app: ACCEPTED 2026-09-23 (owner’s decision). This adds the Android location permission, requested the first time the owner asks for the current location and never at install. Location never leaves the phone and is never logged. Coordinates are stored, not rendered: there is no map in the app, but a place can be handed to the device’s maps app. A place can also come **from Google Maps**, by sharing a listing to Majula or by pasting its link: ACCEPTED 2026-10-13 (owner’s decision). The link is kept in the generic `url` column and **Open in maps** opens that exact listing. Google Maps shares short links that carry no coordinates, and resolving one needs the network, which the app does not have (ADR-003, §6); so coordinates are filled in only when the link itself contains them, and otherwise stay optional as before. Majula receives text shares only for this: a share with no Google Maps link in it is refused, and nothing is written.
 
@@ -233,7 +233,8 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
     "servings": 4,
     "ingredients": [ { "qty": 500, "unit": "g", "name": "feijão" },
                      { "name": "sal a gosto" } ],
-    "steps": [ "Cozinhe o feijão...", "..." ]
+    "steps": [ "Cozinhe o feijão...", "..." ],
+    "rating": 7
   } }
 
 // exercise (catalog entry; body optional, for form cues)
@@ -252,6 +253,11 @@ Generic types (`note`, `todo`, `contact`, `grocery`, `exercise`) use no payload 
 { "type": "place", "title": "Café on Rua X", "url": "https://maps.app.goo.gl/AbC123",
   "payload": { "lat": -12.34, "lon": -56.0 } }
 ```
+
+**Recipe rating.** ACCEPTED 2026-10-14 (owner’s decision): `rating` is optional, an integer
+from 0 to 10 counting half stars, so `7` shows as three and a half of five stars. Absent
+means not rated and shows no stars; it is never stored as `0` to mean that. No SQL change
+and no migration: this is the payload shape, validated in the data layer.
 
 **Recipe ingredients.** ACCEPTED 2026-09-23: `qty` and `unit` are each optional; `name` is
 required. "Sal a gosto" and "a pinch of salt" are real ingredients with no number, and a
