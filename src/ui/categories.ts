@@ -175,3 +175,14 @@ const CHECKABLE_TYPES: readonly ItemType[] = ['todo', 'grocery', 'reading'];
 export function isCheckable(type: ItemType): boolean {
   return CHECKABLE_TYPES.includes(type);
 }
+
+/**
+ * The category a sideways swipe moves to (SPECS §2.2, The list): the next or previous icon
+ * in the row, stopping at either end rather than wrapping. From Habits, which is not in the
+ * row, a swipe lands on its first icon.
+ */
+export function adjacentCategory(current: CategoryId, by: 1 | -1): CategoryId | null {
+  const index = LIST_CATEGORIES.indexOf(current);
+  if (index === -1) return LIST_CATEGORIES[0] ?? null;
+  return LIST_CATEGORIES[index + by] ?? null;
+}

@@ -16,13 +16,14 @@ import { newRoutineDraft } from '../services/workout-draft.ts';
 import { CaptureBar } from './CaptureBar.tsx';
 import { CategoryBubble } from './CategoryBubble.tsx';
 import type { CategoryId } from './categories.ts';
-import { category as categoryOf, isCheckable } from './categories.ts';
+import { adjacentCategory, category as categoryOf, isCheckable } from './categories.ts';
 import { HabitStrip } from './HabitStrip.tsx';
 import { HomeHeader } from './HomeHeader.tsx';
 import { Icon } from './Icon.tsx';
 import { ItemList } from './ItemList.tsx';
 import { NoticeBanner } from './NoticeBanner.tsx';
 import { useListAction } from './use-list-action.ts';
+import { useSwipePages } from './use-swipe-pages.ts';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { screenFor } from './OpenScreenView.tsx';
 
@@ -80,6 +81,19 @@ export function HomeScreen(props: HomeScreenProps) {
 
   const action = useListAction(refresh);
 
+  // SPECS §2.2, The list: a sideways swipe moves to the next or previous category. A tag
+  // view is not one of them, and the habit cards scroll sideways themselves.
+  const scroller = useRef<HTMLDivElement | null>(null);
+  useSwipePages(
+    scroller,
+    tag === null,
+    function swipeCategory(by) {
+      const next = adjacentCategory(categoryId, by);
+      if (next !== null) props.onCategoryChange(next);
+    },
+    '.habit-cards',
+  );
+
   useEffect(
     function loadWheneverTheViewChanges() {
       void action.load();
@@ -127,7 +141,7 @@ export function HomeScreen(props: HomeScreenProps) {
 
   return (
     <div class="screen">
-      <div class="screen__scroll">
+      <div class="screen__scroll" ref={scroller}>
         <HomeHeader onSearch={props.onSearch} onLibrary={props.onLibrary} />
         <NoticeBanner notice={props.notice} onDismiss={props.onDismissNotice} />
         <NoticeBanner notice={action.problem} onDismiss={action.dismiss} />
@@ -170,7 +184,7 @@ export function HomeScreen(props: HomeScreenProps) {
             onOpen={onOpen}
           />
           {items.length === 0 ? null : (
-            <p class="list-hint">Swipe a row left, or hold it, to delete.</p>
+            <p class="list-hint">Hold a row to delete it. Swipe sideways for the next list.</p>
           )}
         </section>
       </div>

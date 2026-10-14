@@ -2,7 +2,7 @@ import type { Item } from '../data/types.ts';
 import { isCheckable, typeIcon, typeLabel } from './categories.ts';
 import { Icon } from './Icon.tsx';
 import { Marked } from './Marked.tsx';
-import { useSwipeReveal } from './use-swipe-reveal.ts';
+import { useHoldReveal } from './use-hold-reveal.ts';
 
 /**
  * One row of the list. Generic over `items`, because most modules are views over one
@@ -10,8 +10,8 @@ import { useSwipeReveal } from './use-swipe-reveal.ts';
  *
  * Inside a category every row is the same type, so the type icon is left off and the
  * checkbox leads. Where types mix — search, a tag, Deleted, Workouts — each row carries
- * its type's icon instead of a word. Delete is a swipe to the left; a deleted row shows
- * Restore instead and does not swipe.
+ * its type's icon instead of a word. Holding a row uncovers Delete; a deleted row shows
+ * Restore instead and does not open.
  *
  * A row shows its tags beside the title. A search result marks the words that matched, and
  * shows the stretch of body around a match in place of its usual second line.
@@ -96,7 +96,7 @@ export function ItemRow({
   onOpen,
 }: ItemRowProps) {
   const isDeleted = item.deletedAt !== null;
-  const swipe = useSwipeReveal(!isDeleted);
+  const reveal = useHoldReveal(!isDeleted);
   const checkbox =
     isCheckable(item.type) && !isDeleted ? <CheckBox item={item} onToggle={onToggleDone} /> : null;
   const meta = metaFor(item);
@@ -124,7 +124,7 @@ export function ItemRow({
           type="button"
           class="row__delete"
           aria-label={`Delete ${item.title}`}
-          tabIndex={swipe.open ? 0 : -1}
+          tabIndex={reveal.open ? 0 : -1}
           onClick={() => onDelete(item)}
         >
           <Icon name="trash" size={20} />
@@ -132,9 +132,9 @@ export function ItemRow({
         </button>
       )}
       <div
-        class={swipe.dragging ? 'row__face row__face--dragging' : 'row__face'}
-        style={{ transform: `translateX(${swipe.offset}px)` }}
-        {...swipe.handlers}
+        class="row__face"
+        style={{ transform: `translateX(${reveal.offset}px)` }}
+        {...reveal.handlers}
       >
         {showType ? (
           <span class="tile">

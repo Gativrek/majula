@@ -341,10 +341,11 @@ _The list_ (`SPECS.md` §2.2, The list):
    each with its type's icon.
 4. Quick capture's placeholder follows the icon selected. The type button at its left
    opens every type; picking **Note** there switches the list to Notes too.
-5. Swipe a row left: **Delete** shows. Tap the row: it closes. Scrolling the list up and
-   down never opens a row. Swipe again and tap **Delete**: it moves to **Deleted**.
-   Hold a row still instead: **Delete** shows the same way, and no text-selection menu
-   appears. A line under the list says both.
+5. Hold a row still: **Delete** shows, and no text-selection menu appears. Tap the row: it
+   closes. Hold again and tap **Delete**: it moves to **Deleted**. Scrolling up and down
+   never opens a row. Swipe sideways on the list: the next or previous category shows,
+   stopping at To-do and at Workouts. A swipe across the habit cards only scrolls them.
+   A line under the list says both.
 6. Check a to-do off: it folds under **Done**, which opens and closes.
 7. On **Notes**, search a word from a to-do: it is found. Back returns to Notes.
 8. In search, tap a tag: the list shows that tag across categories. Back clears it.

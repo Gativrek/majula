@@ -360,10 +360,6 @@ input {
   transition: transform 160ms ease-out;
 }
 
-.row__face--dragging {
-  transition: none;
-}
-
 /* A leading checkbox or toggle supplies its own 44px target, so the face's padding shrinks. */
 .row__face:has(> .check:first-child),
 .row__face:has(> .habit-toggle:first-child) {

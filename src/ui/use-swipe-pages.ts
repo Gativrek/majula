@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'react';
 import { swipeTurn } from './swipe.ts';
 
 /**
- * Swiping turns pages (`docs/modules/reading-queue.md` criterion 11a).
+ * Swiping turns pages: the PDF viewer's (`docs/modules/reading-queue.md` criterion 11a)
+ * and the list's categories (SPECS §2.2, The list).
  *
  * The listeners are passive and never cancel the browser's own scrolling; the touch is
  * judged only once the finger lifts, so a zoomed page still pans and a long page still
@@ -11,11 +12,14 @@ import { swipeTurn } from './swipe.ts';
  * zoomed page turns only on a swipe that starts at its edge.
  *
  * @param onTurn called with +1 or -1; read through a ref, so it may change every render.
+ * @param ignore a selector for parts of the surface that scroll sideways themselves; a
+ *   touch that starts inside one is theirs, never a turn.
  */
 export function useSwipePages(
   frame: RefObject<HTMLElement | null>,
   enabled: boolean,
   onTurn: (by: 1 | -1) => void,
+  ignore?: string,
 ): void {
   const latest = useRef(onTurn);
   latest.current = onTurn;
@@ -38,6 +42,14 @@ export function useSwipePages(
         const touch = event.touches[0];
         // A second finger is a pinch or a mistake, never a page turn.
         if (event.touches.length !== 1 || touch === undefined) {
+          start = null;
+          return;
+        }
+        if (
+          ignore !== undefined &&
+          event.target instanceof Element &&
+          event.target.closest(ignore) !== null
+        ) {
           start = null;
           return;
         }
@@ -77,6 +89,6 @@ export function useSwipePages(
         surface.removeEventListener('touchcancel', onTouchCancel);
       };
     },
-    [frame, enabled],
+    [frame, enabled, ignore],
   );
 }

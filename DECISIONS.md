@@ -285,3 +285,11 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 
 - Owner's request: there was no way to change a reading entry's PDF. `reading-queue.md` criterion 9 had ruled it out, because replacing would leave the old copy referenced by nothing, and purge only removes files of deleted rows. Amended: **Replace PDF** and **Remove PDF** sit on the PDF card, and the old copy is deleted as soon as the entry stops referring to it, which answers the original objection directly.
 - The entry is updated first and the old copy deleted after, so a failure leaves the old PDF still in use rather than an entry pointing at a missing file. A copy that cannot be deleted is logged as `reading.old_pdf_kept`. A replacement starts on page 1 at the default size, since the page and the view belonged to the old document. A refused file leaves the old PDF untouched.
+
+---
+
+## 2026-10-14 — Swipe changes category; Delete is held
+
+- Owner's report: no swiping between categories. A left swipe on a row already uncovered Delete, so the two could not share the gesture. Owner's choice, of three offered: a sideways swipe anywhere on the list moves to the next or previous category, stopping at either end, and Delete is only uncovered by holding a row still. Rejected: swiping only on the icon row, and edge swipes, which clash with Android's back gesture. SPECS §2.2 amended.
+- The swipe reuses the PDF viewer's detector (`use-swipe-pages.ts`, judged after the finger lifts by `swipeTurn`), so the thresholds that keep a scroll from turning a page also keep it from changing category. Touches that start on the habit cards are ignored, since those scroll sideways themselves. A tag view does not swipe.
+- The row gesture is hold-only now (`row-hold.ts`, `use-hold-reveal.ts`); the drag rules it replaced are gone.

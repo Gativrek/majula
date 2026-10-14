@@ -2,7 +2,7 @@ import type { ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
 import { Icon } from './Icon.tsx';
 import { streakText } from './streak-text.ts';
-import { useSwipeReveal } from './use-swipe-reveal.ts';
+import { useHoldReveal } from './use-hold-reveal.ts';
 
 /**
  * A habit row in the Habits list and under Deleted: the name, the current streak, and
@@ -23,7 +23,7 @@ interface HabitRowProps {
 
 export function HabitRow({ habit, state, onToggleToday, onDelete, onRestore }: HabitRowProps) {
   const isDeleted = habit.deletedAt !== null;
-  const swipe = useSwipeReveal(!isDeleted);
+  const reveal = useHoldReveal(!isDeleted);
   const checkedToday = state?.checkedToday ?? false;
 
   return (
@@ -33,7 +33,7 @@ export function HabitRow({ habit, state, onToggleToday, onDelete, onRestore }: H
           type="button"
           class="row__delete"
           aria-label={`Delete ${habit.title}`}
-          tabIndex={swipe.open ? 0 : -1}
+          tabIndex={reveal.open ? 0 : -1}
           onClick={() => onDelete(habit)}
         >
           <Icon name="trash" size={20} />
@@ -41,9 +41,9 @@ export function HabitRow({ habit, state, onToggleToday, onDelete, onRestore }: H
         </button>
       )}
       <div
-        class={swipe.dragging ? 'row__face row__face--dragging' : 'row__face'}
-        style={{ transform: `translateX(${swipe.offset}px)` }}
-        {...swipe.handlers}
+        class="row__face"
+        style={{ transform: `translateX(${reveal.offset}px)` }}
+        {...reveal.handlers}
       >
         {isDeleted ? (
           <span class="tile">
