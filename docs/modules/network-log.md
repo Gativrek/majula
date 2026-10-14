@@ -8,7 +8,7 @@ and stops there.
 
 ## Acceptance criteria
 
-1. Quick capture with the **Contact** chip creates a contact whose title is the person's
+1. Quick capture with the **Contact** type creates a contact whose title is the person's
    name as typed.
 2. Where they were met and the line of context go in the body. They are one free-text
    field, not two structured ones: the spec asks for a line of context, not a schema for

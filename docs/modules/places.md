@@ -16,7 +16,7 @@ present or both absent — a latitude without a longitude is not a place.
 
 **Capturing**
 
-1. Quick capture with the **Place** chip creates the place from the typed name and opens
+1. Quick capture with the **Place** type creates the place from the typed name and opens
    its detail, where **Here** is one tap away. The place is already saved: like a note it
    is a single-field capture, so back only closes the detail (`SPECS.md` §2.2, Back).
 2. The detail edits the name and the note.

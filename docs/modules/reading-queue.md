@@ -17,7 +17,7 @@ to the app's private data directory, never a path the owner chose (ADR-004).
 
 **Capturing and editing**
 
-1. Quick capture with the **Reading** chip creates an entry from the typed title, unread,
+1. Quick capture with the **Reading** type creates an entry from the typed title, unread,
    with no URL and no PDF. Like a note, it is written at once: it is a single-field
    capture, not an edit in progress.
 2. Tapping an entry opens its detail: title, URL, the PDF if one is attached, and the read

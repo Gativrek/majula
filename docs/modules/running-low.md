@@ -8,7 +8,7 @@ the title, not units. The list answers "what do I need", not "how much is left".
 
 ## Acceptance criteria
 
-1. Quick capture with the **Running low** chip creates a grocery item with `done = 0`.
+1. Quick capture with the **Running low** type creates a grocery item with `done = 0`.
 2. Adding an item takes one tap to focus the input, the typing, and one tap to save.
    Nothing else — no category picker, no quantity step, no confirmation.
 3. A grocery row carries a check control, as a to-do does. Tapping it toggles bought.

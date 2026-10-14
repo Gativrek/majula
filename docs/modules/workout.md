@@ -42,7 +42,7 @@ it are purged in the same run. What survives the purge decides what is still ref
 
 **Routines**
 
-4. Quick capture with the **Routine** chip opens the routine editor with the typed name.
+4. Quick capture with the **Routine** type opens the routine editor with the typed name.
    Like a recipe, nothing is written until Save; back or Cancel creates nothing.
 5. Exercises are added through a **picker**, which lists live exercises by name, narrows
    as the owner types, and offers **Create "…"** when nothing matches exactly. Creating

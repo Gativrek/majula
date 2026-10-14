@@ -28,7 +28,7 @@ case-folded (`CODESTYLE.md` §1).
 
 **Creating and editing**
 
-1. Quick capture with the **Recipe** chip opens the editor with the typed title filled in
+1. Quick capture with the **Recipe** type opens the editor with the typed title filled in
    and one serving. **Nothing is written until Save.** Cancel or the back button discards
    the new recipe entirely — no row is created, nothing appears under Deleted
    (`SPECS.md` §2.2, Back).

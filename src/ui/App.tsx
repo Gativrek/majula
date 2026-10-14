@@ -1,67 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Item, ItemOfType, ItemType } from '../data/types.ts';
 import { log } from '../lib/logger.ts';
-import type { HabitState } from '../services/habits.ts';
-import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import type { AppContext } from '../services/database.ts';
 import { initialiseApp } from '../services/database.ts';
-import { newRecipeDraft } from '../services/recipe-draft.ts';
-import { newRoutineDraft } from '../services/workout-draft.ts';
-import {
-  captureItem,
-  deleteItem,
-  listDeletedItems,
-  listItems,
-  loadTagCounts,
-  restoreItem,
-  searchAll,
-  toggleDone,
-} from '../services/items.ts';
-import { BackupPanel } from './BackupPanel.tsx';
-import type { Filter } from './FilterBar.tsx';
-import { FilterBar } from './FilterBar.tsx';
-import { ItemList } from './ItemList.tsx';
-import { NoticeBanner } from './NoticeBanner.tsx';
-import { useShareReceiver } from './use-share-receiver.ts';
+import type { CategoryId } from './categories.ts';
+import { DEFAULT_CATEGORY } from './categories.ts';
+import { HomeScreen } from './HomeScreen.tsx';
+import { LibraryScreen } from './LibraryScreen.tsx';
 import type { OpenScreen } from './OpenScreenView.tsx';
-import { OpenScreenView, screenFor } from './OpenScreenView.tsx';
+import { OpenScreenView } from './OpenScreenView.tsx';
+import { SearchScreen } from './SearchScreen.tsx';
 import type { StartupFailure } from './StartupBanner.tsx';
 import { StartupBanner, startupFailureFrom } from './StartupBanner.tsx';
-import { QuickCapture } from './QuickCapture.tsx';
 import { useBackStep } from './use-back-step.ts';
+import { useShareReceiver } from './use-share-receiver.ts';
 
-type View = 'items' | 'deleted' | 'backup';
+/**
+ * Opens the database, then shows one of: the list, search, Deleted and Backup, or an open
+ * module screen. Each of those owns its own data; this holds only which one is showing and
+ * what the list was filtered to, so that coming back finds it as it was.
+ */
 
-const VIEW_LABEL: Record<View, string> = {
-  items: 'Items',
-  deleted: 'Deleted',
-  backup: 'Backup',
-};
-
-interface TagCount {
-  tag: string;
-  count: number;
-}
-
-function emptyMessage(view: View, query: string, filter: Filter): string {
-  if (view === 'deleted') return 'Nothing deleted.';
-  if (query.trim().length > 0) return 'No match.';
-  if (filter.tag !== undefined) return `Nothing tagged #${filter.tag}.`;
-  if (filter.type !== undefined) return 'Nothing here yet.';
-  return 'Nothing captured yet.';
-}
+type Screen = 'home' | 'search' | 'library';
 
 export function App() {
   const [context, setContext] = useState<AppContext | null>(null);
   const [startupFailure, setStartupFailure] = useState<StartupFailure | null>(null);
-  const [view, setView] = useState<View>('items');
-  const [filter, setFilter] = useState<Filter>({});
-  const [query, setQuery] = useState('');
-  const [items, setItems] = useState<Item[]>([]);
-  const [habitStates, setHabitStates] = useState<ReadonlyMap<string, HabitState>>(new Map());
-  const [tags, setTags] = useState<TagCount[]>([]);
+  const [screen, setScreen] = useState<Screen>('home');
+  const [categoryId, setCategoryId] = useState<CategoryId>(DEFAULT_CATEGORY);
+  const [tag, setTag] = useState<string | null>(null);
   const [open, setOpen] = useState<OpenScreen | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Bumped whenever data changes outside the screen showing, so it reloads.
+  const [version, setVersion] = useState(0);
 
   useEffect(function openDatabaseOnce() {
     let cancelled = false;
@@ -82,174 +52,105 @@ export function App() {
     };
   }, []);
 
-  const refresh = useCallback(
-    async function refreshVisibleItems(): Promise<void> {
-      if (context === null) return;
-      if (view === 'deleted') {
-        const deleted = await listDeletedItems(context);
-        setItems(deleted);
-        setHabitStates(await loadHabitStates(context, deleted));
-        return;
-      }
-      const trimmed = query.trim();
-      const visible =
-        trimmed.length > 0 ? await searchAll(context, trimmed) : await listItems(context, filter);
-      setItems(visible);
-      setHabitStates(await loadHabitStates(context, visible));
-      setTags(await loadTagCounts(context));
-    },
-    [context, view, query, filter],
-  );
-
-  useEffect(
-    function loadWheneverTheViewChanges() {
-      void refresh();
-    },
-    [refresh],
-  );
+  const dataChanged = useCallback(async function bumpVersion(): Promise<void> {
+    setVersion((current) => current + 1);
+  }, []);
 
   // places.md 15–17: a Google Maps share opens as a place; anything else is refused.
   useShareReceiver(context, {
     onPlace(place) {
       setNotice(null);
       setOpen({ module: 'place', place });
-      void refresh();
+      void dataChanged();
     },
     onProblem: setNotice,
   });
 
-  async function onCapture(type: ItemType, title: string, itemTags: string[]): Promise<void> {
-    if (context === null) return;
-    if (type === 'routine') {
-      // workout.md criterion 4: like a recipe, nothing is written until Save.
-      setOpen({
-        module: 'workout',
-        initial: { kind: 'routine-new', draft: newRoutineDraft(title), tags: itemTags },
-      });
-      return;
-    }
-    if (type === 'recipe') {
-      // cookbook.md criterion 1: a captured recipe opens straight into the editor, and
-      // nothing is written until Save, so backing out of the add leaves no row.
-      setOpen({
-        module: 'recipe',
-        initial: { mode: 'new', draft: newRecipeDraft(title), tags: itemTags },
-      });
-      return;
-    }
-    const captured = await captureItem(context, { type, title, tags: itemTags });
-    // places.md criterion 1: a new place opens with Here one tap away. It is already saved,
-    // so this only opens it; back closes it and keeps the place.
-    if (captured.type === 'place') setOpen({ module: 'place', place: captured });
-    if (view !== 'items') setView('items');
-    await refresh();
-  }
-
-  async function onToggleDone(item: Item): Promise<void> {
-    if (context === null) return;
-    await toggleDone(context, item);
-    await refresh();
-  }
-
-  async function onToggleToday(habit: ItemOfType<'habit'>): Promise<void> {
-    if (context === null) return;
-    await toggleHabitToday(context, habit.id);
-    await refresh();
-  }
-
-  async function onDelete(item: Item): Promise<void> {
-    if (context === null) return;
-    await deleteItem(context, item.id);
-    await refresh();
-  }
-
-  function onOpen(item: Item): void {
-    const screen = screenFor(item);
-    if (screen !== null) setOpen(screen);
-  }
-
   /*
-   * SPECS §2.2, Back. Deleted and Backup return to the list; each open module registers
-   * its own steps above this one. On the list with nothing open, no step is active and
-   * back leaves the app.
+   * SPECS §2.2, Back. Search and Deleted/Backup return to the list, and a tag view returns
+   * to its category; each open module registers its own steps above these. On the list
+   * itself no step is active and back leaves the app.
    */
-  useBackStep(view !== 'items', function backToList() {
-    setView('items');
+  useBackStep(screen !== 'home', function backToList() {
+    setScreen('home');
+  });
+  useBackStep(screen === 'home' && tag !== null, function clearTag() {
+    setTag(null);
   });
 
   const closeOpen = useCallback(function closeOpenScreen() {
     setOpen(null);
   }, []);
 
-  async function onRestore(item: Item): Promise<void> {
-    if (context === null) return;
-    await restoreItem(context, item.id);
-    await refresh();
+  function chooseCategory(id: CategoryId): void {
+    setTag(null);
+    setCategoryId(id);
   }
 
-  function renderMain() {
-    if (startupFailure !== null) return <StartupBanner failure={startupFailure} />;
-    if (context === null) return <p class="empty">Opening…</p>;
-    if (view === 'backup') return <BackupPanel context={context} onDataChanged={refresh} />;
+  function pickTag(picked: string): void {
+    setTag(picked);
+    setScreen('home');
+  }
+
+  if (startupFailure !== null) {
     return (
-      <>
-        <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />
-        {view === 'items' ? (
-          <FilterBar
-            query={query}
-            filter={filter}
-            tags={tags}
-            onQueryChange={setQuery}
-            onFilterChange={setFilter}
-          />
-        ) : null}
-        <ItemList
-          items={items}
-          emptyMessage={emptyMessage(view, query, filter)}
-          habitStates={habitStates}
-          onToggleDone={(item) => void onToggleDone(item)}
-          onToggleToday={(habit) => void onToggleToday(habit)}
-          onDelete={(item) => void onDelete(item)}
-          onOpen={onOpen}
-          {...(view === 'deleted' ? { onRestore: (item: Item) => void onRestore(item) } : {})}
-        />
-      </>
+      <div class="app app--message">
+        <StartupBanner failure={startupFailure} />
+      </div>
+    );
+  }
+  if (context === null) {
+    return (
+      <div class="app app--message">
+        <p class="empty">Opening…</p>
+      </div>
     );
   }
 
-  if (open !== null && context !== null) {
+  if (open !== null) {
     return (
       <div class="app">
-        <OpenScreenView screen={open} context={context} onClose={closeOpen} onChanged={refresh} />
+        <OpenScreenView
+          screen={open}
+          context={context}
+          onClose={closeOpen}
+          onChanged={dataChanged}
+        />
       </div>
     );
   }
 
   return (
     <div class="app">
-      <header class="app__header">
-        <h1 class="app__title">Majula</h1>
-        <span class="app__build">{__COMMIT_HASH__}</span>
-      </header>
-
-      <main class="app__main">{renderMain()}</main>
-
-      <footer class="app__footer">
-        <div class="chips" role="group" aria-label="Section">
-          {(Object.keys(VIEW_LABEL) as View[]).map((candidate) => (
-            <button
-              key={candidate}
-              type="button"
-              class="chip"
-              aria-pressed={view === candidate}
-              onClick={() => setView(candidate)}
-            >
-              {VIEW_LABEL[candidate]}
-            </button>
-          ))}
-        </div>
-        <QuickCapture onCapture={onCapture} disabled={context === null} />
-      </footer>
+      {screen === 'search' ? (
+        <SearchScreen
+          context={context}
+          version={version}
+          onClose={() => setScreen('home')}
+          onPickTag={pickTag}
+          onOpenScreen={setOpen}
+        />
+      ) : screen === 'library' ? (
+        <LibraryScreen
+          context={context}
+          onClose={() => setScreen('home')}
+          onDataChanged={dataChanged}
+        />
+      ) : (
+        <HomeScreen
+          context={context}
+          categoryId={categoryId}
+          tag={tag}
+          version={version}
+          notice={notice}
+          onDismissNotice={() => setNotice(null)}
+          onCategoryChange={chooseCategory}
+          onClearTag={() => setTag(null)}
+          onOpenScreen={setOpen}
+          onSearch={() => setScreen('search')}
+          onLibrary={() => setScreen('library')}
+        />
+      )}
     </div>
   );
 }

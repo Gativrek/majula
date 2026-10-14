@@ -36,6 +36,17 @@ describe('item store', function itemSuite() {
     await driver.close();
   });
 
+  it('lists any of several types for a category that spans them', async function types() {
+    const { driver, store } = await freshStore();
+    await store.create({ type: 'exercise', title: 'Bench press' });
+    await store.create({ type: 'note', title: 'Not a workout' });
+    await store.create({ type: 'routine', title: 'Upper A', payload: { exercises: [] } });
+    const titles = (await store.list({ types: ['routine', 'exercise'] })).map((item) => item.title);
+    assert.deepEqual(titles.sort(), ['Bench press', 'Upper A']);
+    assert.equal((await store.list({ types: [] })).length, 3, 'an empty list filters nothing');
+    await driver.close();
+  });
+
   it('hides soft-deleted rows from every ordinary read', async function softDelete() {
     const { driver, store } = await freshStore();
     const item = await store.create({ type: 'todo', title: 'Renew bus card' });

@@ -23,7 +23,7 @@ in the timezone the phone was in, and that string never moves afterwards.
 
 ## Acceptance criteria
 
-1. Quick capture with the **Habit** chip creates a habit. It has no done flag: a habit is
+1. Quick capture with the **Habit** type creates a habit. It has no done flag: a habit is
    never finished.
 2. A habit row shows its name and its current streak as a number. Nothing else.
 3. Tapping the habit logs today. The streak increases immediately.

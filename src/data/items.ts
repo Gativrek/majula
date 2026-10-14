@@ -104,6 +104,8 @@ export interface ItemStoreOptions {
 
 export interface ListItemsFilter {
   type?: ItemType;
+  /** Any of several types, for a category that spans more than one (SPECS §2.2, The list). */
+  types?: readonly ItemType[];
   /** SPECS §2.2: a tag view is a filter over this list, not its own storage. */
   tag?: string;
   limit?: number;
@@ -163,6 +165,11 @@ export class ItemStore {
     if (filter.type !== undefined) {
       sql += ' AND items.type = ?';
       params.push(filter.type);
+    }
+    if (filter.types !== undefined && filter.types.length > 0) {
+      // One placeholder per type: the values are bound, never interpolated (CODESTYLE §10).
+      sql += ` AND items.type IN (${filter.types.map(() => '?').join(', ')})`;
+      params.push(...filter.types);
     }
     sql += ' ORDER BY items.created_at DESC, items.id DESC';
     if (filter.limit !== undefined) {

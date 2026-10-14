@@ -9,7 +9,7 @@ sort-by-date view, then a due-today view, then reminders, which is the calendar
 
 ## Acceptance criteria
 
-1. Quick capture with the **To-do** chip creates a to-do with `done = 0`.
+1. Quick capture with the **To-do** type creates a to-do with `done = 0`.
 2. A to-do row carries a check control in the **lower half of the screen's reach** — the
    row's own leading control, not a menu behind a long press.
 3. Tapping the check toggles `done`. The change is visible immediately and survives a

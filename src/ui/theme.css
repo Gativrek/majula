@@ -1,24 +1,31 @@
 /*
- * Gold and yellow on black (SPECS §1). Plain CSS with custom properties. Kitchen mode's
- * large type redefines these same variables inside `.kitchen` rather than overriding
- * components one by one (CODESTYLE §12).
+ * Gold on black (SPECS §1). Plain CSS with custom properties. Flat: cards separate by a
+ * border, never a shadow, and the corner radius says what a thing is — 20px a card, 14px a
+ * control, 12px an icon tile. Kitchen mode's large type redefines these same variables
+ * inside `.kitchen` rather than overriding components one by one (CODESTYLE §12).
  */
 
 :root {
-  --colour-background: #0a0906;
-  --colour-surface: #16130c;
-  --colour-surface-raised: #221d12;
-  --colour-border: #3a301b;
-  --colour-gold: #d9a441;
+  --colour-background: #0b0a07;
+  --colour-surface: #15130e;
+  --colour-surface-raised: #1f1c15;
+  --colour-nav: #0f0d09;
+  --colour-border: #2a261c;
+  --colour-gold: #e3b04b;
   --colour-gold-bright: #f2c94c;
-  --colour-text: #ede4d3;
-  --colour-text-dim: #978a70;
-  --colour-danger: #c85a3a;
+  --colour-gold-soft: rgba(227, 176, 75, 0.14);
+  --colour-text: #f2ece0;
+  --colour-text-2: #cdc5b4;
+  --colour-text-dim: #9e9580;
+  --colour-check: #6f6754;
+  --colour-danger: #e0775a;
+  --colour-danger-fill: #b42318;
 
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --size-text: 1rem;
+  --size-text: 0.9375rem;
   --size-title: 1.0625rem;
   --size-small: 0.8125rem;
+  --size-caption: 0.75rem;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -26,7 +33,9 @@
   --space-4: 1rem;
   --space-5: 1.5rem;
 
-  --radius: 0.5rem;
+  --radius: 14px;
+  --radius-card: 20px;
+  --radius-tile: 12px;
   --tap-target: 2.75rem;
 }
 
@@ -42,11 +51,18 @@ body {
   color: var(--colour-text);
   font-family: var(--font-body);
   font-size: var(--size-text);
+  line-height: 1.4;
   -webkit-tap-highlight-color: transparent;
 }
 
 #app {
   height: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
 }
 
 .app {
@@ -56,44 +72,714 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
-.app__header {
+.app--message {
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* Icons draw in the text colour of whatever holds them. */
+.icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--dots {
+  stroke-width: 2.6;
+}
+
+/* A screen: everything scrolls but the capture bar, which stays under the thumb. */
+.screen {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--colour-border);
+  flex-direction: column;
+  height: 100%;
 }
 
-.app__title {
-  margin: 0;
-  color: var(--colour-gold);
-  font-size: var(--size-title);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.app__build {
-  color: var(--colour-text-dim);
-  font-size: var(--size-small);
-  font-variant-numeric: tabular-nums;
-}
-
-.app__main {
+.screen__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-3) var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
 }
 
-.app__footer {
-  border-top: 1px solid var(--colour-border);
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 3.5rem;
+  padding: var(--space-1) var(--space-2) 0 var(--space-4);
+}
+
+.top-bar--search,
+.top-bar:has(> .segments) {
+  padding-left: var(--space-1);
+  padding-right: var(--space-4);
+}
+
+.top-bar__brand {
+  display: flex;
+  margin-right: var(--space-1);
+  color: var(--colour-gold);
+}
+
+.top-bar__title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+}
+
+.section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 1.5rem;
+}
+
+.section__title {
+  margin: 0;
+  font-size: var(--size-title);
+  font-weight: 700;
+}
+
+.section__count,
+.section__link {
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+}
+
+.section__link {
+  min-height: var(--tap-target);
+  margin: calc(var(--tap-target) / -4) 0;
+  padding: 0 0 0 var(--space-3);
+  border: 0;
+  background: none;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Habits: one card each, logged with a tap. Several scroll sideways rather than wrapping. */
+.habit-cards {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 2 * var(--space-2)) / 3);
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.habit-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0.625rem var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: 16px;
   background: var(--colour-surface);
-  padding: var(--space-3) var(--space-4);
-  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  text-align: left;
 }
 
+.habit-card[aria-pressed='true'] {
+  border: 1.5px solid var(--colour-gold);
+  background: var(--colour-gold-soft);
+}
+
+.habit-card__streak {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--colour-text-dim);
+}
+
+.habit-card[aria-pressed='true'] .habit-card__streak {
+  color: var(--colour-gold-bright);
+}
+
+.habit-card[aria-pressed='true'] .icon {
+  fill: rgba(227, 176, 75, 0.35);
+}
+
+.habit-card__number {
+  color: var(--colour-text);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-card[aria-pressed='true'] .habit-card__number {
+  color: var(--colour-gold-bright);
+}
+
+.habit-card__unit {
+  align-self: flex-end;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.habit-card__name {
+  overflow: hidden;
+  font-size: var(--size-small);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The category icons: one pill, eight choices, the selected one filled gold. */
+.bubble {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0 var(--space-4);
+  padding: 3px;
+  border: 1px solid var(--colour-border);
+  border-radius: 999px;
+  background: var(--colour-surface);
+}
+
+.bubble__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--colour-text-dim);
+}
+
+.bubble__option[aria-pressed='true'] {
+  background: rgba(227, 176, 75, 0.18);
+  color: var(--colour-gold-bright);
+}
+
+/* Lists: one card of rows. A row's face slides left over its Delete button. */
+.list {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius-card);
+  background: var(--colour-surface);
+  list-style: none;
+}
+
+.list + .fold,
+.fold + .list {
+  margin-top: var(--space-1);
+}
+
+.row {
+  position: relative;
+  overflow: hidden;
+}
+
+.row + .row {
+  border-top: 1px solid var(--colour-border);
+}
+
+.row__delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: var(--colour-danger-fill);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.row__face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.25rem;
+  padding: var(--space-1) var(--space-3);
+  background: var(--colour-surface);
+  touch-action: pan-y;
+  transition: transform 160ms ease-out;
+}
+
+.row__face--dragging {
+  transition: none;
+}
+
+/* A leading checkbox or toggle supplies its own 44px target, so the face's padding shrinks. */
+.row__face:has(> .check:first-child),
+.row__face:has(> .habit-toggle:first-child) {
+  padding-left: var(--space-1);
+}
+
+.row__face:has(> .check:last-child),
+.row__face:has(> .icon-button:last-child) {
+  padding-right: var(--space-1);
+}
+
+.row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row__open {
+  min-height: var(--tap-target);
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.row__title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.row__meta {
+  overflow: hidden;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row--done .row__title {
+  color: var(--colour-text-dim);
+  text-decoration: line-through;
+}
+
+.tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-tile);
+  background: var(--colour-surface-raised);
+  color: var(--colour-text-2);
+}
+
+.check {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.check__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1.8px solid var(--colour-check);
+  border-radius: 7px;
+}
+
+.check[aria-pressed='true'] .check__box {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold);
+  color: var(--colour-background);
+}
+
+.check[aria-pressed='true'] .icon {
+  stroke-width: 2.6;
+}
+
+.habit-toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 0;
+  border-radius: var(--radius-tile);
+  background: none;
+  color: var(--colour-text-dim);
+}
+
+.habit-toggle[aria-pressed='true'] {
+  color: var(--colour-gold-bright);
+}
+
+.habit-toggle[aria-pressed='true'] .icon {
+  fill: rgba(227, 176, 75, 0.35);
+}
+
+.row--logged .row__face {
+  box-shadow: inset 0 0 0 1.5px var(--colour-gold);
+}
+
+.fold {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--colour-border);
+  border-radius: 16px;
+  background: var(--colour-surface);
+  color: var(--colour-text-2);
+  text-align: left;
+}
+
+.fold[aria-expanded='true'] .icon:last-child {
+  transform: rotate(180deg);
+}
+
+.fold__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--colour-gold);
+  color: var(--colour-background);
+}
+
+.fold__label {
+  flex: 1;
+  font-weight: 600;
+}
+
+.fold__count {
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+}
+
+/* Quick capture, pinned to the foot of the home screen. */
+.capture-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--colour-border);
+  background: var(--colour-nav);
+}
+
+.capture-bar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.capture-bar__type,
+.capture-bar__save {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 0;
+}
+
+.capture-bar__type {
+  border-radius: var(--radius);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+}
+
+.capture-bar__save {
+  border-radius: 999px;
+  background: var(--colour-gold);
+  color: var(--colour-background);
+}
+
+.capture-bar__save:disabled {
+  background: var(--colour-surface-raised);
+  color: var(--colour-check);
+}
+
+.capture-bar__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: var(--tap-target);
+  padding-left: 0.875rem;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface-raised);
+}
+
+.capture-bar__field:focus-within {
+  border-color: var(--colour-gold);
+}
+
+.capture-bar__field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-size: 1rem;
+}
+
+.capture-bar__tag-toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--colour-text-dim);
+}
+
+.capture-bar__tag-toggle[aria-pressed='true'] {
+  color: var(--colour-gold-bright);
+}
+
+input::placeholder {
+  color: var(--colour-text-dim);
+}
+
+.field {
+  min-height: var(--tap-target);
+  padding: 0 0.875rem;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface-raised);
+  font-size: 1rem;
+}
+
+.field:focus {
+  border-color: var(--colour-gold);
+  outline: none;
+}
+
+/* A bottom sheet over a dimmed screen. */
+.sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheet-layer__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--colour-border);
+  border-radius: 24px 24px 0 0;
+  background: var(--colour-surface);
+}
+
+.sheet__grabber {
+  align-self: center;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #3a3426;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.type-grid__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 4rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius);
+  background: var(--colour-surface-raised);
+  color: var(--colour-text-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.type-grid__option[aria-pressed='true'] {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+  font-weight: 600;
+}
+
+/* Search. */
+.search-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--tap-target);
+  padding-left: var(--space-3);
+  border: 1.5px solid var(--colour-gold);
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+  color: var(--colour-text-dim);
+}
+
+.search-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--colour-text);
+  font-size: 1rem;
+}
+
+.search-field input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-field__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--colour-text-dim);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: 999px;
+  background: none;
+  color: var(--colour-text-2);
+  font-size: var(--size-small);
+  font-weight: 600;
+}
+
+.tag-chip__count {
+  color: var(--colour-text-dim);
+  font-weight: 500;
+}
+
+.tag-chip--on {
+  border-color: var(--colour-gold);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
+}
+
+/* Deleted and Backup share a screen, switched by two segments. */
+.segments {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+}
+
+.segments__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--colour-text-dim);
+  font-size: var(--size-small);
+  font-weight: 600;
+}
+
+.segments__option[aria-selected='true'] {
+  background: var(--colour-border);
+  color: var(--colour-text);
+}
+
+.purge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.purge__note {
+  margin: 0;
+  text-align: center;
+}
+
+.build {
+  margin: var(--space-4) 0 0;
+  color: var(--colour-text-dim);
+  font-size: var(--size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controls shared with the module screens. */
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -105,7 +791,7 @@ body {
   min-height: var(--tap-target);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--colour-border);
-  border-radius: var(--radius);
+  border-radius: 999px;
   background: var(--colour-surface-raised);
   color: var(--colour-text);
   font-size: var(--size-small);
@@ -113,8 +799,8 @@ body {
 
 .chip[aria-pressed='true'] {
   border-color: var(--colour-gold);
-  background: var(--colour-gold);
-  color: var(--colour-background);
+  background: var(--colour-gold-soft);
+  color: var(--colour-gold-bright);
   font-weight: 600;
 }
 
@@ -123,28 +809,38 @@ body {
   gap: var(--space-2);
 }
 
-.capture__input {
+.capture__input,
+.search__input {
   flex: 1;
   min-height: var(--tap-target);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--colour-border);
   border-radius: var(--radius);
-  background: var(--colour-background);
+  background: var(--colour-surface-raised);
   color: var(--colour-text);
   font-family: inherit;
   font-size: var(--size-text);
 }
 
-.capture__input:focus {
-  outline: 2px solid var(--colour-gold);
-  outline-offset: -2px;
+.capture__input:focus,
+.search__input:focus {
+  border-color: var(--colour-gold);
+  outline: none;
+}
+
+.search__input {
+  margin-bottom: var(--space-2);
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   min-height: var(--tap-target);
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--colour-gold);
-  border-radius: var(--radius);
+  border-radius: 16px;
   background: var(--colour-gold);
   color: var(--colour-background);
   font-family: inherit;
@@ -153,76 +849,43 @@ body {
 }
 
 .button--quiet {
-  background: transparent;
-  border-color: var(--colour-border);
+  border-color: var(--colour-surface-raised);
+  background: var(--colour-surface-raised);
   color: var(--colour-text);
-  font-weight: 400;
 }
 
 .button--danger {
+  border: 1.5px solid var(--colour-danger);
   background: transparent;
-  border-color: var(--colour-danger);
   color: var(--colour-danger);
+}
+
+.button--wide {
+  width: 100%;
+  min-height: 3.25rem;
 }
 
 .button:disabled {
   opacity: 0.45;
 }
 
-.item-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--colour-border);
-  border-radius: var(--radius);
-  background: var(--colour-surface);
-}
-
-.item__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.item__title {
-  overflow-wrap: anywhere;
-}
-
-.item--done .item__title {
-  color: var(--colour-text-dim);
-  text-decoration: line-through;
-}
-
-.item__meta {
-  margin-top: var(--space-1);
-  color: var(--colour-text-dim);
-  font-size: var(--size-small);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.item__actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
 .icon-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
   min-width: var(--tap-target);
   min-height: var(--tap-target);
-  border: 1px solid var(--colour-border);
+  padding: 0;
+  border: 0;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--colour-text-dim);
+  color: var(--colour-text-2);
   font-size: var(--size-text);
+}
+
+.icon-button--accent {
+  color: var(--colour-gold);
 }
 
 .empty {
@@ -252,7 +915,6 @@ body {
 .banner {
   padding: var(--space-3);
   border: 1px solid var(--colour-border);
-  border-left-width: 3px;
   border-radius: var(--radius);
   background: var(--colour-surface);
   font-size: var(--size-small);
@@ -261,91 +923,17 @@ body {
 }
 
 .banner--error {
-  border-left-color: var(--colour-danger);
+  border-color: var(--colour-danger);
   color: var(--colour-danger);
 }
 
 .banner--info {
-  border-left-color: var(--colour-gold);
-}
-
-.filters {
-  margin-bottom: var(--space-3);
-}
-
-.search {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.search__input {
-  flex: 1;
-  min-height: var(--tap-target);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--colour-border);
-  border-radius: var(--radius);
-  background: var(--colour-surface);
-  color: var(--colour-text);
-  font-family: inherit;
-  font-size: var(--size-text);
-}
-
-.search__input:focus {
-  outline: 2px solid var(--colour-gold);
-  outline-offset: -2px;
-}
-
-/* Type and tag views scroll sideways rather than wrapping: the chip row must not push
-   the list off the screen as tags accumulate. */
-.chips--scroll {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  margin-bottom: 0;
-  padding-bottom: var(--space-1);
-  scrollbar-width: none;
-}
-
-.chips--scroll .chip {
-  flex: 0 0 auto;
-}
-
-.capture__input--tags {
-  width: 100%;
-  margin-bottom: var(--space-2);
-}
-
-/* A habit's control is larger than a checkbox: it is the whole interaction, tapped once
-   a day with one thumb (SPECS §6). */
-.habit__check {
-  min-width: 3rem;
-  min-height: 3rem;
-  border: 1px solid var(--colour-border);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--colour-text-dim);
-  font-size: 1.25rem;
-}
-
-.habit__check[aria-pressed='true'] {
-  border-color: var(--colour-gold);
-  background: var(--colour-gold);
-  color: var(--colour-background);
-}
-
-.item--checked-today {
   border-color: var(--colour-gold);
 }
 
-/* A row that opens into its own view. The whole content area is the target, so it
-   resets the button chrome and keeps the row's layout. */
-.item__open {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
+/* The notice sits in the list's gutter like any other section. */
+.screen__scroll > .notice {
+  margin: 0 var(--space-4);
 }
 
 /*

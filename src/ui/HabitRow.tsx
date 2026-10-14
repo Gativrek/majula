@@ -1,9 +1,13 @@
 import type { ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
+import { Icon } from './Icon.tsx';
+import { streakText } from './streak-text.ts';
+import { useSwipeReveal } from './use-swipe-reveal.ts';
 
 /**
- * A habit row: the name, the current streak, and one control that logs today
- * (`docs/modules/habits.md`).
+ * A habit row in the Habits list and under Deleted: the name, the current streak, and
+ * one control that logs today (`docs/modules/habits.md`). Day to day, habits are logged
+ * from the cards above the list; this row is where one is deleted or restored.
  *
  * The streak number is the only statistic in the app (SPECS §1.1 item 7). There is
  * deliberately nowhere to see a history, a rate or a record.
@@ -19,52 +23,57 @@ interface HabitRowProps {
 
 export function HabitRow({ habit, state, onToggleToday, onDelete, onRestore }: HabitRowProps) {
   const isDeleted = habit.deletedAt !== null;
-  const streak = state?.streak ?? 0;
+  const swipe = useSwipeReveal(!isDeleted);
   const checkedToday = state?.checkedToday ?? false;
 
   return (
-    <li class={checkedToday ? 'item item--checked-today' : 'item'}>
+    <li class={checkedToday ? 'row row--logged' : 'row'}>
       {isDeleted ? null : (
         <button
           type="button"
-          class="habit__check"
-          aria-pressed={checkedToday}
-          aria-label={checkedToday ? 'Undo today' : 'Log today'}
-          onClick={() => onToggleToday(habit)}
+          class="row__delete"
+          aria-label={`Delete ${habit.title}`}
+          tabIndex={swipe.open ? 0 : -1}
+          onClick={() => onDelete(habit)}
         >
-          {checkedToday ? '✓' : '·'}
+          <Icon name="trash" size={20} />
+          Delete
         </button>
       )}
-
-      <div class="item__content">
-        <div class="item__title">{habit.title}</div>
-        <div class="item__meta">
-          {/* Plural handled here rather than in JSX logic, because "1 days" is the kind
-              of thing that survives review and then annoys forever. */}
-          {streak === 1 ? 'Streak 1 day' : `Streak ${streak} days`}
-        </div>
-      </div>
-
-      <div class="item__actions">
-        {isDeleted && onRestore !== undefined ? (
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Restore"
-            onClick={() => onRestore(habit)}
-          >
-            {'↺'}
-          </button>
+      <div
+        class={swipe.dragging ? 'row__face row__face--dragging' : 'row__face'}
+        style={{ transform: `translateX(${swipe.offset}px)` }}
+        {...swipe.handlers}
+      >
+        {isDeleted ? (
+          <span class="tile">
+            <Icon name="habit" label="Habit" />
+          </span>
         ) : (
           <button
             type="button"
-            class="icon-button"
-            aria-label="Delete"
-            onClick={() => onDelete(habit)}
+            class="habit-toggle"
+            aria-pressed={checkedToday}
+            aria-label={checkedToday ? 'Undo today' : 'Log today'}
+            onClick={() => onToggleToday(habit)}
           >
-            {'×'}
+            <Icon name="flame" />
           </button>
         )}
+        <div class="row__text">
+          <span class="row__title">{habit.title}</span>
+          <span class="row__meta">{streakText(state?.streak ?? 0)}</span>
+        </div>
+        {isDeleted && onRestore !== undefined ? (
+          <button
+            type="button"
+            class="icon-button icon-button--accent"
+            aria-label={`Restore ${habit.title}`}
+            onClick={() => onRestore(habit)}
+          >
+            <Icon name="restore" />
+          </button>
+        ) : null}
       </div>
     </li>
   );

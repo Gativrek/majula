@@ -33,15 +33,18 @@ export async function captureItem(context: AppContext, input: CaptureInput): Pro
   return item;
 }
 
-/** SPECS §2.2: every module is a filter over one list, not a screen of its own. */
+/**
+ * SPECS §2.2: every module is a filter over one list, not a screen of its own. A category
+ * can span several types, as Workouts spans routines, logs and exercises.
+ */
 export interface ItemFilter {
-  type?: ItemType;
+  types?: readonly ItemType[];
   tag?: string;
 }
 
 export async function listItems(context: AppContext, filter: ItemFilter = {}): Promise<Item[]> {
   return context.items.list({
-    ...(filter.type === undefined ? {} : { type: filter.type }),
+    ...(filter.types === undefined ? {} : { types: filter.types }),
     ...(filter.tag === undefined ? {} : { tag: filter.tag }),
   });
 }

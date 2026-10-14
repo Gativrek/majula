@@ -2,14 +2,12 @@ import { useState } from 'react';
 import type { AppContext } from '../services/database.ts';
 import { exportDatabase, importDatabase } from '../services/backup.ts';
 import { EXPORT_DIRECTORY, EXPORT_FILE_NAME } from '../services/files.ts';
-import { countPurgeable, purgeNow } from '../services/items.ts';
 
 /**
- * Export, import and purge (SPECS §5, §2.2).
+ * Export and import (SPECS §5). Purge sits under Deleted (`PurgeButton`).
  *
- * Import replaces the database rather than merging into it, and purge is
- * irreversible, so both ask first. A failure says what failed and what to do about
- * it, and never prints a stack trace (CODESTYLE §7).
+ * Import replaces the database rather than merging into it, so it asks first. A failure
+ * says what failed and what to do about it, and never prints a stack trace (CODESTYLE §7).
  */
 
 interface BackupPanelProps {
@@ -64,26 +62,6 @@ export function BackupPanel({ context, onDataChanged }: BackupPanelProps) {
     });
   }
 
-  async function onPurge(): Promise<void> {
-    const count = await countPurgeable(context);
-    if (count === 0) {
-      setStatus({ kind: 'info', message: 'Nothing to purge.' });
-      return;
-    }
-    if (!confirm(`Permanently delete ${count} item(s) and their files? This cannot be undone.`)) {
-      return;
-    }
-    await run('Purge', async function purge() {
-      const result = await purgeNow(context);
-      await onDataChanged();
-      const kept =
-        result.keptReferenced === 0
-          ? ''
-          : ` Kept ${result.keptReferenced} still used by a routine or past workout.`;
-      return `Purged ${result.purgedRows} item(s) and ${result.removedFiles} file(s).${kept}`;
-    });
-  }
-
   return (
     <div class="panel">
       <p class="panel__note">
@@ -117,14 +95,6 @@ export function BackupPanel({ context, onDataChanged }: BackupPanelProps) {
           onClick={() => void onImport()}
         >
           Import (replaces everything)
-        </button>
-        <button
-          class="button button--danger"
-          type="button"
-          disabled={busy}
-          onClick={() => void onPurge()}
-        >
-          Purge deleted
         </button>
       </div>
 

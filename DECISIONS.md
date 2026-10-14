@@ -180,3 +180,14 @@ Rationale lives in the ADR or spec section named on the line; this file is the i
 ## 2026-10-14 — Search covers every category
 
 - Search ignores the category or tag selected on the list and always covers every type. Owner's decision. `searchAll` no longer takes a filter, and the data layer's unused `type` search option went with it. SPECS §2.2 amended.
+
+---
+
+## 2026-10-14 — Redesign: the list and quick capture
+
+- The list shows one category at a time, picked from a row of eight line icons below the habits; it opens on To-do. The mixed list of every type is gone. Owner's decision, from the redesign: a mixed list read as clutter. Routines, workout logs and exercises share one Workouts category, so the data layer's list query takes several types (`types`, bound one placeholder per type).
+- Quick capture follows the category the list shows instead of defaulting to a note, and its type button offers every capturable type; picking one switches the list too, so what was just captured is in view. Owner's decision, from the redesign. `docs/modules/notes.md` criteria 2 and 4 amended to match.
+- Habits sit above the category icons on every category, as cards that log today with one tap, and are not one of the eight icons. Their heading opens the habit list, which is where a habit is deleted.
+- Rows lose the per-row × button: delete is a swipe to the left, judged by a pure function under test (`row-swipe.ts`). Inside one category a row carries no type label; where types mix it carries the type's icon. Checked rows fold under a "Done" line.
+- Deleted and Backup move off the list's footer into one screen behind the header's menu button. Purge moves from Backup to the Deleted tab, beside what it removes.
+- Typeface: the system font, not the design's Barlow. Owner's decision: Barlow is not required, and a font already on the phone costs no bundled files (the app has no network, §6) and no ADR.
