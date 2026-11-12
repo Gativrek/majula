@@ -276,10 +276,15 @@ input {
 }
 
 /* The category icons: one pill, eight choices, the selected one filled gold. */
+/*
+ * No gap between the options: eight of them on a 360px screen leave 38px each, and every
+ * pixel spent on a gap comes off the tap target of the control tapped most. Only one
+ * option is ever filled, so touching backgrounds never meet.
+ */
 .bubble {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 2px;
+  gap: 0;
   margin: 0 var(--space-4);
   padding: 3px;
   border: 1px solid var(--colour-border);
@@ -287,11 +292,16 @@ input {
   background: var(--colour-surface);
 }
 
+/*
+ * Full tap-target height. Eight icons cannot also be 44px wide on a 360px screen — the
+ * width is what it is — so the height at least meets the standard the rest of the app
+ * holds to, rather than falling short on both axes.
+ */
 .bubble__option {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 2.5rem;
+  height: var(--tap-target);
   border: 0;
   border-radius: 999px;
   background: none;
@@ -574,8 +584,14 @@ input {
   border-color: var(--colour-gold);
 }
 
+/*
+ * The input stretches to the field's full height. Centred at its own 22px line height it
+ * looked like a 44px target but only took a tap through the middle half of it: a thumb
+ * landing just above or below the text hit the wrapper and opened no keyboard.
+ */
 .capture-bar__field input {
   flex: 1;
+  align-self: stretch;
   min-width: 0;
   padding: 0;
   border: 0;
