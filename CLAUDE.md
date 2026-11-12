@@ -65,6 +65,22 @@ deliberate and must stay loud: it is not worked around with a browser fallback, 
 acceptance runs on the device anyway (§6). Use the dev server for layout, the APK for
 anything that touches data.
 
+**The layout harness is at `/harness.html`.** Because the app itself renders nothing but
+that banner in a browser, "use the dev server for layout" needs somewhere to look:
+`src/dev/harness.tsx` mounts the prop-driven screens over hand-written fixtures in
+`src/dev/fixtures.ts`. It never calls `initialiseApp`, has no driver, and adds no
+dependency — there are still exactly two `SqlDriver` implementations (§1.1 item 3) and the
+startup banner is untouched.
+
+Vite's default build input is `index.html` alone, so `harness.html` is never bundled and
+cannot reach the APK. **Do not add it to `build.rollupOptions.input`.** Confirm with
+`npm run build; ls dist` — only `index.html` should be there.
+
+A fixture is not a database row: the harness proves nothing about data, migrations or
+anything stateful, and acceptance is still the device (§6). What it is good for is width,
+spacing, overflow and tap targets — the app holds to `--tap-target`, 2.75rem, and the
+harness is where a control that falls short of it is visible before the phone is involved.
+
 **Reading device logs.** Capacitor forwards the WebView console to logcat under the tag
 `Capacitor/Console` — not `chromium`, which is what a WebView tags its own internal
 messages with. Filtering on `chromium` hides everything this app logs.

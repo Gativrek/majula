@@ -1,0 +1,86 @@
+/*
+ * A hue per category, prototyped. HARNESS ONLY: the app does not import this file, and it
+ * applies only while the harness's Accent toggle is on.
+ *
+ * The idea: one gold on every surface reads as samey after a few weeks, and gold was also
+ * standing for too many things at once. So each category carries its own hue, every hue
+ * at the same lightness and chroma in OKLCH so they read as one family rather than a
+ * rainbow, spaced roughly evenly round the wheel.
+ *
+ * Gold keeps two jobs: To-do, the screen the app opens on, and fire — habit cards and the
+ * bonfire stay gold whatever category is showing, so gold comes to mean "lit".
+ *
+ * It works by redefining the theme's own three gold tokens inside `[data-cat]`, so every
+ * rule that already reads `--colour-gold` follows without being touched. The handful of
+ * literal golds in theme.css are covered below; in the app they would become tokens.
+ *
+ * Known clash: Recipes' terracotta sits near `--colour-danger`. Danger only ever appears
+ * as a banner or a Delete, and both carry words, but it is worth judging on the phone.
+ */
+
+:root[data-accent='category'] [data-cat] {
+  --accent-l: 0.77;
+  --accent-c: 0.115;
+  --colour-gold: oklch(var(--accent-l) var(--accent-c) var(--hue));
+  --colour-gold-bright: oklch(0.85 0.12 var(--hue));
+  --colour-gold-soft: oklch(var(--accent-l) var(--accent-c) var(--hue) / 0.15);
+}
+
+/* To-do keeps the original gold exactly: home base. */
+:root[data-accent='category'] [data-cat='todo'] {
+  --colour-gold: #e3b04b;
+  --colour-gold-bright: #f2c94c;
+  --colour-gold-soft: rgba(227, 176, 75, 0.14);
+}
+
+/* Roughly 40–50° apart, ordered as the icon row is, so neighbours never share a family. */
+[data-cat='workouts'] {
+  --hue: 125;
+}
+[data-cat='grocery'] {
+  --hue: 160;
+}
+[data-cat='place'] {
+  --hue: 200;
+}
+[data-cat='note'] {
+  --hue: 245;
+}
+[data-cat='reading'] {
+  --hue: 295;
+}
+[data-cat='contact'] {
+  --hue: 345;
+}
+[data-cat='recipe'] {
+  --hue: 35;
+}
+
+/* Fire is always gold: the habits, and the bonfire in the header. */
+:root[data-accent='category'] .habit-cards,
+:root[data-accent='category'] .bonfire {
+  --colour-gold: #e3b04b;
+  --colour-gold-bright: #f2c94c;
+  --colour-gold-soft: rgba(227, 176, 75, 0.14);
+}
+
+/*
+ * The bonfire draws in currentColor, which its ancestor has already resolved from the
+ * category's hue by the time the token is reset above — so it sets its own colour too.
+ */
+:root[data-accent='category'] .bonfire {
+  color: var(--colour-gold);
+}
+
+/* The literal golds in theme.css that sit inside a category's screen. */
+:root[data-accent='category'] [data-cat] .bubble__option[aria-pressed='true'] {
+  background: oklch(var(--accent-l) var(--accent-c) var(--hue) / 0.2);
+}
+
+:root[data-accent='category'] [data-cat='todo'] .bubble__option[aria-pressed='true'] {
+  background: rgba(227, 176, 75, 0.18);
+}
+
+:root[data-accent='category'] [data-cat] mark {
+  background: oklch(var(--accent-l) var(--accent-c) var(--hue) / 0.24);
+}

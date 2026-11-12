@@ -1,0 +1,59 @@
+/* Chrome for the layout harness only; never shipped. Kept visually unlike the app so a
+   screenshot is never mistaken for one of the app's own surfaces. */
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.harness-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.harness-stage > .app {
+  height: 100%;
+}
+
+.harness-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  background: #1b1b2e;
+  border-top: 2px dashed #6c6cff;
+}
+
+.harness-bar button {
+  flex: 1 1 auto;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 11px;
+  color: #c9c9ff;
+  background: #2a2a44;
+  border: 0;
+  border-radius: 4px;
+}
+
+.harness-bar button.is-current {
+  color: #1b1b2e;
+  background: #9a9aff;
+}
+
+/* The two comparison toggles sit apart from the scene tabs. */
+.harness-bar__toggle {
+  flex-basis: 40%;
+  border: 1px dashed #6c6cff !important;
+}
+
+.harness-bar__toggle[aria-pressed='true'] {
+  color: #1b1b2e;
+  background: #c8c8ff;
+}
+
+/* Kept out of the page's view transitions, so a sliding list never paints over it. */
+.harness-bar {
+  view-transition-name: harness-bar;
+}
