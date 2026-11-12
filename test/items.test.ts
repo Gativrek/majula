@@ -67,6 +67,75 @@ describe('item store', function itemSuite() {
     await driver.close();
   });
 
+  it('soft-deletes exactly the rows it is given, each restorable on its own', async function many() {
+    const { driver, store } = await freshStore();
+    const doneA = await store.create({ type: 'todo', title: 'Done A', done: true });
+    const doneB = await store.create({ type: 'todo', title: 'Done B', done: true });
+    const doneUnseen = await store.create({ type: 'todo', title: 'Done, not shown', done: true });
+    const open = await store.create({ type: 'todo', title: 'Still open' });
+
+    await store.softDeleteMany([doneA.id, doneB.id]);
+
+    const live = (await store.list()).map((item) => item.title).sort();
+    assert.deepEqual(live, ['Done, not shown', 'Still open']);
+    assert.equal((await store.listDeleted()).length, 2);
+    // Done-ness is untouched, so a restored row goes back under Done.
+    await store.restore(doneA.id);
+    assert.equal((await store.get(doneA.id))?.done, true);
+    assert.equal(await store.get(doneB.id), null);
+    assert.ok((await store.get(doneUnseen.id)) !== null);
+    assert.ok((await store.get(open.id)) !== null);
+    await driver.close();
+  });
+
+  it('does nothing for an empty list of rows', async function manyEmpty() {
+    const { driver, store } = await freshStore();
+    await store.create({ type: 'todo', title: 'Untouched', done: true });
+    await store.softDeleteMany([]);
+    assert.equal((await store.list()).length, 1);
+    await driver.close();
+  });
+
+  it('deletes more rows than one statement can bind', async function manyChunks() {
+    const { driver, store } = await freshStore();
+    const ids: string[] = [];
+    for (let index = 0; index < 1201; index += 1) {
+      ids.push((await store.create({ type: 'todo', title: `Done ${index}`, done: true })).id);
+    }
+    await store.softDeleteMany(ids);
+    assert.equal((await store.list()).length, 0);
+    assert.equal((await store.listDeleted()).length, 1201);
+    await driver.close();
+  });
+
+  it('leaves every row as it was when a bulk delete fails part-way', async function manyAtomic() {
+    const { driver } = await freshStore();
+    let bulkStatements = 0;
+    // Fails the second chunk, after the first has already run inside the transaction.
+    const failing: typeof driver = Object.create(driver);
+    failing.run = async function run(sql, params) {
+      if (sql.includes('WHERE id IN')) {
+        bulkStatements += 1;
+        if (bulkStatements === 2) throw new Error('disk full');
+      }
+      return driver.run(sql, params);
+    };
+    const store = new ItemStore(failing, {
+      clock: () => new Date('2026-09-21T12:00:00.000Z'),
+      newId: sequentialIds(),
+    });
+    const ids: string[] = [];
+    for (let index = 0; index < 600; index += 1) {
+      ids.push((await store.create({ type: 'todo', title: `Done ${index}`, done: true })).id);
+    }
+
+    await assert.rejects(store.softDeleteMany(ids), /disk full/);
+    assert.equal(bulkStatements, 2);
+    assert.equal((await store.list()).length, 600);
+    assert.equal((await store.listDeleted()).length, 0);
+    await driver.close();
+  });
+
   it('refuses to update a deleted row rather than resurrecting it', async function updateDeleted() {
     const { driver, store } = await freshStore();
     const item = await store.create({ type: 'todo', title: 'Gone' });

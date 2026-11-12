@@ -50,6 +50,9 @@ const COLUMNS = COLUMN_NAMES.join(', ');
 /** The same columns, qualified, for the reads that join `tags`. */
 const QUALIFIED_COLUMNS = COLUMN_NAMES.map((column) => `items.${column}`).join(', ');
 
+/** Ids per statement in a bulk soft delete; the two timestamps take the other places. */
+const SOFT_DELETE_CHUNK = 500;
+
 /** Storage row to domain item. Validates the payload on read (CODESTYLE §10). */
 export function toItem(row: ItemRow): Item {
   if (!isItemType(row.type)) {
@@ -236,6 +239,31 @@ export class ItemStore {
       [now, now, id],
     );
     log.info('item.soft_deleted', { id });
+  }
+
+  /**
+   * Soft-delete exactly these rows in one write (SPECS §2.2, the Done fold). By id rather
+   * than by "every done row of a type": the list can be loaded with a limit, and a criterion
+   * would reach rows the owner never saw. One timestamp for all, so they sit together under
+   * Deleted. Chunked below SQLite's oldest bound-parameter ceiling of 999, inside one
+   * transaction so a failure part-way leaves every row as it was (CODESTYLE §7).
+   */
+  async softDeleteMany(ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) return;
+    const now = nowTimestamp(this.clock);
+    const driver = this.driver;
+    await driver.transaction(async function softDeleteChunks(this: void) {
+      for (let start = 0; start < ids.length; start += SOFT_DELETE_CHUNK) {
+        const chunk = ids.slice(start, start + SOFT_DELETE_CHUNK);
+        // Only `?` placeholders are generated; no value reaches the SQL text (CODESTYLE §10).
+        const placeholders = chunk.map(() => '?').join(', ');
+        await driver.run(
+          `UPDATE items SET deleted_at = ?, updated_at = ? WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+          [now, now, ...chunk],
+        );
+      }
+    });
+    log.info('item.soft_deleted_many', { count: ids.length });
   }
 
   async restore(id: string): Promise<void> {

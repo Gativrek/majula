@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Item, ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
+import { DoneFold } from './DoneFold.tsx';
 import { HabitRow } from './HabitRow.tsx';
-import { Icon } from './Icon.tsx';
 import type { RowHighlight } from './ItemRow.tsx';
 import { ItemRow } from './ItemRow.tsx';
 
@@ -41,6 +41,8 @@ export interface ItemListProps {
   onDelete: (item: Item) => void;
   onRestore?: (item: Item) => void;
   onOpen?: (item: Item) => void;
+  /** With `foldDone`: the rows under Done, all of them, when the held fold's Delete is tapped. */
+  onDeleteDone?: (rows: readonly Item[]) => void;
 }
 
 /** A row's tags and search marks, passed only when it has them. */
@@ -94,25 +96,19 @@ export function ItemList(props: ItemListProps) {
   if (props.items.length === 0) return <p class="empty">{props.emptyMessage}</p>;
   if (props.foldDone !== true) return <Rows {...props} rows={props.items} />;
 
+  const { onDeleteDone } = props;
   const open = props.items.filter((item) => !item.done);
   const done = props.items.filter((item) => item.done);
   return (
     <>
       {open.length === 0 ? <p class="empty">All done.</p> : <Rows {...props} rows={open} />}
       {done.length === 0 ? null : (
-        <button
-          type="button"
-          class="fold"
-          aria-expanded={doneShown}
-          onClick={() => setDoneShown(!doneShown)}
-        >
-          <span class="fold__mark">
-            <Icon name="check" size={14} />
-          </span>
-          <span class="fold__label">Done</span>
-          <span class="fold__count">{done.length}</span>
-          <Icon name="chevronDown" size={18} />
-        </button>
+        <DoneFold
+          count={done.length}
+          expanded={doneShown}
+          onToggle={() => setDoneShown(!doneShown)}
+          {...(onDeleteDone === undefined ? {} : { onDeleteAll: () => onDeleteDone(done) })}
+        />
       )}
       {doneShown && done.length > 0 ? <Rows {...props} rows={done} /> : null}
     </>

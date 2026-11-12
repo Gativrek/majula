@@ -401,6 +401,19 @@ _Capture_:
     it: the whole note shows, line breaks kept. Its pencil edits the whole text; back
     cancels the edit. On **To-do**, Enter still saves.
 
+**Owner’s request of 2026-11-12** — OPEN (`SPECS.md` §2.2, The list). Clearing the Done fold:
+
+1. On **To-do**, check off three items. Hold **Done** still: **Delete all** shows beside it,
+   and no text-selection menu appears. Release: the fold has not opened or closed.
+2. Tap anywhere on the held line: it closes and nothing is deleted.
+3. Hold again, tap **Delete all**. The Done line goes; the open to-dos are untouched.
+4. All three are under **Deleted**. Restore one: it returns to To-do, still checked, under
+   Done. The other two stay deleted.
+5. A plain tap on **Done** still opens and closes it.
+6. On **Running low**, the same holds, and only running-low rows are taken.
+7. On **Reading**, mark an entry with a PDF read, then clear Done. Restore it: its PDF still
+   opens on the same page — soft delete keeps files; only purge removes them (§4.1).
+
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:

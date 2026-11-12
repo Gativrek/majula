@@ -97,6 +97,11 @@ export async function deleteItem(context: AppContext, id: string): Promise<void>
   await context.items.softDelete(id);
 }
 
+/** The Done fold's Delete all (SPECS §2.2): these rows, in one write, files retained. */
+export async function deleteItems(context: AppContext, ids: readonly string[]): Promise<void> {
+  await context.items.softDeleteMany(ids);
+}
+
 export async function restoreItem(context: AppContext, id: string): Promise<void> {
   await context.items.restore(id);
 }

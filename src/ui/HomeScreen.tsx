@@ -6,6 +6,7 @@ import { loadHabitStates, toggleHabitToday } from '../services/habits.ts';
 import {
   captureItem,
   deleteItem,
+  deleteItems,
   listItems,
   loadTagCounts,
   loadTagsFor,
@@ -189,6 +190,14 @@ export function HomeScreen(props: HomeScreenProps) {
             onToggleDone={(item) => void action.run(toggleDone(context, item))}
             onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
             onDelete={(item) => void action.run(deleteItem(context, item.id))}
+            onDeleteDone={(rows) =>
+              void action.run(
+                deleteItems(
+                  context,
+                  rows.map((row) => row.id),
+                ),
+              )
+            }
             onOpen={onOpen}
           />
           {items.length === 0 ? null : (

@@ -324,9 +324,62 @@ input {
   list-style: none;
 }
 
-.list + .fold,
-.fold + .list {
+.list + .fold-hold,
+.fold-hold + .list {
   margin-top: var(--space-1);
+}
+
+/*
+ * The Done line, held. Unlike a row it does not slide: a row is square and loses only its
+ * checkbox off the edge, but the Done line is a rounded pill whose label is its left half,
+ * and sliding it pushed "Done" out of sight and butted a rounded end against a square red
+ * block. So the pill narrows instead, Delete fills the room it leaves, and the wrapper's
+ * clip rounds the outer corners of both: one shape, Done on the left, Delete on the right.
+ */
+.fold-hold {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+/*
+ * Delete is not drawn until the fold is held. Behind a rounded face, the face's curve and
+ * the wrapper's clip are two anti-aliased edges over red, and they leave a faint red halo
+ * at the corners. On release it stays until the face has grown back over it (the 160ms
+ * matches the face's own transition).
+ */
+.fold-hold > .row__delete {
+  visibility: hidden;
+  transition: visibility 0s linear 160ms;
+}
+
+.fold-hold--open > .row__delete {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.fold-hold__face {
+  position: relative;
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: margin-right 160ms ease-out;
+}
+
+/* 88px is Delete's width, `REVEAL_WIDTH` in row-hold.ts. */
+.fold-hold--open > .fold-hold__face {
+  margin-right: 88px;
+}
+
+.fold-hold__face > .fold {
+  width: 100%;
+}
+
+/* Where the pill meets Delete the join is square; the outer corners stay the wrapper's. */
+.fold-hold--open .fold {
+  border-right-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .row {
