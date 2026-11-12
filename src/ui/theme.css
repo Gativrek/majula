@@ -497,7 +497,12 @@ input {
   text-align: left;
 }
 
-.fold[aria-expanded='true'] .icon:last-child {
+/*
+ * The chevron only: it is the fold's own last child. A descendant selector also caught the
+ * check inside `.fold__mark`, which is that span's only child and so its last, and turned
+ * it upside down whenever Done was open.
+ */
+.fold[aria-expanded='true'] > .icon:last-child {
   transform: rotate(180deg);
 }
 
