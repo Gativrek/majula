@@ -14,6 +14,9 @@
   --colour-gold: #e3b04b;
   --colour-gold-bright: #f2c94c;
   --colour-gold-soft: rgba(227, 176, 75, 0.14);
+  /* The selected category icon's fill, and a search match's mark. */
+  --colour-gold-tint: rgba(227, 176, 75, 0.18);
+  --colour-gold-mark: rgba(227, 176, 75, 0.22);
   --colour-text: #f2ece0;
   --colour-text-2: #cdc5b4;
   --colour-text-dim: #9e9580;
@@ -37,6 +40,79 @@
   --radius-card: 20px;
   --radius-tile: 12px;
   --tap-target: 2.75rem;
+}
+
+/*
+ * A colour per category (SPECS §2.2, Look and motion). `data-cat` on `.app` names the
+ * category showing, or the one an open screen belongs to; the gold tokens are redefined
+ * under it, so every rule that reads them follows without being touched. The hues sit at
+ * one lightness and chroma in OKLCH so they read as one family, spaced round the wheel in
+ * the icon row's order. To-do, habits and anything without a category keep the gold.
+ *
+ * Recipes' terracotta sits near `--colour-danger`; danger only ever appears with words —
+ * a banner, a Delete — and the owner saw the pair before choosing (2026-11-12).
+ */
+[data-cat='workouts'] {
+  --hue: 125;
+}
+
+[data-cat='grocery'] {
+  --hue: 160;
+}
+
+[data-cat='place'] {
+  --hue: 200;
+}
+
+[data-cat='note'] {
+  --hue: 245;
+}
+
+[data-cat='reading'] {
+  --hue: 295;
+}
+
+[data-cat='contact'] {
+  --hue: 345;
+}
+
+[data-cat='recipe'] {
+  --hue: 35;
+}
+
+/*
+ * Listed rather than `[data-cat]`: a category with no hue above would resolve every token
+ * here to nothing, and with it every colour on its screen.
+ */
+:is(
+  [data-cat='workouts'],
+  [data-cat='grocery'],
+  [data-cat='place'],
+  [data-cat='note'],
+  [data-cat='reading'],
+  [data-cat='contact'],
+  [data-cat='recipe']
+) {
+  --colour-gold: oklch(0.77 0.115 var(--hue));
+  --colour-gold-bright: oklch(0.85 0.12 var(--hue));
+  --colour-gold-soft: oklch(0.77 0.115 var(--hue) / 0.15);
+  --colour-gold-tint: oklch(0.77 0.115 var(--hue) / 0.2);
+  --colour-gold-mark: oklch(0.77 0.115 var(--hue) / 0.24);
+}
+
+/*
+ * Fire is gold whatever is showing. The bonfire draws in currentColor, which an ancestor
+ * has resolved from the category's hue before the token is reset here, so it sets its own.
+ */
+.habit-cards,
+.bonfire {
+  --colour-gold: #e3b04b;
+  --colour-gold-bright: #f2c94c;
+  --colour-gold-soft: rgba(227, 176, 75, 0.14);
+}
+
+.bonfire {
+  color: var(--colour-gold);
 }
 
 * {
@@ -309,7 +385,7 @@ input {
 }
 
 .bubble__option[aria-pressed='true'] {
-  background: rgba(227, 176, 75, 0.18);
+  background: var(--colour-gold-tint);
   color: var(--colour-gold-bright);
 }
 
@@ -1802,7 +1878,7 @@ a.button {
 mark {
   padding: 0 1px;
   border-radius: 3px;
-  background: rgba(227, 176, 75, 0.22);
+  background: var(--colour-gold-mark);
   color: var(--colour-gold-bright);
 }
 

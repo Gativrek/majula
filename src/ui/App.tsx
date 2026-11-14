@@ -9,6 +9,7 @@ import { HomeScreen } from './HomeScreen.tsx';
 import { LibraryScreen } from './LibraryScreen.tsx';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { OpenScreenView } from './OpenScreenView.tsx';
+import { categoryOfScreen } from './screen-category.ts';
 import { SearchScreen } from './SearchScreen.tsx';
 import type { StartupFailure } from './StartupBanner.tsx';
 import { StartupBanner, startupFailureFrom } from './StartupBanner.tsx';
@@ -22,6 +23,22 @@ import { useShareReceiver } from './use-share-receiver.ts';
  */
 
 type Screen = 'home' | 'search' | 'library';
+
+/**
+ * The category whose colour the app wears (SPECS §2.2, Look and motion): the one showing,
+ * or the one an open screen belongs to. A tag view mixes categories, and search, Deleted
+ * and Backup belong to none, so those keep the gold.
+ */
+function accentFor(
+  open: OpenScreen | null,
+  screen: Screen,
+  categoryId: CategoryId,
+  tag: string | null,
+): CategoryId | undefined {
+  if (open !== null) return categoryOfScreen(open);
+  if (screen === 'home' && tag === null) return categoryId;
+  return undefined;
+}
 
 export function App() {
   const [context, setContext] = useState<AppContext | null>(null);
@@ -110,9 +127,12 @@ export function App() {
     );
   }
 
+  const accent = accentFor(open, screen, categoryId, tag);
+
+  // `app--open` while anything but the list shows: motion.css raises that screen into place.
   if (open !== null) {
     return (
-      <div class="app">
+      <div class="app app--open" data-cat={accent}>
         <OpenScreenView
           screen={open}
           context={context}
@@ -124,7 +144,7 @@ export function App() {
   }
 
   return (
-    <div class="app">
+    <div class={screen === 'home' ? 'app' : 'app app--open'} data-cat={accent}>
       {screen === 'search' ? (
         <SearchScreen
           context={context}
