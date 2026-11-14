@@ -17,3 +17,26 @@ android/capacitor-cordova-android-plugins/
 
 # Generated from node_modules/pdfjs-dist by scripts/copy-pdfjs-assets.mjs.
 public/pdfjs/
+
+# Kept out of the published repository, on disk and in this repository's history.
+# The code cites these constantly — `SPECS §4.1`, `CODESTYLE §10`, a module's numbered
+# criteria — and those citations stay; the documents they point at live elsewhere.
+/CLAUDE.md
+/CODESTYLE.md
+/DECISIONS.md
+/ROADMAP.md
+/SPECS.md
+/docs/
+
+# Local tooling: editor and formatter settings, the pre-commit hook, and the dev-server
+# entries the editor reads. None of it is needed to build or run the app.
+/.claude/
+/.editorconfig
+/.githooks/
+/.prettierignore
+/.prettierrc.json
+
+# The layout harness, for working on screens without a phone. Vite's only build input is
+# index.html, so this was never bundled and never reached the APK.
+/harness.html
+/src/dev/

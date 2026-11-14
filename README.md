@@ -148,38 +148,44 @@ npm run install:apk
 `npm run sync` and then `./gradlew assembleDebug` inside `android/`.
 
 The app cannot run in a desktop browser: SQLite is a native plugin, so `npm run dev`
-renders the UI and then says plainly that it has no database. That failure is deliberate.
-For layout work without a phone there is a dev-only harness at `/harness.html`, which
-mounts the screens over hand-written fixtures.
+renders the UI and then says plainly that it has no database. That failure is deliberate,
+not a bug to fix — acceptance runs on the device anyway.
 
-The rest of the commands, and the reasons behind the awkward ones, are in `CLAUDE.md`.
+The rest of the scripts: `npm run typecheck`, `npm test` (Node's own runner, over
+`test/*.test.ts`), `npm run build`, and `npm run sync` to push a build into the Android
+project after any dependency change.
 
 ---
 
 ## Repository layout
 
-| File | What it is |
+| Directory | What is in it |
 |---|---|
-| `SPECS.md` | The source of truth. Product brief, non-goals, modules, ADRs, data model. |
-| `ROADMAP.md` | Build order, phase by phase, with the decisions that gate each one. |
-| `CODESTYLE.md` | How the code is written and kept debuggable. |
-| `CLAUDE.md` | Agent operating manual: commands, layout, standing rules. |
-| `DECISIONS.md` | Append-only log. One dated line per change of mind. |
-| `LICENSE` | MIT. |
-| `docs/modules/` | Per-module acceptance criteria. Observable behaviour only. |
-| `docs/adr/` | Architecture decision records, once they outgrow `SPECS.md` §3. |
+| `src/lib/` | Logger, errors, branded time types, id generation. |
+| `src/data/` | Every SQL statement, the migrations, payload validation, the type union. |
+| `src/services/` | Orchestration the UI may call: filesystem, export and import. |
+| `src/ui/` | Preact components, the theme, the motion. |
+| `test/` | Node's test runner, over a `node:sqlite` driver and an in-memory file store. |
+| `android/` | The Capacitor Android project. |
 
-**The process rule:** to change behaviour, edit the spec first, then reconcile the code.
-Never patch code and leave the spec stale.
+Layering runs one way: UI to service to data. The UI issues no SQL, touches no files and
+parses no payload.
+
+**A note on the comments.** This is a spec-driven project, and the code says so: comments
+cite `SPECS §4.1`, `CODESTYLE §10`, or a module's numbered acceptance criteria rather than
+restating the reasoning. Those documents are the owner's working notes and are not
+published here, so the citations are not links you can follow. What they point at is
+usually recoverable from the sentence around them — each one says why the code does what
+it does, which was the point of writing them down.
 
 ---
 
 ## Status
 
-Every phase of `ROADMAP.md` is built, and Phases 1 to 7, the back button and the
-permission set are verified on the phone. What still waits on device checks is the most
-recent work: the redesign of 2026-10-14, clearing the Done fold, and the per-category
-colours and motion. Those checks are listed in `CLAUDE.md`.
+Every module described above is built, and all of them are verified on the phone — every
+module spec ends in a list of observable checks, run on the device rather than asserted.
+What still waits on that is the most recent work: a redesign of the list, clearing the
+Done fold in one action, and the per-category colours and motion.
 
 ---
 
