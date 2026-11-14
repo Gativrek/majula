@@ -1,0 +1,387 @@
+/*
+ * Motion (SPECS §2.2, Look and motion). Imported after theme.css.
+ *
+ * Rules of the house (CODESTYLE §12):
+ * - Everything sits inside `prefers-reduced-motion: no-preference`. With reduced motion on,
+ *   the phone gets the app without any of it, and that setting is the only switch.
+ * - Colours come from the theme's tokens, never literals, so a category's accent carries
+ *   its motion with it.
+ * - Nothing loops and nothing waits on an animation: each one decorates a change already
+ *   made, so a slow phone loses polish, never function.
+ * - No dependency: CSS, and the View Transitions API the WebView already has (motion.ts).
+ *
+ * Two attributes drive it. `data-tapped` marks the control just touched (use-tap-mark.ts),
+ * so only that one animates — not every logged habit or checked box on screen when it
+ * loads. `data-vt` on the root names the view transition running (motion.ts), so a
+ * check-off and a category change can animate differently.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-settle: cubic-bezier(0.3, 1.25, 0.5, 1);
+  }
+
+  /* ---- Touch: every button answers the finger ------------------------------------- */
+
+  /* Not Delete: its own transition times when it hides behind the Done fold (theme.css). */
+  button:not(.row__delete) {
+    transition:
+      transform 120ms var(--ease-out),
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
+  }
+
+  /*
+   * Not a full-row button or a row's Delete: shrinking a whole row reads as a glitch, and
+   * a held row's face already moves.
+   */
+  button:not(.row__open, .row__delete):active {
+    transform: scale(0.95);
+  }
+
+  .row__open:active {
+    background: var(--colour-surface-raised);
+  }
+
+  .capture-bar__field {
+    transition: border-color 200ms ease;
+  }
+
+  /* ---- Habits: logging one lights it ---------------------------------------------- */
+
+  .habit-card {
+    position: relative;
+  }
+
+  .habit-card[data-tapped][aria-pressed='true'] {
+    animation: habit-glow 760ms var(--ease-out);
+  }
+
+  .habit-card[data-tapped][aria-pressed='true'] .icon {
+    transform-origin: 50% 85%;
+    animation: flame-catch 620ms var(--ease-spring);
+  }
+
+  .habit-card[data-tapped] .habit-card__number {
+    display: inline-block;
+    animation: count-up 420ms var(--ease-spring);
+  }
+
+  .habit-card[data-tapped][aria-pressed='false'] .habit-card__number {
+    animation-name: count-down;
+  }
+
+  /* Three embers off the flame. Drawn, not an image: one element, three gradients. */
+  .habit-card[data-tapped][aria-pressed='true']::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 8px;
+    width: 30px;
+    height: 32px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle, var(--colour-gold-bright) 0 1.6px, transparent 2.2px) 2px 20px / 8px
+        8px no-repeat,
+      radial-gradient(circle, var(--colour-gold-bright) 0 1.3px, transparent 1.9px) 15px 24px / 8px
+        8px no-repeat,
+      radial-gradient(circle, var(--colour-gold) 0 1.1px, transparent 1.7px) 9px 12px / 8px 8px
+        no-repeat;
+    animation: embers-rise 820ms var(--ease-out) forwards;
+  }
+
+  /*
+   * Inset, not outset: the habit strip scrolls sideways, and a scroll container clips on
+   * both axes, so an outer glow was cut off at the strip's edges. The warmth rises inside
+   * the card instead, from the flame's corner.
+   */
+  @keyframes habit-glow {
+    0% {
+      box-shadow: inset 0 0 0 0 transparent;
+      background-color: var(--colour-gold-soft);
+    }
+    30% {
+      box-shadow: inset 14px 10px 26px -6px
+        color-mix(in srgb, var(--colour-gold-bright) 38%, transparent);
+      background-color: color-mix(in srgb, var(--colour-gold) 26%, transparent);
+    }
+    100% {
+      box-shadow: inset 0 0 0 0 transparent;
+    }
+  }
+
+  @keyframes flame-catch {
+    0% {
+      transform: scale(0.45) rotate(-10deg);
+      opacity: 0.4;
+    }
+    45% {
+      transform: scale(1.4) rotate(7deg);
+      opacity: 1;
+    }
+    72% {
+      transform: scale(0.92) rotate(-3deg);
+    }
+    100% {
+      transform: none;
+    }
+  }
+
+  @keyframes count-up {
+    from {
+      transform: translateY(55%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes count-down {
+    from {
+      transform: translateY(-55%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes embers-rise {
+    0% {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-16px);
+      opacity: 0;
+    }
+  }
+
+  /* ---- Checking off: the tick lands, then the row folds away ---------------------- */
+
+  /*
+   * The tick is drawn on the box the moment it is tapped, while the write is already under
+   * way: the row then leaves under a view transition, and without this the owner would
+   * check a box and watch it vanish without ever seeing it checked.
+   */
+  .check[data-tapped][aria-pressed='false'] .check__box {
+    border-color: var(--colour-gold);
+    background: var(--colour-gold);
+    animation: check-pop 260ms var(--ease-spring);
+  }
+
+  .check[data-tapped][aria-pressed='false'] .check__box::after {
+    content: '';
+    width: 6px;
+    height: 11px;
+    margin-top: -2px;
+    border: solid var(--colour-background);
+    border-width: 0 2.4px 2.4px 0;
+    transform: rotate(45deg);
+    animation: tick-draw 200ms 60ms var(--ease-out) both;
+  }
+
+  @keyframes check-pop {
+    0% {
+      transform: scale(0.7);
+    }
+    60% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: none;
+    }
+  }
+
+  @keyframes tick-draw {
+    from {
+      transform: rotate(45deg) scale(0);
+    }
+  }
+
+  /* ---- Rows: leave, arrive and close ranks (view transitions) --------------------- */
+
+  /*
+   * A row is named by its item's id (`--vt-name`, set by ItemRow and HabitRow), so a row
+   * that stays glides to its new place, and a checked row moves into an open Done list as
+   * itself. One that leaves or arrives has half a pair and plays the animations below.
+   */
+  .row {
+    view-transition-name: var(--vt-name, none);
+    view-transition-class: row;
+  }
+
+  /*
+   * The list's own box, so it grows and shrinks rather than snapping. `match-element` is
+   * newer than view transitions; where a WebView lacks it this line is ignored and the box
+   * simply changes size at the end.
+   */
+  .list {
+    view-transition-name: match-element;
+    view-transition-class: list;
+  }
+
+  .fold-hold {
+    view-transition-name: done-fold;
+  }
+
+  /* Painted above the list, so nothing moving in the scroll area draws over it. */
+  .capture-bar {
+    view-transition-name: capture-bar;
+  }
+
+  ::view-transition-group(*.row),
+  ::view-transition-group(*.list),
+  ::view-transition-group(done-fold) {
+    animation-duration: 340ms;
+    animation-timing-function: var(--ease-out);
+  }
+
+  ::view-transition-old(*.row):only-child {
+    animation: row-leave 240ms var(--ease-out) both;
+  }
+
+  ::view-transition-new(*.row):only-child {
+    animation: row-arrive 320ms 80ms var(--ease-out) both;
+  }
+
+  @keyframes row-leave {
+    to {
+      opacity: 0;
+      transform: translateY(10px) scale(0.97);
+    }
+  }
+
+  @keyframes row-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+    }
+  }
+
+  /* ---- Done: its rows unfold one after another ------------------------------------ */
+
+  /* The chevron is the fold's own last child; the check in `.fold__mark` must not turn. */
+  .fold > .icon:last-child {
+    transition: transform 280ms var(--ease-settle);
+  }
+
+  /* Not during a view transition, which animates rows its own way. */
+  :root:not([data-vt]) .fold-hold + .list > .row {
+    animation: unfold 300ms var(--ease-out) backwards;
+  }
+
+  :root:not([data-vt]) .fold-hold + .list > .row:nth-child(2) {
+    animation-delay: 40ms;
+  }
+
+  :root:not([data-vt]) .fold-hold + .list > .row:nth-child(3) {
+    animation-delay: 80ms;
+  }
+
+  :root:not([data-vt]) .fold-hold + .list > .row:nth-child(n + 4) {
+    animation-delay: 120ms;
+  }
+
+  @keyframes unfold {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  /* ---- Changing category: the list slides the way the finger went ----------------- */
+
+  /*
+   * During a category change no row is named on its own — every row is different, and
+   * twenty leave-and-arrive animations read as noise. The list section moves as one, and
+   * the selected icon's fill travels to its new place.
+   */
+  :root[data-vt^='cat'] .row,
+  :root[data-vt^='cat'] .list,
+  :root[data-vt^='cat'] .fold-hold {
+    view-transition-name: none;
+  }
+
+  :root[data-vt^='cat'] .section--list {
+    view-transition-name: category-list;
+  }
+
+  .bubble__option[aria-pressed='true'] {
+    view-transition-name: category-pick;
+  }
+
+  ::view-transition-group(category-pick) {
+    animation-duration: 340ms;
+    animation-timing-function: var(--ease-settle);
+  }
+
+  ::view-transition-group(category-list) {
+    animation-duration: 320ms;
+    animation-timing-function: var(--ease-out);
+  }
+
+  :root[data-vt='cat-next']::view-transition-old(category-list) {
+    animation: list-out-left 200ms var(--ease-out) both;
+  }
+
+  :root[data-vt='cat-next']::view-transition-new(category-list) {
+    animation: list-in-right 320ms 40ms var(--ease-out) both;
+  }
+
+  :root[data-vt='cat-prev']::view-transition-old(category-list) {
+    animation: list-out-right 200ms var(--ease-out) both;
+  }
+
+  :root[data-vt='cat-prev']::view-transition-new(category-list) {
+    animation: list-in-left 320ms 40ms var(--ease-out) both;
+  }
+
+  @keyframes list-out-left {
+    to {
+      opacity: 0;
+      transform: translateX(-32px);
+    }
+  }
+
+  @keyframes list-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(32px);
+    }
+  }
+
+  @keyframes list-out-right {
+    to {
+      opacity: 0;
+      transform: translateX(32px);
+    }
+  }
+
+  @keyframes list-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-32px);
+    }
+  }
+
+  /* ---- Opening a screen: it rises into place -------------------------------------- */
+
+  /*
+   * `.app--open` is set while anything but the list shows (App.tsx), and the screen is
+   * its first child, so this plays as a screen opens and not on returning to the list.
+   * `backwards`, not `both`: a fill left on `transform` would make the screen the box that
+   * the bottom sheet and the exercise picker — both `position: fixed` — lay out against.
+   */
+  .app--open > :first-child {
+    animation: screen-rise 340ms var(--ease-out) backwards;
+  }
+
+  @keyframes screen-rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+    }
+  }
+}

@@ -2,6 +2,7 @@ import type { ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
 import { Icon } from './Icon.tsx';
 import { dayUnit } from './streak-text.ts';
+import { tappedAttribute, useTapMark } from './use-tap-mark.ts';
 
 /**
  * Habits above the list, on every category: one card each, and tapping a card logs today
@@ -19,6 +20,10 @@ interface HabitStripProps {
 }
 
 export function HabitStrip({ habits, states, onToggleToday, onShowAll }: HabitStripProps) {
+  // The card is marked with the state it is heading for, and counts as tapped only once it
+  // gets there: today's check reaches the list a moment after the tap, from the database,
+  // and lighting the card before then would animate the old number.
+  const tap = useTapMark();
   if (habits.length === 0) return null;
   const logged = habits.filter((habit) => states.get(habit.id)?.checkedToday === true).length;
 
@@ -42,7 +47,11 @@ export function HabitStrip({ habits, states, onToggleToday, onShowAll }: HabitSt
               class="habit-card"
               aria-pressed={checked}
               aria-label={`${habit.title}, streak ${streak} ${dayUnit(streak)}${checked ? ', logged today' : ''}`}
-              onClick={() => onToggleToday(habit)}
+              data-tapped={tappedAttribute(tap.marked(`${habit.id}:${checked}`))}
+              onClick={() => {
+                tap.mark(`${habit.id}:${!checked}`);
+                onToggleToday(habit);
+              }}
             >
               <span class="habit-card__streak">
                 <Icon name="flame" size={18} />

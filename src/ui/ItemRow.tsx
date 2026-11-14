@@ -3,6 +3,7 @@ import { isCheckable, typeIcon, typeLabel } from './categories.ts';
 import { Icon } from './Icon.tsx';
 import { Marked } from './Marked.tsx';
 import { useHoldReveal } from './use-hold-reveal.ts';
+import { tappedAttribute, useTapMark } from './use-tap-mark.ts';
 
 /**
  * One row of the list. Generic over `items`, because most modules are views over one
@@ -70,15 +71,30 @@ function firstLine(body: string | null): string | null {
   return line.length === 0 ? null : line;
 }
 
+/**
+ * A row's view-transition name, by its item's id, so a row that moves is animated as
+ * itself — into the Done list as it is checked, say (motion.css). Read through a custom
+ * property so the stylesheet can still switch names off during a category change.
+ */
+export function transitionName(id: string): string {
+  return `--vt-name: row-${id}`;
+}
+
+/** Marks itself on a tap, so motion.css can land the tick before the row folds away. */
 function CheckBox({ item, onToggle }: { item: Item; onToggle: (item: Item) => void }) {
   const label = item.type === 'grocery' ? 'bought' : item.type === 'reading' ? 'read' : 'done';
+  const tap = useTapMark();
   return (
     <button
       type="button"
       class="check"
       aria-pressed={item.done}
       aria-label={item.done ? `Mark as not ${label}` : `Mark as ${label}`}
-      onClick={() => onToggle(item)}
+      data-tapped={tappedAttribute(tap.marked('check'))}
+      onClick={() => {
+        tap.mark('check');
+        onToggle(item);
+      }}
     >
       <span class="check__box">{item.done ? <Icon name="check" size={16} /> : null}</span>
     </button>
@@ -118,7 +134,7 @@ export function ItemRow({
   const tagText = tags === undefined || tags.length === 0 ? null : tagLine(tags);
 
   return (
-    <li class={item.done ? 'row row--done' : 'row'}>
+    <li class={item.done ? 'row row--done' : 'row'} style={transitionName(item.id)}>
       {isDeleted ? null : (
         <button
           type="button"

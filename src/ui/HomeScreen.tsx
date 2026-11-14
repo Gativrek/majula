@@ -25,6 +25,7 @@ import { Icon } from './Icon.tsx';
 import { ItemList } from './ItemList.tsx';
 import { NoticeBanner } from './NoticeBanner.tsx';
 import { useListAction } from './use-list-action.ts';
+import { useListMotion } from './use-list-motion.ts';
 import { useSwipePages } from './use-swipe-pages.ts';
 import type { OpenScreen } from './OpenScreenView.tsx';
 import { screenFor } from './OpenScreenView.tsx';
@@ -61,6 +62,7 @@ export function HomeScreen(props: HomeScreenProps) {
   // Switching categories quickly starts loads that can finish out of order; only the
   // latest may fill the list.
   const latest = useRef(0);
+  const motion = useListMotion();
 
   const refresh = useCallback(
     async function refreshList(): Promise<void> {
@@ -77,8 +79,9 @@ export function HomeScreen(props: HomeScreenProps) {
       setStates(habitStates);
       setRowTags(tagsOnRows);
       setKnownTags(tagCounts);
+      motion.settled();
     },
-    [context, shown, tag, version],
+    [context, shown, tag, version, motion],
   );
 
   const action = useListAction(refresh);
@@ -91,7 +94,7 @@ export function HomeScreen(props: HomeScreenProps) {
     tag === null,
     function swipeCategory(by) {
       const next = adjacentCategory(categoryId, by);
-      if (next !== null) props.onCategoryChange(next);
+      if (next !== null) changeCategory(next);
     },
     '.habit-cards',
   );
@@ -135,8 +138,34 @@ export function HomeScreen(props: HomeScreenProps) {
     // places.md criterion 1: a new place opens with Here one tap away. It is already
     // saved, so this only opens it; back closes it and keeps the place.
     if (captured.type === 'place') props.onOpenScreen({ module: 'place', place: captured });
-    await action.load();
+    await motion.animate('add', () => action.load());
     return true;
+  }
+
+  /** SPECS §2.2, Look and motion: the list slides the way the finger went. */
+  function changeCategory(next: CategoryId): void {
+    // Picking the category already showing reloads nothing, so there is nothing to wait for.
+    if (next === categoryId && tag === null) return;
+    motion.changeCategory(categoryId, next, () => props.onCategoryChange(next));
+  }
+
+  /*
+   * SPECS §2.2, Look and motion: no write waits on motion. Each write below starts the
+   * moment it is asked for; only the redraw goes through the transition, which awaits the
+   * write already under way and then reloads. A failed write is reported by action.run at
+   * the redraw; the empty catch only keeps the gap before then quiet.
+   */
+
+  /** The tick lands first; the row folds away after it. */
+  function onToggleDone(item: Item): void {
+    const write = toggleDone(context, item);
+    write.catch(() => undefined);
+    motion.checkOff(item.done, () => action.run(write));
+  }
+
+  function onDelete(write: Promise<unknown>): void {
+    write.catch(() => undefined);
+    void motion.animate('delete', () => action.run(write));
   }
 
   function onOpen(item: Item): void {
@@ -158,13 +187,10 @@ export function HomeScreen(props: HomeScreenProps) {
           habits={habits}
           states={states}
           onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
-          onShowAll={() => props.onCategoryChange('habit')}
+          onShowAll={() => changeCategory('habit')}
         />
-        <CategoryBubble
-          selected={tag === null ? categoryId : null}
-          onSelect={props.onCategoryChange}
-        />
-        <section class="section">
+        <CategoryBubble selected={tag === null ? categoryId : null} onSelect={changeCategory} />
+        <section class="section section--list">
           <div class="section__head">
             {tag === null ? (
               <h2 class="section__title">{shown.label}</h2>
@@ -187,11 +213,11 @@ export function HomeScreen(props: HomeScreenProps) {
             tagsByItem={rowTags}
             showType={mixed}
             foldDone={foldDone}
-            onToggleDone={(item) => void action.run(toggleDone(context, item))}
+            onToggleDone={onToggleDone}
             onToggleToday={(habit) => void action.run(toggleHabitToday(context, habit.id))}
-            onDelete={(item) => void action.run(deleteItem(context, item.id))}
+            onDelete={(item) => onDelete(deleteItem(context, item.id))}
             onDeleteDone={(rows) =>
-              void action.run(
+              onDelete(
                 deleteItems(
                   context,
                   rows.map((row) => row.id),
@@ -210,7 +236,7 @@ export function HomeScreen(props: HomeScreenProps) {
         knownTags={knownTags}
         disabled={false}
         onCapture={onCapture}
-        onPickCategory={props.onCategoryChange}
+        onPickCategory={changeCategory}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import type { ItemOfType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
 import { Icon } from './Icon.tsx';
+import { transitionName } from './ItemRow.tsx';
 import { streakText } from './streak-text.ts';
 import { useHoldReveal } from './use-hold-reveal.ts';
 
@@ -27,7 +28,7 @@ export function HabitRow({ habit, state, onToggleToday, onDelete, onRestore }: H
   const checkedToday = state?.checkedToday ?? false;
 
   return (
-    <li class={checkedToday ? 'row row--logged' : 'row'}>
+    <li class={checkedToday ? 'row row--logged' : 'row'} style={transitionName(habit.id)}>
       {isDeleted ? null : (
         <button
           type="button"
