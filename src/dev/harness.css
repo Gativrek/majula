@@ -42,17 +42,6 @@
   background: #9a9aff;
 }
 
-/* The two comparison toggles sit apart from the scene tabs. */
-.harness-bar__toggle {
-  flex-basis: 40%;
-  border: 1px dashed #6c6cff !important;
-}
-
-.harness-bar__toggle[aria-pressed='true'] {
-  color: #1b1b2e;
-  background: #c8c8ff;
-}
-
 /* Kept out of the page's view transitions, so a sliding list never paints over it. */
 .harness-bar {
   view-transition-name: harness-bar;

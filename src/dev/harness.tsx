@@ -14,10 +14,10 @@
  * `index.html` alone, so `harness.html` is never bundled and cannot reach the APK. Do not
  * add it to `build.rollupOptions.input`.
  *
- * The list scene keeps its rows in memory so taps do something, and two toggles compare
- * prototypes that are not in the app: `motion.css` (motion, off by default in the app
- * because it is not there yet) and `accents.css` (a hue per category). Neither stylesheet
- * is imported by the app; moving either across is a spec change first (CLAUDE.md rule 1).
+ * The list scene keeps its rows in memory so taps do something. It drives the app's own
+ * motion — `motion.css`, `motion.ts`, and the tap marks the components set themselves — so
+ * what moves here is what ships (SPECS §2.2, Look and motion). With reduced motion on in
+ * the operating system, it shows the app without motion, as the phone would.
  *
  * Acceptance is still the device (SPECS §6). Anything seen here is a layout lead, not a
  * passed check.
@@ -25,18 +25,19 @@
 
 import type { JSX } from 'preact';
 import { render } from 'preact';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { Item, ItemOfType, ItemType } from '../data/types.ts';
 import type { HabitState } from '../services/habits.ts';
 import { draftFromRecipe } from '../services/recipe-draft.ts';
 import { CaptureBar } from '../ui/CaptureBar.tsx';
 import { CategoryBubble } from '../ui/CategoryBubble.tsx';
 import type { CategoryId } from '../ui/categories.ts';
-import { LIST_CATEGORIES, category as categoryOf, isCheckable } from '../ui/categories.ts';
+import { category as categoryOf, isCheckable } from '../ui/categories.ts';
 import { ExerciseDetail } from '../ui/ExerciseDetail.tsx';
 import { HabitStrip } from '../ui/HabitStrip.tsx';
 import { HomeHeader } from '../ui/HomeHeader.tsx';
 import { ItemList } from '../ui/ItemList.tsx';
+import { TICK_MS, motionAllowed, slideKind, withViewTransition } from '../ui/motion.ts';
 import { PlaceDetail } from '../ui/PlaceDetail.tsx';
 import { ReadingDetail } from '../ui/ReadingDetail.tsx';
 import { RecipeEditor } from '../ui/RecipeEditor.tsx';
@@ -45,62 +46,21 @@ import { RoutineView } from '../ui/RoutineView.tsx';
 import { WorkoutLogView } from '../ui/WorkoutLogView.tsx';
 import * as fixture from './fixtures.ts';
 import '../ui/theme.css';
+import '../ui/motion.css';
 import './harness.css';
-import './motion.css';
-import './accents.css';
 
 function noop(): void {}
 async function asyncNoop(): Promise<void> {}
 
-function motionAllowed(): boolean {
-  return (
-    document.documentElement.dataset['motion'] !== 'off' &&
-    !matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
 /**
- * Run a state change as a view transition, so rows that leave, arrive or move are animated
- * between their old and new places (`motion.css`). `kind` lands on the root while it runs,
- * so the stylesheet can tell a check-off from a category change. Preact renders on a
- * microtask; waiting one task guarantees the new DOM is in place before the browser takes
- * its second snapshot.
+ * A state change here is synchronous where the app's is a database write and a reload; the
+ * view transition and its timing are the app's own.
  */
 function transition(kind: string, update: () => void): void {
-  if (!motionAllowed() || typeof document.startViewTransition !== 'function') {
+  void withViewTransition(kind, async function apply() {
     update();
-    return;
-  }
-  const root = document.documentElement;
-  root.dataset['vt'] = kind;
-  const running = document.startViewTransition(async function apply() {
-    update();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  });
-  void running.finished.finally(function clear() {
-    delete root.dataset['vt'];
   });
 }
-
-/**
- * Mark the control a tap landed on, so `motion.css` animates only what was just touched
- * and not every logged habit or checked box that happens to be on screen when it loads.
- * In the app this is one piece of state in the component; here the components are the
- * app's own, unmodified, so the harness tags the element instead.
- */
-function markTapped(event: MouseEvent): void {
-  const target = event.target;
-  if (!(target instanceof Element)) return;
-  const control = target.closest('.habit-card, .check');
-  if (control === null) return;
-  control.setAttribute('data-tapped', '');
-  setTimeout(function untag() {
-    control.removeAttribute('data-tapped');
-  }, 900);
-}
-
-/** How long a checked box shows its tick before the row folds away under Done. */
-const TICK_MS = 260;
 
 const PLAIN_CAPTURE: readonly ItemType[] = ['todo', 'note', 'grocery', 'contact'];
 
@@ -127,8 +87,7 @@ function ListScene() {
 
   function chooseCategory(id: CategoryId): void {
     if (id === categoryId) return;
-    const by = LIST_CATEGORIES.indexOf(id) > LIST_CATEGORIES.indexOf(categoryId) ? 'next' : 'prev';
-    transition(`cat-${by}`, () => setCategoryId(id));
+    transition(slideKind(categoryId, id), () => setCategoryId(id));
   }
 
   function toggleDone(item: Item): void {
@@ -171,7 +130,7 @@ function ListScene() {
   return (
     <div class="app" data-cat={categoryId}>
       <div class="screen">
-        <div class="screen__scroll" onClickCapture={markTapped}>
+        <div class="screen__scroll">
           <HomeHeader onSearch={noop} onLibrary={noop} />
           <HabitStrip
             habits={fixture.habits}
@@ -180,7 +139,7 @@ function ListScene() {
             onShowAll={noop}
           />
           <CategoryBubble selected={categoryId} onSelect={chooseCategory} />
-          <section class="section">
+          <section class="section section--list">
             <div class="section__head">
               <h2 class="section__title">{shown.label}</h2>
               <span class="section__count">
@@ -231,7 +190,7 @@ const SCENES: Scene[] = [
     id: 'recipe',
     label: 'Recipe',
     render: () => (
-      <div class="app" data-cat="recipe">
+      <div class="app app--open" data-cat="recipe">
         <RecipeView recipe={fixture.recipe} onClose={noop} onEdit={noop} />
       </div>
     ),
@@ -240,7 +199,7 @@ const SCENES: Scene[] = [
     id: 'recipe-edit',
     label: 'Recipe · edit',
     render: () => (
-      <div class="app" data-cat="recipe">
+      <div class="app app--open" data-cat="recipe">
         <RecipeEditor
           initial={draftFromRecipe(fixture.recipe.title, fixture.recipe.payload)}
           onSave={async function save() {
@@ -255,7 +214,7 @@ const SCENES: Scene[] = [
     id: 'reading',
     label: 'Reading',
     render: () => (
-      <div class="app" data-cat="reading">
+      <div class="app app--open" data-cat="reading">
         <ReadingDetail
           reading={fixture.reading}
           onSaveDetails={async function saveDetails() {
@@ -276,7 +235,7 @@ const SCENES: Scene[] = [
     id: 'place',
     label: 'Place',
     render: () => (
-      <div class="app" data-cat="place">
+      <div class="app app--open" data-cat="place">
         <PlaceDetail
           place={fixture.place}
           onSaveDetails={async function saveDetails() {
@@ -297,7 +256,7 @@ const SCENES: Scene[] = [
     id: 'routine',
     label: 'Routine',
     render: () => (
-      <div class="app" data-cat="workouts">
+      <div class="app app--open" data-cat="workouts">
         <RoutineView
           routine={fixture.routine}
           nameOf={fixture.nameOf}
@@ -312,7 +271,7 @@ const SCENES: Scene[] = [
     id: 'log',
     label: 'Workout log',
     render: () => (
-      <div class="app" data-cat="workouts">
+      <div class="app app--open" data-cat="workouts">
         <WorkoutLogView log={fixture.workoutLog} nameOf={fixture.nameOf} onClose={noop} />
       </div>
     ),
@@ -321,7 +280,7 @@ const SCENES: Scene[] = [
     id: 'exercise',
     label: 'Exercise',
     render: () => (
-      <div class="app" data-cat="workouts">
+      <div class="app app--open" data-cat="workouts">
         <ExerciseDetail
           exercise={fixture.exercise}
           loadHistory={async function history() {
@@ -350,21 +309,10 @@ const FIRST = SCENES[0] as Scene;
 
 function Harness() {
   const [sceneId, setSceneId] = useState(FIRST.id);
-  const [motion, setMotion] = useState(true);
-  const [accent, setAccent] = useState<'gold' | 'category'>('gold');
   const shown =
     SCENES.find(function match(candidate) {
       return candidate.id === sceneId;
     }) ?? FIRST;
-
-  useEffect(
-    function applyToggles() {
-      const root = document.documentElement;
-      root.dataset['motion'] = motion ? 'on' : 'off';
-      root.dataset['accent'] = accent;
-    },
-    [motion, accent],
-  );
 
   return (
     <>
@@ -385,22 +333,6 @@ function Harness() {
             </button>
           );
         })}
-        <button
-          type="button"
-          class="harness-bar__toggle"
-          aria-pressed={motion}
-          onClick={() => setMotion(!motion)}
-        >
-          {motion ? 'Motion: on' : 'Motion: off'}
-        </button>
-        <button
-          type="button"
-          class="harness-bar__toggle"
-          aria-pressed={accent === 'category'}
-          onClick={() => setAccent(accent === 'gold' ? 'category' : 'gold')}
-        >
-          {accent === 'gold' ? 'Accent: gold' : 'Accent: per category'}
-        </button>
       </nav>
     </>
   );
