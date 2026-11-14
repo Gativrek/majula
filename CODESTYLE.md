@@ -222,4 +222,8 @@ TypeScript, `strict` on. Settled by ADR-005.
 - No business logic in JSX. If a render branch needs a comment to follow, it belongs in a
   named function above the return.
 - Styling is plain CSS with custom properties for the gold-on-black theme. Kitchen mode's
-  large type is a theme variable, not a per-component override.
+  large type is a theme variable, not a per-component override. A category's accent
+  (SPECS §2.2, Look and motion) redefines the gold tokens under `[data-cat]`, so a rule
+  that reads a token follows it; a literal colour does not, and is a bug unless it is fire.
+- Motion lives in `motion.css`, all of it inside `prefers-reduced-motion: no-preference`.
+  An animation decorates a change already made; nothing waits on one.

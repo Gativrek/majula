@@ -430,6 +430,28 @@ _Capture_:
 7. On **Reading**, mark an entry with a PDF read, then clear Done. Restore it: its PDF still
    opens on the same page — soft delete keeps files; only purge removes them (§4.1).
 
+**Look and motion of 2026-11-12** — OPEN (`SPECS.md` §2.2, Look and motion):
+
+1. **To-do** is gold. Tap through the icons: each category has its own colour in the
+   selected icon and the capture button. The habit cards and the bonfire stay gold on all
+   of them. Search, Deleted and Backup are gold.
+2. Open a recipe, a reading entry, a place and a routine: each carries its category's
+   colour (Recipes terracotta, Reading violet, Places teal, Workouts green).
+3. Log a habit: the card warms, the flame catches, embers rise, the number counts up.
+   Undo it: the number counts down and nothing glows. Other logged habits do not move.
+4. Check off a to-do: the tick lands, then the row folds away and the rows below close up.
+   With Done open, a checked row moves into it rather than vanishing.
+5. **The one that matters.** Check a to-do and force-stop the app within half a second.
+   Reopen: it is checked. The write never waited for the animation.
+6. Swipe to the next category: the list slides left and the icon's fill travels right.
+   Swipe back: the reverse.
+7. Open Done: its rows unfold one after another. Delete a row, and Delete all: the rest close
+   up rather than jump.
+8. Open a recipe: it rises into place. Back to the list: the list does not.
+9. Turn on Android's **Remove animations**, reopen: all of the above still happens, without
+   any motion, and nothing is slower.
+10. Cold start to typing in quick capture is still under ~2 s (Phase 1 check 1).
+
 **Permissions** — PASSED 2026-10-14 (`DECISIONS.md`, 2026-09-23). The APK declares no `INTERNET`, no
 biometrics, only location. Re-check after any manifest or dependency change, since a
 plugin can merge a permission back in:
