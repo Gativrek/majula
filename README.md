@@ -98,8 +98,10 @@ These are not missing features. They are decisions.
 - **Frontend:** Preact, authored with JSX aliased from React, bundled with Vite.
   TypeScript in strict mode — `items.type` is a discriminated union with a payload shape
   per variant, which is where a wrong shape would otherwise fail silently.
-- **Storage:** SQLite via `@capacitor-community/sqlite`, with full-text search through
-  FTS5 where the bundled build supports it and a `LIKE` fallback where it does not.
+- **Storage:** SQLite via `@capacitor-community/sqlite`, with full-text search through an
+  external-content FTS5 table kept in sync by triggers. There is no `LIKE` fallback: the
+  phone was checked for FTS5 before the index was built, so a device without it fails
+  loudly at the migration rather than searching differently.
 - **PDFs:** copied into private app storage on attach, rendered with PDF.js, last page
   remembered.
 - **Schema:** a single generic `items` table with a JSON payload for type-specific fields,
@@ -119,10 +121,38 @@ background.
 
 ## Install
 
-Android only. Build the debug APK and install it on the device; there is no release
-channel and no store listing.
+Android only, and from source. There is no release channel and no store listing.
 
-Build and run commands are in `CLAUDE.md`.
+You need Node 22 or newer — the tests run TypeScript directly — a JDK with `JAVA_HOME`
+pointing at it, and the Android SDK. Android Studio supplies the last two.
+
+```
+npm install
+```
+
+Then write `android/local.properties` with the SDK path. It is not committed, and a Java
+properties file reads a backslash as an escape, so use forward slashes:
+
+```
+sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk
+```
+
+With the phone connected and USB debugging on:
+
+```
+npm run apk
+npm run install:apk
+```
+
+`npm run apk` calls `.\gradlew.bat`, so it is Windows-only as written. Elsewhere, run
+`npm run sync` and then `./gradlew assembleDebug` inside `android/`.
+
+The app cannot run in a desktop browser: SQLite is a native plugin, so `npm run dev`
+renders the UI and then says plainly that it has no database. That failure is deliberate.
+For layout work without a phone there is a dev-only harness at `/harness.html`, which
+mounts the screens over hand-written fixtures.
+
+The rest of the commands, and the reasons behind the awkward ones, are in `CLAUDE.md`.
 
 ---
 
@@ -146,9 +176,10 @@ Never patch code and leave the spec stale.
 
 ## Status
 
-Every phase of `ROADMAP.md` is built. Phases 1 and 2 are verified on the phone; Phases 3
-to 7 and the back button are built and tested off the device, and wait on their device
-checks, which are listed in `CLAUDE.md`.
+Every phase of `ROADMAP.md` is built, and Phases 1 to 7, the back button and the
+permission set are verified on the phone. What still waits on device checks is the most
+recent work: the redesign of 2026-10-14, clearing the Done fold, and the per-category
+colours and motion. Those checks are listed in `CLAUDE.md`.
 
 ---
 

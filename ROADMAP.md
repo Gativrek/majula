@@ -14,7 +14,8 @@ Decisions are recorded in `DECISIONS.md`; rationale goes in the ADR or spec sect
   and the closure is logged in `DECISIONS.md`.
 - *Done when* — the observable check that ends the phase. Not "code written".
 
-**Every gate is closed.** Phase 1 is verified on device; Phase 2 is in progress.
+**Every gate is closed, and every phase is built.** Phases 1 to 7 are verified on the
+device; the device checks still outstanding are the ones listed at the end of `CLAUDE.md`.
 
 ---
 
